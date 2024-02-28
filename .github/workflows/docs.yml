@@ -1,6 +1,9 @@
 
 name: Pages
 
+permissions:
+  contents: write
+
 on:
   push:
     branches: [ main ]
@@ -12,6 +15,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+   
     - uses: actions/setup-python@v4
       with:
         python-version: '3.11'
@@ -28,5 +32,6 @@ jobs:
         make html
     - name: Push changes to gh-pages
       uses: JamesIves/github-pages-deploy-action@v4
+      
       with:
         folder: docs # The folder the action should deploy.
