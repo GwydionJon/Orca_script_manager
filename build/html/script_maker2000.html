@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>script_maker2000 &mdash; script_maker2000 2024 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=6fefd858"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Modules" href="modules.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            script_maker2000
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">Modules</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">script_maker2000</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.orca.Orca_Calculations"><code class="docutils literal notranslate"><span class="pre">Orca_Calculations</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.Orca_Calculations.create_orca_batch"><code class="docutils literal notranslate"><span class="pre">Orca_Calculations.create_orca_batch()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.Orca_Calculations.create_orca_config"><code class="docutils literal notranslate"><span class="pre">Orca_Calculations.create_orca_config()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.Orca_Calculations.run_orca_jobs"><code class="docutils literal notranslate"><span class="pre">Orca_Calculations.run_orca_jobs()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.orca.Orca_Script"><code class="docutils literal notranslate"><span class="pre">Orca_Script</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.Orca_Script.save_script"><code class="docutils literal notranslate"><span class="pre">Orca_Script.save_script()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.crest.Crest_Job"><code class="docutils literal notranslate"><span class="pre">Crest_Job</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#script_maker2000.crest.Crest_Job.create_slurm_scripts"><code class="docutils literal notranslate"><span class="pre">Crest_Job.create_slurm_scripts()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#script_maker2000.crest.Crest_Job.run_crest_jobs"><code class="docutils literal notranslate"><span class="pre">Crest_Job.run_crest_jobs()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.slurm.Slurm_Script"><code class="docutils literal notranslate"><span class="pre">Slurm_Script</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#script_maker2000.slurm.Slurm_Script.ceate_slurm_config"><code class="docutils literal notranslate"><span class="pre">Slurm_Script.ceate_slurm_config()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#script_maker2000.slurm.Slurm_Script.submit_slurm_script"><code class="docutils literal notranslate"><span class="pre">Slurm_Script.submit_slurm_script()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.create_working_dir_structure"><code class="docutils literal notranslate"><span class="pre">create_working_dir_structure()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.move_files"><code class="docutils literal notranslate"><span class="pre">move_files()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">script_maker2000</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">Modules</a></li>
+      <li class="breadcrumb-item active">script_maker2000</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/script_maker2000.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-script_maker2000.cli">
+<span id="script-maker2000"></span><h1>script_maker2000<a class="headerlink" href="#module-script_maker2000.cli" title="Link to this heading"></a></h1>
+<dl class="py class" id="module-script_maker2000.orca">
+<dt class="sig sig-object py" id="script_maker2000.orca.Orca_Calculations">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">script_maker2000.orca.</span></span><span class="sig-name descname"><span class="pre">Orca_Calculations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">main_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.orca.Orca_Calculations" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Setup the orca files from the main config.
+Since different orca setups can be defined in the config
+we need to pass the corresponding kyword ( eg.: opimization or single_point)</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>main_config (dict): _description_
+config_key (str): _description_</p>
+</dd>
+<dt>Raises:</dt><dd><p>NotImplementedError: _description_</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="script_maker2000.orca.Orca_Calculations.create_orca_batch">
+<span class="sig-name descname"><span class="pre">create_orca_batch</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.orca.Orca_Calculations.create_orca_batch" title="Link to this definition"></a></dt>
+<dd><p>Take batch information from the orca config and prepare relevnt files.</p>
+<dl class="simple">
+<dt>Raises:</dt><dd><p>NotImplementedError: _description_</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="script_maker2000.orca.Orca_Calculations.create_orca_config">
+<span class="sig-name descname"><span class="pre">create_orca_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">main_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.orca.Orca_Calculations.create_orca_config" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="script_maker2000.orca.Orca_Calculations.run_orca_jobs">
+<span class="sig-name descname"><span class="pre">run_orca_jobs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.orca.Orca_Calculations.run_orca_jobs" title="Link to this definition"></a></dt>
+<dd><p>Start the number of orca jobs defined in the config.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="script_maker2000.orca.Orca_Script">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">script_maker2000.orca.</span></span><span class="sig-name descname"><span class="pre">Orca_Script</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">main_config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.orca.Orca_Script" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>create orca sript</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="script_maker2000.orca.Orca_Script.save_script">
+<span class="sig-name descname"><span class="pre">save_script</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.orca.Orca_Script.save_script" title="Link to this definition"></a></dt>
+<dd><p>Save the script to disk.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class" id="module-script_maker2000.crest">
+<dt class="sig sig-object py" id="script_maker2000.crest.Crest_Job">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">script_maker2000.crest.</span></span><span class="sig-name descname"><span class="pre">Crest_Job</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">main_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.crest.Crest_Job" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>use config to setup a crest run.
+generate crest config as well as necessary slurm scripts.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="script_maker2000.crest.Crest_Job.create_slurm_scripts">
+<span class="sig-name descname"><span class="pre">create_slurm_scripts</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.crest.Crest_Job.create_slurm_scripts" title="Link to this definition"></a></dt>
+<dd><p>_summary_</p>
+<dl class="simple">
+<dt>Raises:</dt><dd><p>NotImplementedError: _description_</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="script_maker2000.crest.Crest_Job.run_crest_jobs">
+<span class="sig-name descname"><span class="pre">run_crest_jobs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.crest.Crest_Job.run_crest_jobs" title="Link to this definition"></a></dt>
+<dd><p>Start the number of crest jobs defined in the config.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class" id="module-script_maker2000.slurm">
+<dt class="sig sig-object py" id="script_maker2000.slurm.Slurm_Script">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">script_maker2000.slurm.</span></span><span class="sig-name descname"><span class="pre">Slurm_Script</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">main_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">specific_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.slurm.Slurm_Script" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="script_maker2000.slurm.Slurm_Script.ceate_slurm_config">
+<span class="sig-name descname"><span class="pre">ceate_slurm_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.slurm.Slurm_Script.ceate_slurm_config" title="Link to this definition"></a></dt>
+<dd><p>Filter the main config for relevant slurm settings and create a new config file for just the slurm operations</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>main_config (dict): _description_</p>
+</dd>
+<dt>Raises:</dt><dd><p>NotImplementedError: _description_</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="script_maker2000.slurm.Slurm_Script.submit_slurm_script">
+<span class="sig-name descname"><span class="pre">submit_slurm_script</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.slurm.Slurm_Script.submit_slurm_script" title="Link to this definition"></a></dt>
+<dd><p>Main function to submit a new script to the cli.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function" id="module-script_maker2000.files">
+<dt class="sig sig-object py" id="script_maker2000.files.create_working_dir_structure">
+<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">create_working_dir_structure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">main_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.create_working_dir_structure" title="Link to this definition"></a></dt>
+<dd><blockquote>
+<div><dl class="simple">
+<dt>This function generates the data structure for further calculations.</dt><dd><p>a main folder with a folder for crest, optimzation, sp and result sub folders
+as well as the corresponding config files.
+In each of these subfolders will be an input, and an output folder.
+These always contain pairs of molecule files and slurm files.</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="simple">
+<dt>Args:</dt><dd><p>main_config (dict):The main working folder can be extracted from this config dict</p>
+</dd>
+<dt>Raises:</dt><dd><p>NotImplementedError: _description_</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="script_maker2000.files.move_files">
+<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">move_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.move_files" title="Link to this definition"></a></dt>
+<dd><p>simple wrapper for moving files and handling certain logic requiremens before doing so. TODO</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>start (str): input file
+end (str): output file</p>
+</dd>
+<dt>Raises:</dt><dd><p>NotImplementedError: _description_</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="modules.html" class="btn btn-neutral float-left" title="Modules" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Gwydion Daskalakis, Manuel Schmitt.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
