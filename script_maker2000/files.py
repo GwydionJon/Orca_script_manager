@@ -1,3 +1,11 @@
+import json
+import logging
+import pathlib
+
+script_maker_log = logging.getLogger("Script_maker_log")
+script_maker_error = logging.getLogger("Script_maker_error")
+
+
 def create_working_dir_structure(main_config: dict):
     """
        This function generates the data structure for further calculations.
@@ -28,3 +36,41 @@ def move_files(start, end):
         NotImplementedError: _description_
     """
     raise NotImplementedError()
+
+
+def read_config(config_file):
+    """_summary_
+
+    Args:
+        config_file (_type_): _description_
+    """
+
+    with open(config_file, "r") as f:
+        main_config = json.load(f)
+
+    output_dir = pathlib.Path(main_config["main_config"]["output_dir"])
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # remove previous handlers from logging
+    # this is mainly relevant for the tests
+
+    for handler in script_maker_log.handlers:
+        script_maker_log.removeHandler(handler)
+    for handler in script_maker_error.handlers:
+        script_maker_error.removeHandler(handler)
+
+    # add log file to loggers
+    file_handler_log = logging.FileHandler(output_dir / "log.log")
+    file_handler_failed = logging.FileHandler(output_dir / "failed.log")
+
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+
+    file_handler_log.setFormatter(formatter)
+    file_handler_failed.setFormatter(formatter)
+
+    script_maker_log.addHandler(file_handler_log)
+    script_maker_error.addHandler(file_handler_failed)
+
+    return main_config
