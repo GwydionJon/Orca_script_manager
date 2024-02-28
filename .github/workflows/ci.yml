@@ -32,6 +32,6 @@ jobs:
     - name: Run pytest
      
       run: |
-        cd moralization
+        cd script_maker2000
         python -m pytest -v -s
    
