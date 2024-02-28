@@ -11,16 +11,15 @@ class Orca_Script:
 
 
 class Orca_Calculations:
-    """
-    Handles an entire batch of orca jobs at once.
-    This includes config setup, creation of Orca_Scripts and
-    corresponding slurm scripts as well as handeling the submission logic.
-    """
+
+    # Handles an entire batch of orca jobs at once.
+    #   This includes config setup, creation of Orca_Scripts and
+    # corresponding slurm scripts as well as handeling the submission logic.
 
     def __init__(self, main_config: dict, config_key: str) -> None:
         """Setup the orca files from the main config.
         Since different orca setups can be defined in the config
-          we need to pass the corresponding kyword ( eg.: opimization or single_point)
+        we need to pass the corresponding kyword ( eg.: opimization or single_point)
 
         Args:
             main_config (dict): _description_
