@@ -3,9 +3,9 @@
 from pathlib import Path
 
 
-class ModuleTemplate:
+class TemplateModule:
 
-    def __init__(self, main_config, config_key) -> None:
+    def __init__(self, main_config: dict, config_key: str) -> None:
         """
         This class is only used as a template guide to have all derived classes follow the same generell layout.
 
@@ -27,7 +27,7 @@ class ModuleTemplate:
         """
         # please default to these naming conventions:
         self.internal_config = self.create_internal_config(main_config, config_key)
-        self.slurm_location = self.create_slurm_script()
+        self.slurm_location = None
 
     def create_internal_config(self, main_config, config_key) -> dict:
         """
@@ -36,7 +36,7 @@ class ModuleTemplate:
         Returns:
             dict: a dict of the sub config.
         """
-        raise NotImplementedError
+        return main_config["loop_config"][config_key]
 
     def create_slurm_script(self) -> str | Path:
         """Create the slurm script that is used to submit this calculation run to the server.
