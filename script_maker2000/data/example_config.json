@@ -8,38 +8,49 @@
         "max_run_time": "60:00:00",
         "input_file_path": "some_path",
         "input_type": "csv",
-        "csv_smiles_column":"smiles"
-    },
-    "crest_config": {
-        "n_tasks": 20,
-        "n_cores": 40,
-        "ram_per_core": 2000,
-        "args": {}
-    },
-    "opt_config": {
-        "method": "Some DFT",
-        "basisset": "Some basisset",
-        "ram_per_core": 2000,
-        "n_cores_per_calculation": 12,
-        "n_calculation_at_once": 30,
-        "disk_storage": 0,
-        "walltime": "40:00:00",
-        "args": {}
-    },
-    "sp_config": {
-        "method": "Some better DFT",
-        "basisset": "Some better basisset",
-        "ram_per_core": 2000,
-        "n_cores_per_calculation": 12,
-        "n_calculation_at_once": 30,
-        "disk_storage": 0,
-        "walltime": "40:00:00",
-        "args": {}
+        "csv_smiles_column": "smiles"
     },
     "structure_check_config": {
         "run_checks": true
     },
     "analysis_config": {
         "run_benchmark": true
+    },
+    "loop_config": {
+        "crest_config": {
+            "type": "crest",
+            "options:": {
+                "n_tasks": 20,
+                "n_cores": 40,
+                "ram_per_core": 2000,
+                "args": {}
+            }
+        },
+        "opt_config": {
+            "type": "orca",
+            "options": {
+                "method": "Some DFT",
+                "basisset": "Some basisset",
+                "ram_per_core": 2000,
+                "n_cores_per_calculation": 12,
+                "n_calculation_at_once": 30,
+                "disk_storage": 0,
+                "walltime": "40:00:00",
+                "args": {}
+            }
+        },
+        "sp_config": {
+            "type": "orca",
+            "options": {
+                "method": "Some better DFT",
+                "basisset": "Some better basisset",
+                "ram_per_core": 2000,
+                "n_cores_per_calculation": 12,
+                "n_calculation_at_once": 30,
+                "disk_storage": 0,
+                "walltime": "40:00:00",
+                "args": {}
+            }
+        }
     }
 }

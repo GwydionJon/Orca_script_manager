@@ -8,7 +8,9 @@ script_maker_log = logging.getLogger("Script_maker_log")
 script_maker_error = logging.getLogger("Script_maker_error")
 
 
-def create_working_dir_structure(main_config: dict, config_path: str):
+def create_working_dir_structure(
+    main_config: dict,
+):
     """
        This function generates the data structure for further calculations.
         a main folder with a folder for crest, optimzation, sp and result sub folders
@@ -24,32 +26,31 @@ def create_working_dir_structure(main_config: dict, config_path: str):
     output_dir = pathlib.Path(main_config["main_config"]["output_dir"])
     input_path = pathlib.Path(main_config["main_config"]["input_file_path"])
 
-    # create desired folder structure
+    print(main_config)
 
-    for subfolder in [
-        "force_field",
-        "crest",
-        "optimization",
-        "single_point",
-    ]:
-        # check if subfolder already exists, if so, this is most likely an already used directory
-        if (output_dir / subfolder).exists():
-            raise FileExistsError(
-                f"The directory {output_dir} already has subfolders setup. "
-                + "If you want to continue a previous run please change the "
-                + "'continue_previous_run'-option in the main config"
-            )
-        (output_dir / subfolder / "input").mkdir(parents=True)
-        (output_dir / subfolder / "output").mkdir(parents=True)
+    # create desired folder structure
+    sub_dir_names = [
+        pathlib.Path(key.split("_config")[0]) for key in main_config["loop_config"]
+    ]
+    script_maker_log.info(f"creating subfolders: {sub_dir_names} ")
+
+    for subfolder in sub_dir_names:
+        if main_config["main_config"]["continue_previous_run"] is False:
+            (output_dir / subfolder / "input").mkdir(parents=True)
+            (output_dir / subfolder / "output").mkdir(parents=True)
 
     (output_dir / "finished" / "raw_results").mkdir(parents=True)
     (output_dir / "finished" / "results").mkdir(parents=True)
 
     # move input files and main_settings in output folder
-    new_config_path = move_files(config_path, output_dir)
-    new_input_path = move_files(input_path, output_dir)
+    # save config into working dir
+    with open(output_dir / "example_config.json", "w") as json_file:
+        json.dump(main_config, json_file)
 
-    return output_dir, new_config_path, new_input_path
+    # copy input files
+    new_input_path = shutil.copy(input_path, output_dir)
+
+    return output_dir, new_input_path
 
 
 def move_files(input_path, output_path, copy=True):
@@ -68,8 +69,41 @@ def move_files(input_path, output_path, copy=True):
         return shutil.move(input_path, output_path)
 
 
+def check_config(main_config):
+    input_path = pathlib.Path(main_config["main_config"]["input_file_path"])
+
+    if not input_path.exists():
+        raise FileNotFoundError(
+            f"Can't find input files under {input_path}."
+            + " Please check your file name or provide the necessary files."
+        )
+
+    output_dir = pathlib.Path(main_config["main_config"]["output_dir"])
+    sub_dir_names = [key.split("_config") for key in main_config["loop_config"]]
+    if len(sub_dir_names) == 0:
+        raise ValueError(
+            "Can't find loop configs. did you name them similar to 'test_config'?"
+        )
+    for sub_dir in sub_dir_names:
+
+        if len(sub_dir) != 2:
+            raise ValueError(
+                f"Something seems wrong with {sub_dir}. Please make sure your names are correct."
+            )
+        sub_dir = pathlib.Path(sub_dir[0])
+        if (output_dir / sub_dir).exists() and main_config["main_config"][
+            "continue_previous_run"
+        ] is False:
+            raise FileExistsError(
+                f"The directory {output_dir} already has subfolders setup. "
+                + "If you want to continue a previous run please change the "
+                + "'continue_previous_run'-option in the main config"
+            )
+
+
 def read_config(config_file):
-    """This is a very import setup function as it not only reads and provides the main config,
+    """
+    This is a very import setup function as it not only reads and provides the main config,
     it also sets the location for the logging files.
 
     Args:
@@ -80,7 +114,26 @@ def read_config(config_file):
         main_config = json.load(f)
 
     output_dir = pathlib.Path(main_config["main_config"]["output_dir"])
+    print(output_dir.is_absolute())
+    # when giving a relativ path resolve it in relation to the config file.
+    if output_dir.is_absolute() is False:
+        output_dir = pathlib.Path(config_file).parent / output_dir
+
+    output_dir = output_dir.resolve()
+    main_config["main_config"]["output_dir"] = str(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+    print(output_dir)
+
+    # check if input file/folder is present
+    input_path = pathlib.Path(main_config["main_config"]["input_file_path"])
+    # manage relativ input file
+    if input_path.is_absolute() is False:
+        input_path = pathlib.Path(config_file).parent / input_path
+
+    input_path = input_path.resolve()
+    main_config["main_config"]["input_file_path"] = str(input_path)
+
+    check_config(main_config)
 
     # remove previous handlers from logging
     # this is mainly relevant for the tests
