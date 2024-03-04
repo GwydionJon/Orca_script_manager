@@ -25,7 +25,9 @@ dependencies = [
     "pandas",
     "numpy",
     "click",
-  
+    "rdkit",
+    "tqdm",
+    "joblib",
   
 ]
 
