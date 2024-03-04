@@ -1,7 +1,11 @@
+from script_maker2000.template import TemplateModule
+from pathlib import Path
+
+
 class Orca_Script:
     """This class manages the creation of the orca setup scripts"""
 
-    def __init__(self, main_config) -> None:
+    def __init__(self, orca_config) -> None:
         """create orca sript"""
         raise NotImplementedError
 
@@ -10,7 +14,7 @@ class Orca_Script:
         raise NotImplementedError()
 
 
-class Orca_Calculations:
+class OrcaModule(TemplateModule):
 
     # Handles an entire batch of orca jobs at once.
     #   This includes config setup, creation of Orca_Scripts and
@@ -28,25 +32,29 @@ class Orca_Calculations:
         Raises:
             NotImplementedError: _description_
         """
-        raise NotImplementedError()
-        self.orca_config = None
-        self.working_dir = None
-        self.orca_input = None
-        self.orca_output = None
+        super(OrcaModule, self).__init__(main_config, config_key)
+        self.slurm_location = None
 
-    def create_orca_config(self, main_config: dict):
-
+    def create_slurm_script(self) -> str | Path:
+        """Create the slurm script that is used to submit this calculation run to the server.
+        This should use the slurm class provided in this module.
+        """
         raise NotImplementedError
 
-    def create_orca_batch(self):
-        """Take batch information from the orca config and prepare relevnt files.
+    def create_orca_input_files(self):
+        pass
+
+    def run_job(self) -> None:
+        """Interface to send the job to the server.
 
         Raises:
             NotImplementedError: _description_
         """
-        raise NotImplementedError()
 
-    def run_orca_jobs(self):
-        """Start the number of orca jobs defined in the config."""
+    @classmethod
+    def check_result_integrity(single_experiment) -> bool:
+        """provide some method to verify if a single calculation was succesful.
+        This should be handled indepentendly from the existence of this class object.
 
-        raise NotImplementedError()
+        """
+        raise NotImplementedError

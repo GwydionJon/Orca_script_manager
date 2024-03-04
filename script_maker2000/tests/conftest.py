@@ -14,33 +14,25 @@ def temp_work_dir():
 
     # load example config
     example_config_path = (
-        current_path / ".." / ".." / "data" / "example_config.json"
+        current_path / ".." / ".." / "data" / "example_config_xyz.json"
     ).resolve()
 
     # copy config to tmp dir
     new_config_path = shutil.copy(example_config_path, tmp_dir)
-
     with open(new_config_path, "r") as f:
         main_dict = json.load(f)
 
     main_dict["main_config"]["output_dir"] = "output"
 
-    example_mol_csv = (
-        current_path / ".." / ".." / "data" / "example_molecules.csv"
-    ).resolve()
+    example_mol_dir = (current_path / ".." / ".." / "data" / "example_xyz").resolve()
 
-    example_csv = shutil.copy(example_mol_csv, tmp_dir)
+    example_csv = shutil.copytree(str(example_mol_dir), str(tmp_dir / "example_xyz"))
     main_dict["main_config"]["input_file_path"] = str(example_csv)
 
     with open(tmp_dir / "example_config.json", "w") as json_file:
         json.dump(main_dict, json_file)
 
     # make relativ input test config:
-    new_config1 = copy.deepcopy(main_dict)
-    new_config1["main_config"]["input_file_path"] = "example_molecules.csv"
-
-    with open(tmp_dir / "example_config2.json", "w") as json_file:
-        json.dump(new_config1, json_file)
 
     # make faulty file path
     new_config2 = copy.deepcopy(main_dict)
