@@ -69,6 +69,7 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.create_working_dir_structure"><code class="docutils literal notranslate"><span class="pre">create_working_dir_structure()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.move_files"><code class="docutils literal notranslate"><span class="pre">move_files()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.read_config"><code class="docutils literal notranslate"><span class="pre">read_config()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -202,7 +203,7 @@ generate crest config as well as necessary slurm scripts.</p>
 
 <dl class="py function" id="module-script_maker2000.files">
 <dt class="sig sig-object py" id="script_maker2000.files.create_working_dir_structure">
-<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">create_working_dir_structure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">main_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.create_working_dir_structure" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">create_working_dir_structure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">main_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.create_working_dir_structure" title="Link to this definition"></a></dt>
 <dd><blockquote>
 <div><dl class="simple">
 <dt>This function generates the data structure for further calculations.</dt><dd><p>a main folder with a folder for crest, optimzation, sp and result sub folders
@@ -215,20 +216,28 @@ These always contain pairs of molecule files and slurm files.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><p>main_config (dict):The main working folder can be extracted from this config dict</p>
 </dd>
-<dt>Raises:</dt><dd><p>NotImplementedError: _description_</p>
-</dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="script_maker2000.files.move_files">
-<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">move_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.move_files" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">move_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.move_files" title="Link to this definition"></a></dt>
 <dd><p>simple wrapper for moving files and handling certain logic requiremens before doing so. TODO</p>
 <dl class="simple">
-<dt>Args:</dt><dd><p>start (str): input file
-end (str): output file</p>
+<dt>Args:</dt><dd><p>input_path (str): input path
+output_path (str): output path
+copy (bool): copy (True) or move(False) the file</p>
 </dd>
-<dt>Raises:</dt><dd><p>NotImplementedError: _description_</p>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="script_maker2000.files.read_config">
+<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">read_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_file</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.read_config" title="Link to this definition"></a></dt>
+<dd><p>This is a very import setup function as it not only reads and provides the main config,
+it also sets the location for the logging files.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>config_file (_type_): _description_</p>
 </dd>
 </dl>
 </dd></dl>
