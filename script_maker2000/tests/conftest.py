@@ -14,7 +14,7 @@ def temp_work_dir():
 
     # load example config
     example_config_path = (
-        current_path / ".." / ".." / "data" / "example_config.json"
+        current_path / ".." / ".." / "data" / "example_config_xyz.json"
     ).resolve()
 
     # copy config to tmp dir
@@ -25,11 +25,9 @@ def temp_work_dir():
 
     main_dict["main_config"]["output_dir"] = "output"
 
-    example_mol_csv = (
-        current_path / ".." / ".." / "data" / "example_molecules.csv"
-    ).resolve()
+    example_mol_dir = (current_path / ".." / ".." / "data" / "example_xyz").resolve()
 
-    example_csv = shutil.copy(example_mol_csv, tmp_dir)
+    example_csv = shutil.copy(example_mol_dir, tmp_dir)
     main_dict["main_config"]["input_file_path"] = str(example_csv)
 
     with open(tmp_dir / "example_config.json", "w") as json_file:

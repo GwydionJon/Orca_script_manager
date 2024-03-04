@@ -1,0 +1,55 @@
+{
+    "main_config": {
+        "continue_previous_run": false,
+        "max_n_jobs": 20,
+        "max_ram_per_core": 2500,
+        "max_nodes": 50,
+        "output_dir": "example_xyz_output",
+        "max_run_time": "60:00:00",
+        "input_file_path": "example_xyz",
+        "input_type": "xyz"
+    },
+    "structure_check_config": {
+        "run_checks": true
+    },
+    "analysis_config": {
+        "run_benchmark": true
+    },
+    "loop_config": {
+        "crest_config": {
+            "type": "crest",
+            "options:": {
+                "n_tasks": 20,
+                "n_cores": 40,
+                "ram_per_core": 2000,
+                "args": {}
+            }
+        },
+        "opt_config": {
+            "type": "orca",
+            "options": {
+                "method": "Some DFT",
+                "basisset": "Some basisset",
+                "ram_per_core": 2000,
+                "n_cores_per_calculation": 12,
+                "n_calculation_at_once": 30,
+                "disk_storage": 0,
+                "walltime": "40:00:00",
+                "args": {}
+            }
+        },
+        "sp_config": {
+            "type": "orca",
+            "options": {
+                "method": "Some better DFT",
+                "basisset": "Some better basisset",
+                "ram_per_core": 2000,
+                "n_cores_per_calculation": 12,
+                "n_calculation_at_once": 30,
+                "disk_storage": 0,
+                "walltime": "40:00:00",
+                "args": {}
+            }
+        }
+    }
+}

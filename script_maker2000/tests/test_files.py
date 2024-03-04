@@ -30,9 +30,6 @@ def test_read_config(temp_work_dir):
 def test_create_working_dir_structure(temp_work_dir):
     main_config = read_config(temp_work_dir / "example_config.json")
 
-    current_path = pathlib.Path(__file__)
-    print((current_path / "..").resolve())
-
     # input_location = temp_work_dir / "example_molecules.csv"
     create_working_dir_structure(main_config)
 
@@ -55,3 +52,5 @@ def test_create_working_dir_structure(temp_work_dir):
     assert len(list(output_path.glob("*"))) == 9
     # check that two new sub dirs are present
     assert len(list(output_path.glob("*/*"))) == 10
+
+    main_config = read_config(temp_work_dir / "example_config.json")
