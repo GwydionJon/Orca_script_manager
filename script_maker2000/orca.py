@@ -5,7 +5,7 @@ from pathlib import Path
 class Orca_Script:
     """This class manages the creation of the orca setup scripts"""
 
-    def __init__(self, main_config) -> None:
+    def __init__(self, orca_config) -> None:
         """create orca sript"""
         raise NotImplementedError
 
@@ -40,6 +40,9 @@ class OrcaModule(TemplateModule):
         This should use the slurm class provided in this module.
         """
         raise NotImplementedError
+
+    def create_orca_input_files(self):
+        pass
 
     def run_job(self) -> None:
         """Interface to send the job to the server.

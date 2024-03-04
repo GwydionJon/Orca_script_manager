@@ -26,8 +26,6 @@ def create_working_dir_structure(
     output_dir = pathlib.Path(main_config["main_config"]["output_dir"])
     input_path = pathlib.Path(main_config["main_config"]["input_file_path"])
 
-    print(main_config)
-
     # create desired folder structure
     sub_dir_names = [
         pathlib.Path(key.split("_config")[0]) for key in main_config["loop_config"]
@@ -48,7 +46,7 @@ def create_working_dir_structure(
         json.dump(main_config, json_file)
 
     # copy input files
-    new_input_path = shutil.copy(input_path, output_dir)
+    new_input_path = shutil.copytree(input_path, output_dir / "start_input_files")
 
     return output_dir, new_input_path
 
@@ -100,6 +98,8 @@ def check_config(main_config):
                 + "'continue_previous_run'-option in the main config"
             )
 
+    script_maker_log.info("Config seems in order.")
+
 
 def read_config(config_file):
     """
@@ -114,7 +114,6 @@ def read_config(config_file):
         main_config = json.load(f)
 
     output_dir = pathlib.Path(main_config["main_config"]["output_dir"])
-    print(output_dir.is_absolute())
     # when giving a relativ path resolve it in relation to the config file.
     if output_dir.is_absolute() is False:
         output_dir = pathlib.Path(config_file).parent / output_dir
@@ -122,7 +121,6 @@ def read_config(config_file):
     output_dir = output_dir.resolve()
     main_config["main_config"]["output_dir"] = str(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    print(output_dir)
 
     # check if input file/folder is present
     input_path = pathlib.Path(main_config["main_config"]["input_file_path"])

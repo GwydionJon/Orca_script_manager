@@ -21,8 +21,6 @@ def test_read_config(temp_work_dir):
     script_maker_error.warning("test2")
     assert len(list((temp_work_dir / "output").glob("*.log"))) == 2
 
-    config = read_config(temp_work_dir / "example_config2.json")
-
     with pytest.raises(FileNotFoundError):
         config = read_config(temp_work_dir / "example_config3.json")
 
@@ -38,7 +36,7 @@ def test_create_working_dir_structure(temp_work_dir):
 
     assert len(list(output_path.glob("*"))) == 8
     # check that sub dirs are present
-    assert len(list(output_path.glob("*/*"))) == 8
+    assert len(list(output_path.glob("*/*"))) == 19
 
     with pytest.raises(FileExistsError):
         main_config = read_config(temp_work_dir / "example_config4.json")
@@ -51,6 +49,4 @@ def test_create_working_dir_structure(temp_work_dir):
 
     assert len(list(output_path.glob("*"))) == 9
     # check that two new sub dirs are present
-    assert len(list(output_path.glob("*/*"))) == 10
-
-    main_config = read_config(temp_work_dir / "example_config.json")
+    assert len(list(output_path.glob("*/*"))) == 21
