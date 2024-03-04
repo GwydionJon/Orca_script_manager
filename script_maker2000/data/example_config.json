@@ -1,10 +1,14 @@
 {
     "main_config": {
+        "continue_previous_run": false,
         "max_n_jobs": 20,
         "max_ram_per_core": 2500,
         "max_nodes": 50,
         "output_dir": "example_output",
-        "max_run_time": "60:00:00"
+        "max_run_time": "60:00:00",
+        "input_file_path": "some_path",
+        "input_type": "csv",
+        "csv_smiles_column":"smiles"
     },
     "crest_config": {
         "n_tasks": 20,
@@ -33,12 +37,9 @@
         "args": {}
     },
     "structure_check_config": {
-        "run_checks": true,
-    }, 
-    "analysis_config":
-    {
-        "run_benchmark":true
-    } 
-
-
+        "run_checks": true
+    },
+    "analysis_config": {
+        "run_benchmark": true
+    }
 }
