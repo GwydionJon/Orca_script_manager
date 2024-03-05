@@ -30,7 +30,7 @@ class TemplateModule:
 
         if isinstance(main_config, Path):
             main_config = read_config(main_config, perform_validation=False)
-
+        self.main_config = main_config
         self.internal_config = self.create_internal_config(main_config, config_key)
         self.working_dir = Path(main_config["main_config"]["output_dir"]) / config_key
 

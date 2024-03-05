@@ -28,9 +28,9 @@ class OrcaModule(TemplateModule):
         """
         script_maker_log.info(f"Creating orca object from key: {config_key}")
         super(OrcaModule, self).__init__(main_config, config_key)
-        self.internal_config["options"]["orca_version"] = main_config["main_config"][
-            "orca_version"
-        ]
+        self.internal_config["options"]["orca_version"] = self.main_config[
+            "main_config"
+        ]["orca_version"]
 
         # get xyz data
         xyz_dict = self.read_xyzs()
