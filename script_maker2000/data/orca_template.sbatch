@@ -112,12 +112,12 @@ echo ""
 
 # set important  variables from python
 
-export SLURM_SUBMIT_DIR = __input_dir  	# from where the input files are copied
-export SLURM_OUTPUT_DIR = __output_dir 	# where the output is written and copied back
-export JOBNAME = __jobname             	# name of the job
-export INPUTFILE = __input_file        	# name of the input file
-export OUTPUTFILE = __output_file      	# name of the output file
-export MARKED_FILES = __marked_files   	# list of files to be copied back to the output directory
+export SLURM_SUBMIT_DIR=__input_dir  	# from where the input files are copied
+export SLURM_OUTPUT_DIR=__output_dir 	# where the output is written and copied back
+export JOBNAME=__jobname             	# name of the job
+export INPUTFILE=__input_file        	# name of the input file
+export OUTPUTFILE=__output_file      	# name of the output file
+export MARKED_FILES=__marked_files   	# list of files to be copied back to the output directory
 									   	# example to mark multiple files:	 
 									   	# cp /home/usr/dir/{file1,file2,file3,file4} /home/usr/destination/
 
@@ -158,7 +158,7 @@ echo " "
 #
 
 (
-	$ORCA_BIN_DIR/orca "$INPUTFILE" >"${OUTPUTFILE}.out" 2>&1
+	$ORCA_BIN_DIR/orca "$INPUTFILE" >"${OUTPUTFILE}" 2>&1
 	orca_exit_code=$?
 ) &
 wait
