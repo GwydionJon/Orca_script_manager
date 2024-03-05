@@ -73,7 +73,7 @@ class OrcaModule(TemplateModule):
                 "__output_dir": working_dir / "output",
                 "__input_file": f"{key}.inp",
                 "__output_file": working_dir / f"{key}.out",
-                "__marked_files": "{" + f"{key}.inp" + "}",
+                "__marked_files": f"{key}.inp",
             }
 
         return slurm_dict
