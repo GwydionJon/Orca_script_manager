@@ -36,7 +36,7 @@
                 "n_cores_per_calculation": 12,
                 "n_calculation_at_once": 30,
                 "disk_storage": 0,
-                "walltime": "40:00:00",
+                "walltime": "0:10:00",
                 "args": {
                     "scf": [
                         "MAXITER 0"
