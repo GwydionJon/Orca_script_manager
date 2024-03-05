@@ -158,7 +158,7 @@ mkdir -vp "${SLURM_OUTPUT_DIR}/${JOBNAME}"
 
 
 (
-	$ORCA_BIN_DIR/orca "$INPUTFILE" >"${SLURM_OUTPUT_DIR}/${JOBNAME}"/"${OUTPUTFILE}" 2>&1
+	$ORCA_BIN_DIR/orca "$INPUTFILE" >"${OUTPUTFILE}" 2>&1
 	orca_exit_code=$?
 ) &
 wait
