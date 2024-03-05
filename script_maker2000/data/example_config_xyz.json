@@ -28,27 +28,37 @@
         "opt_config": {
             "type": "orca",
             "options": {
-                "method": "Some DFT",
-                "basisset": "Some basisset",
+                "method": "HF",
+                "basisset": " DEF2-SVP",
+                "additional_settings": "",
                 "ram_per_core": 2000,
                 "n_cores_per_calculation": 12,
                 "n_calculation_at_once": 30,
                 "disk_storage": 0,
                 "walltime": "40:00:00",
-                "args": {}
+                "args": {
+                    "scf": [
+                        "MAXITER 0"
+                    ]
+                }
             }
         },
         "sp_config": {
             "type": "orca",
             "options": {
-                "method": "Some better DFT",
-                "basisset": "Some better basisset",
+                "method": "HF",
+                "basisset": " DEF2-SVP",
+                "additional_settings": "",
                 "ram_per_core": 2000,
                 "n_cores_per_calculation": 12,
                 "n_calculation_at_once": 30,
                 "disk_storage": 0,
                 "walltime": "40:00:00",
-                "args": {}
+                "args": {
+                    "scf": [
+                        "MAXITER 0"
+                    ]
+                }
             }
         }
     }
