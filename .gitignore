@@ -163,3 +163,4 @@ cython_debug/
 script_maker2000/examples/qtaim/
 script_maker2000/examples/Fia_nb/
 .vscode/settings.json
+script_maker2000/tests/tests_dir/
