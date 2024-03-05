@@ -22,7 +22,7 @@ backup_function() {
 	mkdir -pv "${SLURM_SUBMIT_DIR}"
 
 	echo "Creating tgz-file '${SLURM_SUBMIT_DIR}/backup_results_${SLURM_JOB_ID}.tgz' ..."
-	tar --xform="s%^%backup_results_${SLURM_JOB_ID}/%" -zcvf "${SLURM_SUBMIT_DIR}/backup_results_${SLURM_JOB_ID}.tgz" *
+	tar --xform="s%^%backup_results_${SLURM_JOB_ID}/%" -zcvf "${SLURM_OUTPUT_DIR}/backup_results_${SLURM_JOB_ID}.tgz" *
 
 	echo -e "\n### backup function finished at $(date)\n"
 	trap - USR1
@@ -153,8 +153,12 @@ echo " "
 #			end
 #
 
+# create output dir
+mkdir -vp "${SLURM_OUTPUT_DIR}/${JOBNAME}"
+
+
 (
-	$ORCA_BIN_DIR/orca "$INPUTFILE" >"${OUTPUTFILE}" 2>&1
+	$ORCA_BIN_DIR/orca "$INPUTFILE" >"${SLURM_OUTPUT_DIR}/${JOBNAME}"/"${OUTPUTFILE}" 2>&1
 	orca_exit_code=$?
 ) &
 wait
@@ -176,6 +180,12 @@ mkdir -vp "${SLURM_OUTPUT_DIR}" # if submit dir has been deleted or moved away
 echo "Creating result tgz-file '${JOBNAME}.tgz' ..."
 tar -zcvf "${SLURM_OUTPUT_DIR}/${JOBNAME}.tgz" -C "${TMP_WORK_DIR}" . # compress entire content of TMP_WORK_DIR
 
+
+
+# copy the tgz file to the output directory
+cp -v "${SLURM_OUTPUT_DIR}/${JOBNAME}.tgz" "${SLURM_OUTPUT_DIR}/${JOBNAME}"
+
+# extract the tgz file in the output directory
 cd "${SLURM_OUTPUT_DIR}/${JOBNAME}"
 tar -xzvf "${SLURM_OUTPUT_DIR}/${JOBNAME}.tgz"
 
