@@ -154,7 +154,7 @@ echo " "
 #
 
 # create output dir
-mkdir -vp "${SLURM_OUTPUT_DIR}/${JOBNAME}"
+mkdir -vp "${SLURM_OUTPUT_DIR}"
 
 
 (

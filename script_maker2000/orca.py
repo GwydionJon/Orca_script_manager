@@ -70,7 +70,7 @@ class OrcaModule(TemplateModule):
                 "__walltime": options["walltime"],
                 "__scratchsize": options["disk_storage"],
                 "__input_dir": working_dir / "input",
-                "__output_dir": working_dir / "output",
+                "__output_dir": working_dir / "output" / f"{key}",
                 "__input_file": f"{key}.inp",
                 "__output_file": working_dir / "output" / f"{key}" / f"{key}.out",
                 "__marked_files": f"{key}.inp",
