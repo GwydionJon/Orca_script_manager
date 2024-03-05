@@ -176,7 +176,7 @@ mkdir -vp "${SLURM_OUTPUT_DIR}" # if submit dir has been deleted or moved away
 echo "Creating result tgz-file '${TMP_WORK_DIR}.tgz' ..."
 tar -zcvf "${TMP_WORK_DIR}.tgz" *
 
-cd SLURM_OUTPUT_DIR
+cd "${SLURM_OUTPUT_DIR}"
 tar -xzvf "${SLURM_OUTPUT_DIR}/${JOBNAME}.tgz"
 
 echo " "
