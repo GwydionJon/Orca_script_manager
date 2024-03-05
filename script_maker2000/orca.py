@@ -72,7 +72,7 @@ class OrcaModule(TemplateModule):
                 "__input_dir": working_dir / "input",
                 "__output_dir": working_dir / "output",
                 "__input_file": f"{key}.inp",
-                "__output_file": working_dir / f"{key}.out",
+                "__output_file": working_dir / "output" / f"{key}" / f"{key}.out",
                 "__marked_files": f"{key}.inp",
             }
 

@@ -178,16 +178,16 @@ echo "### Copying back tgz-archive of results to SLURM_OUTPUT_DIR ..."
 echo " "
 mkdir -vp "${SLURM_OUTPUT_DIR}" # if submit dir has been deleted or moved away
 echo "Creating result tgz-file '${JOBNAME}.tgz' ..."
-tar -zcvf "${SLURM_OUTPUT_DIR}/${JOBNAME}.tgz" -C "${TMP_WORK_DIR}" . # compress entire content of TMP_WORK_DIR
+tar -zcvf "${JOBNAME}.tgz" -C "${TMP_WORK_DIR}" . # compress entire content of TMP_WORK_DIR
 
 
 
 # copy the tgz file to the output directory
-cp -v "${SLURM_OUTPUT_DIR}/${JOBNAME}.tgz" "${SLURM_OUTPUT_DIR}/${JOBNAME}"
+cp -v "${JOBNAME}.tgz" "${SLURM_OUTPUT_DIR}/${JOBNAME}"
 
 # extract the tgz file in the output directory
 cd "${SLURM_OUTPUT_DIR}/${JOBNAME}"
-tar -xzvf "${SLURM_OUTPUT_DIR}/${JOBNAME}.tgz"
+tar -xzvf "${JOBNAME}.tgz"
 
 echo " "
 echo "### Final cleanup: Remove TMP_WORK_DIR ..."
