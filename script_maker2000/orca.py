@@ -28,6 +28,10 @@ class OrcaModule(TemplateModule):
         """
         script_maker_log.info(f"Creating orca object from key: {config_key}")
         super(OrcaModule, self).__init__(main_config, config_key)
+        self.internal_config["options"]["orca_version"] = main_config["main_config"][
+            "orca_version"
+        ]
+
         # get xyz data
         xyz_dict = self.read_xyzs()
         orca_file_dict = self.create_orca_input_files(xyz_dict)
@@ -60,6 +64,7 @@ class OrcaModule(TemplateModule):
         for key in orca_file_dict.keys():
             slurm_dict[key] = {
                 "__jobname": f"{config_key}_{key}",
+                "__VERSION": options["orca_version"],
                 "__ntasks": options["n_cores_per_calculation"],
                 "__memcore": options["ram_per_core"],
                 "__walltime": options["walltime"],

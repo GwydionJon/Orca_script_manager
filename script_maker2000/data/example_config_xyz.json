@@ -7,7 +7,9 @@
         "output_dir": "example_xyz_output",
         "max_run_time": "60:00:00",
         "input_file_path": "example_xyz",
-        "input_type": "xyz"
+        "input_type": "xyz",
+        "orca_version": "5.0.2",
+
     },
     "structure_check_config": {
         "run_checks": true

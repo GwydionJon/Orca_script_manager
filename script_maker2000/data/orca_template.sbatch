@@ -3,10 +3,10 @@
 #########################################
 ## E D I T  here your SBATCH resources ##
 #########################################
-#SBATCH --job-name __jobname
-#SBATCH --ntasks= __ntasks --nodes=1
-#SBATCH --mem-per-cpu= __memcore
-#SBATCH --time __walltime
+#SBATCH --job-name=__jobname
+#SBATCH --ntasks=__ntasks --nodes=1
+#SBATCH --mem-per-cpu=__memcore
+#SBATCH --time=__walltime
 #SBATCH --gres=scratch:__scratchsize
 #SBACTH --output=slurm-%j.out
 #BATCH --error=%x.%j.out
@@ -94,7 +94,7 @@ echo " "
 echo "### Loading software module:"
 echo " "
 module unload chem/orca
-module load chem/orca/?VERSION?
+module load chem/orca/__VERSION
 if test -z "$ORCA_VERSION"; then
 	echo "ERROR: Failed to load module 'chem/orca/'."
 	exit 101
@@ -109,20 +109,16 @@ echo "ORCA_EXA_DIR  = ${ORCA_EXA_DIR}"
 echo "ORCA_VERSION  = ${ORCA_VERSION}"
 echo ""
 
-
 # set important  variables from python
 
-export SLURM_SUBMIT_DIR=__input_dir  	# from where the input files are copied
-export SLURM_OUTPUT_DIR=__output_dir 	# where the output is written and copied back
-export JOBNAME=__jobname             	# name of the job
-export INPUTFILE=__input_file        	# name of the input file
-export OUTPUTFILE=__output_file      	# name of the output file
-export MARKED_FILES=__marked_files   	# list of files to be copied back to the output directory
-									   	# example to mark multiple files:	 
-									   	# cp /home/usr/dir/{file1,file2,file3,file4} /home/usr/destination/
-
-
-
+export SLURM_SUBMIT_DIR=__input_dir  # from where the input files are copied
+export SLURM_OUTPUT_DIR=__output_dir # where the output is written and copied back
+export JOBNAME=__jobname             # name of the job
+export INPUTFILE=__input_file        # name of the input file
+export OUTPUTFILE=__output_file      # name of the output file
+export MARKED_FILES=__marked_files   # list of files to be copied back to the output directory
+# example to mark multiple files:
+# cp /home/usr/dir/{file1,file2,file3,file4} /home/usr/destination/
 
 echo " "
 echo "### Copying input files to TMP_WORK_DIR."
@@ -163,7 +159,6 @@ echo " "
 ) &
 wait
 wait
-
 
 echo " "
 echo "### Cleaning up files ... removing unnecessary scratch files ..."
