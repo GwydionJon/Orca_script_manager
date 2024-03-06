@@ -1,6 +1,8 @@
 import shutil
 import subprocess
 import pytest
+import time
+
 from script_maker2000.orca import OrcaModule
 
 
@@ -54,7 +56,9 @@ def test_orca_submission(clean_tmp_dir):
     for key in orca_test.slurm_path_dict:
 
         if shutil.which("sbatch"):
-            orca_test.run_job(key)
+            process = orca_test.run_job(key)
+            time.sleep(1)
+            print(process)
         else:
             with pytest.raises(FileNotFoundError):
                 orca_test.run_job(key)
