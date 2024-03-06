@@ -186,7 +186,7 @@ tar -zcvf "${JOBNAME}.tgz" -C "${TMP_WORK_DIR}" . # compress entire content of T
 cp -v "${JOBNAME}.tgz" "${SLURM_OUTPUT_DIR}"
 
 # extract the tgz file in the output directory
-cd "${SLURM_OUTPUT_DIR}/${JOBNAME}"
+cd "${SLURM_OUTPUT_DIR}"
 tar -xzvf "${JOBNAME}.tgz"
 
 echo " "
