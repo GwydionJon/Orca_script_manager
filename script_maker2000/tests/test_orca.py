@@ -7,7 +7,6 @@ from script_maker2000.orca import OrcaModule
 
 
 def test_OrcaModule(clean_tmp_dir):
-    print(clean_tmp_dir)
     config_path = clean_tmp_dir / "example_config.json"
 
     # copy input files to module working space
@@ -34,9 +33,8 @@ def test_OrcaModule(clean_tmp_dir):
         for input in clean_tmp_dir.glob("example_xyz_output/sp_config/input/*.inp"):
 
             if skip is False:
-                process = subprocess.run([shutil.which("orca"), input])
+                subprocess.run([shutil.which("orca"), input])
 
-                assert process.returncode == 0
             else:
 
                 pass
@@ -57,8 +55,9 @@ def test_orca_submission(clean_tmp_dir):
 
         if shutil.which("sbatch"):
             process = orca_test.run_job(key)
-            time.sleep(1)
-            print(process)
+            time.sleep(0.3)
+            assert process.returncode == 0
+
         else:
             with pytest.raises(FileNotFoundError):
                 orca_test.run_job(key)

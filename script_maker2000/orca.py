@@ -105,7 +105,6 @@ class OrcaModule(TemplateModule):
             slurm_script = copy.copy(slurm_template)
 
             for replace_key, input_value in slurm_dict.items():
-                print(replace_key, input_value)
                 slurm_script = slurm_script.replace(replace_key, str(input_value))
 
             slurm_path_dict[key] = self.working_dir / "input" / f"{key}.sbatch"
@@ -216,7 +215,10 @@ class OrcaModule(TemplateModule):
 
         if shutil.which("sbatch"):
             process = subprocess.run(
-                [shutil.which("sbatch"), str(slurm_job)], shell=True
+                [shutil.which("sbatch"), str(slurm_job)],
+                shell=False,
+                check=False,
+                # shell = False is important on justus
             )
         else:
             raise FileNotFoundError(
