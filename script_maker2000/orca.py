@@ -2,6 +2,7 @@ from pathlib import Path
 import logging
 import copy
 from datetime import datetime
+import subprocess
 
 
 from script_maker2000.template import TemplateModule
@@ -41,7 +42,7 @@ class OrcaModule(TemplateModule):
         self.orca_slurm_config = self.prepare_slurm_script(config_key, orca_file_dict)
 
         self.write_orca_scripts(orca_file_dict)
-        self.create_slurm_scripts()
+        self.slurm_path_dict = self.create_slurm_scripts()
 
     def prepare_slurm_script(self, config_key, orca_file_dict) -> str | Path:
         """
@@ -91,6 +92,9 @@ class OrcaModule(TemplateModule):
 
         """
         # read slurm template and merge lines in one string
+
+        slurm_path_dict = {}
+
         slurm_template_path = self.working_dir / "orca_template.sbatch"
         with open(slurm_template_path, "r") as f:
             slurm_template = f.readlines()
@@ -104,8 +108,11 @@ class OrcaModule(TemplateModule):
                 print(replace_key, input_value)
                 slurm_script = slurm_script.replace(replace_key, str(input_value))
 
+            slurm_path_dict[key] = self.working_dir / "input" / f"{key}.sbatch"
+
             with open(self.working_dir / "input" / f"{key}.sbatch", "w") as f:
                 f.write(slurm_script)
+            return slurm_path_dict
 
     def write_orca_scripts(self, orca_file_dict):
         input_dir = self.working_dir / "input"
@@ -192,12 +199,30 @@ class OrcaModule(TemplateModule):
 
         return orca_file_dict
 
-    def run_job(self) -> None:
+    def run_job(self, key) -> None:
         """Interface to send the job to the server.
 
-        Raises:
-            NotImplementedError: _description_
+        Returns:
+            subprocess.CompletedProcess: the process object that was created by the subprocess.run command.
+            can be used to check for succesful submission.
         """
+
+        import shutil
+
+        slurm_job = self.slurm_path_dict[key]
+        script_maker_log.info(f"Submitting orca job: {key}")
+        script_maker_log.info(f"Slurm script: {slurm_job}")
+
+        if shutil.which("sbatch"):
+            process = subprocess.run(
+                [shutil.which("sbatch"), str(slurm_job)], shell=True
+            )
+        else:
+            raise FileNotFoundError(
+                "sbatch not found in path. Please make sure that slurm is installed on your system."
+            )
+
+        return process
 
     @classmethod
     def check_result_integrity(single_experiment) -> bool:
