@@ -1,6 +1,5 @@
 import shutil
 import subprocess
-import time
 from script_maker2000.orca import OrcaModule
 
 
@@ -23,6 +22,8 @@ def test_OrcaModule(clean_tmp_dir):
 
     # run orca test only when available.
     if shutil.which("orca"):
+
+        # toggle to skip these tests
         skip = True
         for input in clean_tmp_dir.glob("example_xyz_output/sp_config/input/*.inp"):
 
@@ -30,6 +31,6 @@ def test_OrcaModule(clean_tmp_dir):
                 process = subprocess.run([shutil.which("orca"), input])
 
                 assert process.returncode == 0
-            time.sleep(0.01)
+            else:
 
-    1 / 0
+                pass
