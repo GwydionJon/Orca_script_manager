@@ -8,8 +8,8 @@
 #SBATCH --mem-per-cpu=__memcore
 #SBATCH --time=__walltime
 #SBATCH --gres=scratch:__scratchsize
-#SBACTH --output=slurm-%j.out
-#BATCH --error=%x.%j.out
+#SBACTH --output=__output_dir/slurm-%j.out
+##SBATCH --error=%x.%j.out
 #########################################
 ## Start of job shell script           ##
 #########################################
@@ -195,11 +195,6 @@ echo " "
 echo "Remove tgz file from SLURM_OUTPUT_DIR ..."
 echo " "
 rm -vf "${JOBNAME}.tgz"
-
-echo " "
-echo "Move and rename the slurm output file to the output directory ..."
-echo " "
-mv "slurm-${SLURM_JOB_ID}.out" "${SLURM_OUTPUT_DIR}/${JOBNAME}.out"
 
 echo " "
 echo "### Final cleanup: Remove TMP_WORK_DIR ..."
