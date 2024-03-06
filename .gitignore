@@ -160,6 +160,7 @@ cython_debug/
 #.idea/
 
 
-script_maker2000/examples/qtaim/
-script_maker2000/examples/Fia_nb/
+script_maker2000/examples/
 .vscode/settings.json
+script_maker2000/tests/tests_dir/
+s

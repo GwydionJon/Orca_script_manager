@@ -27,15 +27,22 @@ def create_working_dir_structure(
     input_path = pathlib.Path(main_config["main_config"]["input_file_path"])
 
     # create desired folder structure
-    sub_dir_names = [
-        pathlib.Path(key.split("_config")[0]) for key in main_config["loop_config"]
-    ]
+    sub_dir_names = [pathlib.Path(key) for key in main_config["loop_config"]]
     script_maker_log.info(f"creating subfolders: {sub_dir_names} ")
 
     for subfolder in sub_dir_names:
         if main_config["main_config"]["continue_previous_run"] is False:
+
             (output_dir / subfolder / "input").mkdir(parents=True)
             (output_dir / subfolder / "output").mkdir(parents=True)
+
+            # copy template files to sub-folder
+            if main_config["loop_config"][str(subfolder)]["type"] == "orca":
+                slurm_template_path = (
+                    pathlib.Path(__file__).parent / "data/orca_template.sbatch"
+                )
+
+                shutil.copy(slurm_template_path, output_dir / subfolder)
 
     (output_dir / "finished" / "raw_results").mkdir(parents=True)
     (output_dir / "finished" / "results").mkdir(parents=True)
@@ -77,18 +84,13 @@ def check_config(main_config):
         )
 
     output_dir = pathlib.Path(main_config["main_config"]["output_dir"])
-    sub_dir_names = [key.split("_config") for key in main_config["loop_config"]]
+    sub_dir_names = [pathlib.Path(key) for key in main_config["loop_config"]]
     if len(sub_dir_names) == 0:
         raise ValueError(
             "Can't find loop configs. did you name them similar to 'test_config'?"
         )
     for sub_dir in sub_dir_names:
 
-        if len(sub_dir) != 2:
-            raise ValueError(
-                f"Something seems wrong with {sub_dir}. Please make sure your names are correct."
-            )
-        sub_dir = pathlib.Path(sub_dir[0])
         if (output_dir / sub_dir).exists() and main_config["main_config"][
             "continue_previous_run"
         ] is False:
@@ -101,7 +103,7 @@ def check_config(main_config):
     script_maker_log.info("Config seems in order.")
 
 
-def read_config(config_file):
+def read_config(config_file, perform_validation=True):
     """
     This is a very import setup function as it not only reads and provides the main config,
     it also sets the location for the logging files.
@@ -131,7 +133,10 @@ def read_config(config_file):
     input_path = input_path.resolve()
     main_config["main_config"]["input_file_path"] = str(input_path)
 
-    check_config(main_config)
+    if perform_validation is True:
+        check_config(main_config)
+    else:
+        script_maker_log.info("Skipping config validation.")
 
     # remove previous handlers from logging
     # this is mainly relevant for the tests

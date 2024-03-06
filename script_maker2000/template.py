@@ -1,6 +1,7 @@
 # this module is onlz intendet to be used as a template class and provides necessary function
 # for another module to be properly useful in the scope of this program.
 from pathlib import Path
+from script_maker2000.files import read_config
 
 
 class TemplateModule:
@@ -26,8 +27,12 @@ class TemplateModule:
             NotImplementedError: This is just a template
         """
         # please default to these naming conventions:
+
+        if isinstance(main_config, Path):
+            main_config = read_config(main_config, perform_validation=False)
+        self.main_config = main_config
         self.internal_config = self.create_internal_config(main_config, config_key)
-        self.slurm_location = None
+        self.working_dir = Path(main_config["main_config"]["output_dir"]) / config_key
 
     def create_internal_config(self, main_config, config_key) -> dict:
         """
@@ -36,9 +41,10 @@ class TemplateModule:
         Returns:
             dict: a dict of the sub config.
         """
-        return main_config["loop_config"][config_key]
+        internal_config = main_config["loop_config"][config_key]
+        return internal_config
 
-    def create_slurm_script(self) -> str | Path:
+    def create_slurm_scripts(self) -> str | Path:
         """Create the slurm script that is used to submit this calculation run to the server.
         This should use the slurm class provided in this module.
         """
@@ -50,6 +56,7 @@ class TemplateModule:
         Raises:
             NotImplementedError: _description_
         """
+        raise NotImplementedError
 
     @classmethod
     def check_result_integrity(single_experiment) -> bool:
