@@ -1,14 +1,11 @@
 from pathlib import Path
-import logging
 import copy
 from datetime import datetime
 import subprocess
+import shutil
 
 
 from script_maker2000.template import TemplateModule
-
-script_maker_log = logging.getLogger("Script_maker_log")
-script_maker_error = logging.getLogger("Script_maker_error")
 
 
 class OrcaModule(TemplateModule):
@@ -29,19 +26,19 @@ class OrcaModule(TemplateModule):
         Raises:
             NotImplementedError: _description_
         """
-        script_maker_log.info(f"Creating orca object from key: {config_key}")
         super(OrcaModule, self).__init__(main_config, config_key)
+        self.log.info(f"Creating orca object from key: {config_key}")
+
         self.internal_config["options"]["orca_version"] = self.main_config[
             "main_config"
         ]["orca_version"]
-
         # get xyz data
         xyz_dict = self.read_xyzs()
         orca_file_dict = self.create_orca_input_files(xyz_dict)
 
         self.orca_slurm_config = self.prepare_slurm_script(config_key, orca_file_dict)
 
-        self.write_orca_scripts(orca_file_dict)
+        self.orca_path_dict = self.write_orca_scripts(orca_file_dict)
         self.slurm_path_dict = self.create_slurm_scripts()
 
     def prepare_slurm_script(self, config_key, orca_file_dict) -> str | Path:
@@ -96,7 +93,7 @@ class OrcaModule(TemplateModule):
         slurm_path_dict = {}
 
         slurm_template_path = self.working_dir / "orca_template.sbatch"
-        with open(slurm_template_path, "r") as f:
+        with open(slurm_template_path, "r", encoding="utf-8") as f:
             slurm_template = f.readlines()
         slurm_template = "".join(slurm_template)
 
@@ -109,18 +106,22 @@ class OrcaModule(TemplateModule):
 
             slurm_path_dict[key] = self.working_dir / "input" / f"{key}.sbatch"
 
-            with open(self.working_dir / "input" / f"{key}.sbatch", "w") as f:
+            with open(
+                self.working_dir / "input" / f"{key}.sbatch", "w", encoding="utf-8"
+            ) as f:
                 f.write(slurm_script)
 
         return slurm_path_dict
 
     def write_orca_scripts(self, orca_file_dict):
         input_dir = self.working_dir / "input"
-
+        orca_path_dict = {}
         for key, value in orca_file_dict.items():
-            with open(input_dir / (key + ".inp"), "w") as f:
+            orca_path_dict[key] = input_dir / (key + ".inp")
+            with open(input_dir / (key + ".inp"), "w", encoding="utf-8") as f:
                 for item in value:
                     f.write("%s\n" % item)
+        return orca_path_dict
 
     def read_xyzs(self):
 
@@ -133,7 +134,7 @@ class OrcaModule(TemplateModule):
         xyz_dict = {}
 
         for xyz_path in xyz_files:
-            with open(xyz_path, "r") as f:
+            with open(xyz_path, "r", encoding="utf-8") as f:
                 charge_mul_coords = f.readlines()[1:]
                 # remove trailing spaces and line breaks
             charge_mul = charge_mul_coords[0]
@@ -188,11 +189,14 @@ class OrcaModule(TemplateModule):
         orca_file_dict = {}
 
         for key, value in xyz_dict.items():
+            orca_file_dict[key] = copy.deepcopy(setup_lines)
+
+            orca_file_dict[key].append("%output XYZFILE 1 end")
+
             coords = value["coords"]
             charge = value["charge"]
             mul = value["mul"]
 
-            orca_file_dict[key] = copy.deepcopy(setup_lines)
             orca_file_dict[key].append(f"* xyz {charge} {mul}")
             orca_file_dict[key] += coords
             orca_file_dict[key].append("*")
@@ -207,24 +211,31 @@ class OrcaModule(TemplateModule):
             can be used to check for succesful submission.
         """
 
-        import shutil
+        slurm_file = self.slurm_path_dict[key]
+        orca_file = self.orca_path_dict[key]
+        self.log.info(
+            f"Submitting orca job: {key} with slurm file: {slurm_file} and orca file: {orca_file}"
+        )
 
-        slurm_job = self.slurm_path_dict[key]
-        script_maker_log.info(f"Submitting orca job: {key}")
-        script_maker_log.info(f"Slurm script: {slurm_job}")
+        if slurm_file.is_file() and orca_file.is_file():
 
-        if shutil.which("sbatch"):
-            process = subprocess.run(
-                [shutil.which("sbatch"), str(slurm_job)],
-                shell=False,
-                check=False,
-                # shell = False is important on justus
-            )
+            if shutil.which("sbatch"):
+                process = subprocess.run(
+                    [shutil.which("sbatch"), str(slurm_file)],
+                    shell=False,
+                    check=False,
+                    # shell = False is important on justus
+                )
+            else:
+                raise FileNotFoundError(
+                    "sbatch not found in path. Please make sure that slurm is installed on your system."
+                )
+
         else:
             raise FileNotFoundError(
-                "sbatch not found in path. Please make sure that slurm is installed on your system."
+                f"Can't find slurm file: {slurm_file} or orca file: {orca_file}."
+                + " Please check your file name or provide the necessary files."
             )
-
         return process
 
     @classmethod
