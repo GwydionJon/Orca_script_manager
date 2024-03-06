@@ -8,7 +8,7 @@
 #SBATCH --mem-per-cpu=__memcore
 #SBATCH --time=__walltime
 #SBATCH --gres=scratch:__scratchsize
-#SBACTH --output=__output_dir/slurm-%j.out
+#SBACTH --output="__output_dir/slurm_%x_%j.out"
 ##SBATCH --error=%x.%j.out
 #########################################
 ## Start of job shell script           ##

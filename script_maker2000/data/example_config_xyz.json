@@ -32,11 +32,11 @@
                 "method": "HF",
                 "basisset": " DEF2-SVP",
                 "additional_settings": "",
-                "ram_per_core": 2000,
+                "ram_per_core": 20,
                 "n_cores_per_calculation": 12,
                 "n_calculation_at_once": 30,
                 "disk_storage": 0,
-                "walltime": "0:10:00",
+                "walltime": "0:2:00",
                 "args": {
                     "scf": [
                         "MAXITER 0"
@@ -50,11 +50,11 @@
                 "method": "HF",
                 "basisset": " DEF2-SVP",
                 "additional_settings": "",
-                "ram_per_core": 2000,
+                "ram_per_core": 20,
                 "n_cores_per_calculation": 12,
                 "n_calculation_at_once": 30,
                 "disk_storage": 0,
-                "walltime": "0:10:00",
+                "walltime": "0:2:00",
                 "args": {
                     "scf": [
                         "MAXITER 0"
