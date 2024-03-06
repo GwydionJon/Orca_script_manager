@@ -1,6 +1,8 @@
 from pathlib import Path
 import logging
 import copy
+from datetime import datetime
+
 
 from script_maker2000.template import TemplateModule
 
@@ -58,7 +60,11 @@ class OrcaModule(TemplateModule):
         """
         options = self.internal_config["options"]
         slurm_dict = {}
+        # Get current date
+        current_date = datetime.now()
 
+        # Format date as a string with abbreviated year, hours, minutes, and seconds
+        date_str = current_date.strftime("%dd_%mm_%yy-%Hh_%Mm_%Ss")
         working_dir = self.working_dir.resolve()
 
         for key in orca_file_dict.keys():
@@ -74,6 +80,7 @@ class OrcaModule(TemplateModule):
                 "__input_file": f"{key}.inp",
                 "__output_file": working_dir / "output" / f"{key}" / f"{key}.out",
                 "__marked_files": f"{key}.inp",
+                "__timestemp": date_str,
             }
 
         return slurm_dict

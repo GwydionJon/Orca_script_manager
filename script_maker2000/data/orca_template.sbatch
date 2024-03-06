@@ -8,7 +8,7 @@
 #SBATCH --mem-per-cpu=__memcore
 #SBATCH --time=__walltime
 #SBATCH --gres=scratch:__scratchsize
-#SBACTH --output="__output_dir/slurm_%x_%j.out"
+#SBATCH --output="__output_dir/slurm_%x___timestemp.out"
 ##SBATCH --error=%x.%j.out
 #########################################
 ## Start of job shell script           ##
@@ -22,7 +22,7 @@ backup_function() {
 	mkdir -pv "${SLURM_SUBMIT_DIR}"
 
 	echo "Creating tgz-file '${SLURM_SUBMIT_DIR}/backup_results_${SLURM_JOB_ID}.tgz' ..."
-	tar --xform="s%^%backup_results_${SLURM_JOB_ID}/%" -zcvf "${SLURM_OUTPUT_DIR}/backup_results_${SLURM_JOB_ID}.tgz" *
+	tar --xform="s%^%backup_results_${SLURM_JOB_ID}/%" -zcvf "${SLURM_OUTPUT_DIR}/backup_results/backup${SLURM_JOB_NAME}__timestemp.tgz" *
 
 	echo -e "\n### backup function finished at $(date)\n"
 	trap - USR1
