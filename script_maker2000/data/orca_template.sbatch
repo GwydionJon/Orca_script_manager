@@ -156,7 +156,6 @@ echo " "
 # create output dir
 mkdir -vp "${SLURM_OUTPUT_DIR}"
 
-
 (
 	$ORCA_BIN_DIR/orca "$INPUTFILE" >"${OUTPUTFILE}" 2>&1
 	orca_exit_code=$?
@@ -174,13 +173,16 @@ sleep 10 # Sleep some time so potential stale nfs handles can disappear
 # * PLEASE remove all not required files in this script.
 
 echo " "
+echo "### Removing orca input file ..."
+echo " "
+rm -rvf "${TMP_WORK_DIR}/${INPUTFILE}"
+
+echo " "
 echo "### Copying back tgz-archive of results to SLURM_OUTPUT_DIR ..."
 echo " "
 mkdir -vp "${SLURM_OUTPUT_DIR}" # if submit dir has been deleted or moved away
 echo "Creating result tgz-file '${JOBNAME}.tgz' ..."
 tar -zcvf "${JOBNAME}.tgz" -C "${TMP_WORK_DIR}" . # compress entire content of TMP_WORK_DIR
-
-
 
 # copy the tgz file to the output directory
 cp -v "${JOBNAME}.tgz" "${SLURM_OUTPUT_DIR}"
@@ -188,6 +190,16 @@ cp -v "${JOBNAME}.tgz" "${SLURM_OUTPUT_DIR}"
 # extract the tgz file in the output directory
 cd "${SLURM_OUTPUT_DIR}"
 tar -xzvf "${JOBNAME}.tgz"
+
+echo " "
+echo "Remove tgz file from SLURM_OUTPUT_DIR ..."
+echo " "
+rm -vf "${JOBNAME}.tgz"
+
+echo " "
+echo "Move and rename the slurm output file to the output directory ..."
+echo " "
+mv "slurm-${SLURM_JOB_ID}.out" "${SLURM_OUTPUT_DIR}/${JOBNAME}.out"
 
 echo " "
 echo "### Final cleanup: Remove TMP_WORK_DIR ..."
