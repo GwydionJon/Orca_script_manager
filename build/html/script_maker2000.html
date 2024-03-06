@@ -50,12 +50,11 @@
 <li class="toctree-l3"><a class="reference internal" href="#script_maker2000.orca.OrcaModule"><code class="docutils literal notranslate"><span class="pre">OrcaModule</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.OrcaModule.check_result_integrity"><code class="docutils literal notranslate"><span class="pre">OrcaModule.check_result_integrity()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.OrcaModule.create_orca_input_files"><code class="docutils literal notranslate"><span class="pre">OrcaModule.create_orca_input_files()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.OrcaModule.create_slurm_script"><code class="docutils literal notranslate"><span class="pre">OrcaModule.create_slurm_script()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.OrcaModule.create_slurm_scripts"><code class="docutils literal notranslate"><span class="pre">OrcaModule.create_slurm_scripts()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.OrcaModule.prepare_slurm_script"><code class="docutils literal notranslate"><span class="pre">OrcaModule.prepare_slurm_script()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.OrcaModule.read_xyzs"><code class="docutils literal notranslate"><span class="pre">OrcaModule.read_xyzs()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.OrcaModule.run_job"><code class="docutils literal notranslate"><span class="pre">OrcaModule.run_job()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.orca.Orca_Script"><code class="docutils literal notranslate"><span class="pre">Orca_Script</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.Orca_Script.save_script"><code class="docutils literal notranslate"><span class="pre">Orca_Script.save_script()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.OrcaModule.write_orca_scripts"><code class="docutils literal notranslate"><span class="pre">OrcaModule.write_orca_scripts()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#script_maker2000.crest.CrestModule"><code class="docutils literal notranslate"><span class="pre">CrestModule</span></code></a><ul>
@@ -129,38 +128,62 @@ This should be handled indepentendly from the existence of this class object.</p
 
 <dl class="py method">
 <dt class="sig sig-object py" id="script_maker2000.orca.OrcaModule.create_orca_input_files">
-<span class="sig-name descname"><span class="pre">create_orca_input_files</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.orca.OrcaModule.create_orca_input_files" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">create_orca_input_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xyz_dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.orca.OrcaModule.create_orca_input_files" title="Link to this definition"></a></dt>
+<dd><p>config explanation:
+To use additional arguments provide them in the args section of the specific config.
+use the following dict style:
+key:value
+key: block keyword (https://sites.google.com/site/orcainputlibrary/general-input)
+value: provide a list of argument + value strings.</p>
+<dl class="simple">
+<dt>example:</dt><dd><p>{“scf”: [“MAXITER 0”], “elprop”: [“Polar 1”,”Solver C”] }</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="script_maker2000.orca.OrcaModule.create_slurm_script">
-<span class="sig-name descname"><span class="pre">create_slurm_script</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span></span></span><a class="headerlink" href="#script_maker2000.orca.OrcaModule.create_slurm_script" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="script_maker2000.orca.OrcaModule.create_slurm_scripts">
+<span class="sig-name descname"><span class="pre">create_slurm_scripts</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span></span></span><a class="headerlink" href="#script_maker2000.orca.OrcaModule.create_slurm_scripts" title="Link to this definition"></a></dt>
 <dd><p>Create the slurm script that is used to submit this calculation run to the server.
 This should use the slurm class provided in this module.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="script_maker2000.orca.OrcaModule.prepare_slurm_script">
+<span class="sig-name descname"><span class="pre">prepare_slurm_script</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">orca_file_dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span></span></span><a class="headerlink" href="#script_maker2000.orca.OrcaModule.prepare_slurm_script" title="Link to this definition"></a></dt>
+<dd><p>Variables to fill:
+__jobname : str
+__ntasks : int
+__memcore : int
+__walltime : str
+__scratchsize : int
+__input_dir : full path to original dir
+__output_dir : full path to original dir
+__input_file : rel path to input file (this gets copied)
+__output_file : saves the orca output (full path to original dir)
+__marked_files : str /home/usr/dir/{file1,file2,file3,file4}</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="script_maker2000.orca.OrcaModule.read_xyzs">
+<span class="sig-name descname"><span class="pre">read_xyzs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.orca.OrcaModule.read_xyzs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="script_maker2000.orca.OrcaModule.run_job">
-<span class="sig-name descname"><span class="pre">run_job</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#script_maker2000.orca.OrcaModule.run_job" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">run_job</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#script_maker2000.orca.OrcaModule.run_job" title="Link to this definition"></a></dt>
 <dd><p>Interface to send the job to the server.</p>
 <dl class="simple">
-<dt>Raises:</dt><dd><p>NotImplementedError: _description_</p>
+<dt>Returns:</dt><dd><p>subprocess.CompletedProcess: the process object that was created by the subprocess.run command.
+can be used to check for succesful submission.</p>
 </dd>
 </dl>
 </dd></dl>
 
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="script_maker2000.orca.Orca_Script">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">script_maker2000.orca.</span></span><span class="sig-name descname"><span class="pre">Orca_Script</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">orca_config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.orca.Orca_Script" title="Link to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>create orca sript</p>
 <dl class="py method">
-<dt class="sig sig-object py" id="script_maker2000.orca.Orca_Script.save_script">
-<span class="sig-name descname"><span class="pre">save_script</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.orca.Orca_Script.save_script" title="Link to this definition"></a></dt>
-<dd><p>Save the script to disk.</p>
-</dd></dl>
+<dt class="sig sig-object py" id="script_maker2000.orca.OrcaModule.write_orca_scripts">
+<span class="sig-name descname"><span class="pre">write_orca_scripts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">orca_file_dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.orca.OrcaModule.write_orca_scripts" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
@@ -257,7 +280,7 @@ copy (bool): copy (True) or move(False) the file</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="script_maker2000.files.read_config">
-<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">read_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_file</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.read_config" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">read_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">perform_validation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.read_config" title="Link to this definition"></a></dt>
 <dd><p>This is a very import setup function as it not only reads and provides the main config,
 it also sets the location for the logging files.</p>
 <dl class="simple">
