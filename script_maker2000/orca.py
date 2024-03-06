@@ -112,7 +112,8 @@ class OrcaModule(TemplateModule):
 
             with open(self.working_dir / "input" / f"{key}.sbatch", "w") as f:
                 f.write(slurm_script)
-            return slurm_path_dict
+
+        return slurm_path_dict
 
     def write_orca_scripts(self, orca_file_dict):
         input_dir = self.working_dir / "input"

@@ -21,6 +21,9 @@ def test_OrcaModule(clean_tmp_dir):
         (list(clean_tmp_dir.glob("example_xyz_output/sp_config/input/*.inp")))
     ) == len(list(clean_tmp_dir.glob("*/*.xyz")))
 
+    assert len(
+        (list(clean_tmp_dir.glob("example_xyz_output/sp_config/input/*.sbatch")))
+    ) == len(list(clean_tmp_dir.glob("*/*.xyz")))
     # run orca test only when available.
     if shutil.which("orca"):
 
