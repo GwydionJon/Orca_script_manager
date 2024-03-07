@@ -1,4 +1,5 @@
 import shutil
+from pathlib import Path
 from script_maker2000.orca import OrcaModule
 from script_maker2000.work_manager import WorkManager
 
@@ -6,6 +7,17 @@ from script_maker2000.work_manager import WorkManager
 def test_workmanager(clean_tmp_dir, all_job_ids, monkeypatch):
 
     def mock_run_job(args, shell, **kw):
+
+        # move output files to output dir
+        example_output_files = Path(__file__).parent / "test_data" / "example_outputs"
+        if len(list((orca_test.working_dir / "output").glob("*"))) == 0:
+            print("copy data")
+            shutil.copytree(
+                example_output_files,
+                orca_test.working_dir / "output",
+                dirs_exist_ok=True,
+            )
+
         return args
 
     config_path = clean_tmp_dir / "example_config.json"
@@ -29,12 +41,21 @@ def test_workmanager(clean_tmp_dir, all_job_ids, monkeypatch):
         assert len(list(input_dir.glob("*.*"))) == 3
 
     monkeypatch.setattr("shutil.which", lambda x: True)
-
-    if shutil.which("sbatch") is None:
-        monkeypatch.setattr("subprocess.run", mock_run_job)
+    monkeypatch.setattr("subprocess.run", mock_run_job)
     work_manager.submit_jobs()
 
     assert len(work_manager.all_jobs_dict["not_yet_submitted"]) == 0
     assert len(work_manager.all_jobs_dict["submitted"]) == 11
+
+    work_manager.check_output_dir()
+    assert len(work_manager.all_jobs_dict["submitted"]) == 0
+    assert len(work_manager.all_jobs_dict["returned_jobs"]) == 11
+
+    work_manager.check_completed_job_status()
+    assert len(work_manager.all_jobs_dict["finished"]) == 4
+    assert len(work_manager.all_jobs_dict["walltime_error"]) == 4
+    assert len(work_manager.all_jobs_dict["missing_ram_error"]) == 3
+    assert len(work_manager.all_jobs_dict["unknown_error"]) == 0
+    assert len(work_manager.all_jobs_dict["returned_jobs"]) == 0
 
     1 / 0
