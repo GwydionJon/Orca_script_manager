@@ -1,5 +1,7 @@
 import logging
 import time
+import shutil
+from pathlib import Path
 
 
 class WorkManager:
@@ -36,7 +38,7 @@ class WorkManager:
             "missing_ram_error": [],
             "unknown_error": [],
         }
-        self.finished_all_jobs = False
+        self.n_total_jobs = len(all_job_ids)
 
     # check input dir
     # check output dir
@@ -90,6 +92,17 @@ class WorkManager:
                 self.all_jobs_dict["submitted"].remove(self.input_dir / output_dir.stem)
                 self.all_jobs_dict["returned_jobs"].append(output_dir)
 
+    def cleanup(self, job_out_dir: Path):
+        # archive input files
+        shutil.make_archive(
+            self.input_dir / ("archive_" + str(job_out_dir.stem)),
+            "gztar",
+            self.input_dir,
+            job_out_dir.stem,
+        )
+        # remove input files
+        shutil.rmtree(self.input_dir / job_out_dir.stem)
+
     def check_completed_job_status(self):
         """
         Check if a job was succesfull and if not try to find out what the cause was.
@@ -100,23 +113,44 @@ class WorkManager:
         new_missing_ram_error = 0
         new_unknown_error = 0
 
-        for jobb_out_dir in self.all_jobs_dict["returned_jobs"]:
-            job_status = self.workModule.check_job_status(jobb_out_dir)
+        for job_out_dir in self.all_jobs_dict["returned_jobs"]:
+            job_status = self.workModule.check_job_status(job_out_dir)
             if job_status == "all_good":
                 new_finished += 1
-                self.all_jobs_dict["finished"].append(jobb_out_dir)
+                self.all_jobs_dict["finished"].append(job_out_dir)
+                shutil.move(job_out_dir, self.workModule.working_dir / "finished")
 
             elif job_status == "walltime_error":
                 new_walltime_error += 1
-                self.all_jobs_dict["walltime_error"].append(jobb_out_dir)
+                self.all_jobs_dict["walltime_error"].append(job_out_dir)
+                shutil.move(
+                    job_out_dir,
+                    self.workModule.working_dir
+                    / "failed"
+                    / ("walltime_" + str(job_out_dir.stem)),
+                )
 
             elif job_status == "missing_ram_error":
                 new_missing_ram_error += 1
-                self.all_jobs_dict["missing_ram_error"].append(jobb_out_dir)
-
+                self.all_jobs_dict["missing_ram_error"].append(job_out_dir)
+                shutil.move(
+                    job_out_dir,
+                    self.workModule.working_dir
+                    / "failed"
+                    / ("ram_" + str(job_out_dir.stem)),
+                )
             else:
                 new_unknown_error += 1
-                self.all_jobs_dict["unknown_error"].append(jobb_out_dir)
+                self.all_jobs_dict["unknown_error"].append(job_out_dir)
+                shutil.move(
+                    job_out_dir,
+                    self.workModule.working_dir
+                    / "failed"
+                    / ("error_" + str(job_out_dir.stem)),
+                )
+
+            self.cleanup(job_out_dir)
+
         self.log.info(
             f"From {len(self.all_jobs_dict['returned_jobs'])} returned jobs: "
             + f"{new_finished} finished normaly, {new_walltime_error} walltime errors,"
@@ -125,11 +159,33 @@ class WorkManager:
         self.all_jobs_dict["returned_jobs"] = []
 
     def manage_failed_jobs(self):
-
-        pass
-
-    def manage_finished_jobs(self):
+        # TODO: implement a method to handle failed jobs
+        # restart with more ram or longer walltime/ start from intermediate structure
         pass
 
     def loop(self):
-        pass
+        def all_jobs_done():
+            total_jobs_done = (
+                len(self.all_jobs_dict["finished"])
+                + len(self.all_jobs_dict["walltime_error"])
+                + len(self.all_jobs_dict["missing_ram_error"])
+                + len(self.all_jobs_dict["unknown_error"])
+            )
+            return total_jobs_done == self.n_total_jobs
+
+        wait_time = 300
+
+        while not all_jobs_done():
+            self.check_input_dir()
+            self.prepare_jobs()
+            self.submit_jobs()
+            self.check_output_dir()
+            self.check_completed_job_status()
+            self.manage_failed_jobs()
+
+            if all_jobs_done():
+                break
+
+            time.sleep(wait_time)
+
+        self.log.info("All jobs done.")
