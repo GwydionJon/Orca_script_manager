@@ -166,4 +166,5 @@ script_maker2000/tests/tests_dir/
 
 script_maker2000/tests/test_data/example_walltime_output/
 script_maker2000/tests/test_data/example_memory_output/
+script_maker2000/tests/test_data/example_normal_output/
 
