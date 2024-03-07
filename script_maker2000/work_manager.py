@@ -1,5 +1,5 @@
 import logging
-import shutil
+import time
 
 
 class WorkManager:
@@ -30,8 +30,11 @@ class WorkManager:
             "not_yet_prepared": [],
             "not_yet_submitted": [],
             "submitted": [],
+            "returned_jobs": [],
             "finished": [],
-            "failed": [],
+            "walltime_error": [],
+            "missing_ram_error": [],
+            "unknown_error": [],
         }
         self.finished_all_jobs = False
 
@@ -50,15 +53,13 @@ class WorkManager:
 
         found_xyz_files = list(self.input_dir.glob("*.xyz"))
         for file in found_xyz_files:
+            # split at first _ to get the job id
             file_stem = file.stem.split("_", maxsplit=1)[1]
             if file_stem in self.all_jobs_dict["not_yet_found"]:
                 self.all_jobs_dict["not_yet_found"].remove(file_stem)
 
         self.all_jobs_dict["not_yet_prepared"] += found_xyz_files
         self.log.info(f"Found {len(found_xyz_files)} new xyz files.")
-
-    def check_output_dir(self):
-        pass
 
     def prepare_jobs(self):
         if self.all_jobs_dict["not_yet_prepared"]:
@@ -77,29 +78,51 @@ class WorkManager:
         for job_dir in self.all_jobs_dict["not_yet_submitted"]:
             self.workModule.run_job(job_dir)
             self.all_jobs_dict["submitted"].append(job_dir)
-
+            time.sleep(0.3)
         self.all_jobs_dict["not_yet_submitted"] = []
-        self.post_submit_cleanup()
 
-    def post_submit_cleanup(self):
-        """
-        Archive up the input dir after submission.
-        Delete now archived input files.
-        """
-        for job_dir in self.all_jobs_dict["submitted"]:
-            shutil.make_archive(
-                job_dir.parents[0] / ("archive_" + str(job_dir.stem)),
-                "zip",
-                job_dir,
-            )
-            shutil.rmtree(job_dir)
+    def check_output_dir(self):
+        """find new jobs in output dir"""
+        output_dirs = list(self.output_dir.glob("*"))
+        for output_dir in output_dirs:
+            if self.input_dir / output_dir.stem in self.all_jobs_dict["submitted"]:
+
+                self.all_jobs_dict["submitted"].remove(self.input_dir / output_dir.stem)
+                self.all_jobs_dict["returned_jobs"].append(output_dir)
 
     def check_completed_job_status(self):
         """
         Check if a job was succesfull and if not try to find out what the cause was.
 
         """
-        pass
+        new_finished = 0
+        new_walltime_error = 0
+        new_missing_ram_error = 0
+        new_unknown_error = 0
+
+        for jobb_out_dir in self.all_jobs_dict["returned_jobs"]:
+            job_status = self.workModule.check_job_status(jobb_out_dir)
+            if job_status == "all_good":
+                new_finished += 1
+                self.all_jobs_dict["finished"].append(jobb_out_dir)
+
+            elif job_status == "walltime_error":
+                new_walltime_error += 1
+                self.all_jobs_dict["walltime_error"].append(jobb_out_dir)
+
+            elif job_status == "missing_ram_error":
+                new_missing_ram_error += 1
+                self.all_jobs_dict["missing_ram_error"].append(jobb_out_dir)
+
+            else:
+                new_unknown_error += 1
+                self.all_jobs_dict["unknown_error"].append(jobb_out_dir)
+        self.log.info(
+            f"From {len(self.all_jobs_dict['returned_jobs'])} returned jobs: "
+            + f"{new_finished} finished normaly, {new_walltime_error} walltime errors,"
+            + f" {new_missing_ram_error} missing ram errors, {new_unknown_error} unknown errors."
+        )
+        self.all_jobs_dict["returned_jobs"] = []
 
     def manage_failed_jobs(self):
 
