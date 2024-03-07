@@ -163,4 +163,7 @@ cython_debug/
 script_maker2000/examples/
 .vscode/settings.json
 script_maker2000/tests/tests_dir/
-s
+
+script_maker2000/tests/test_data/example_walltime_output/
+script_maker2000/tests/test_data/example_memory_output/
+
