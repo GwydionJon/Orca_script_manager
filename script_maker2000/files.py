@@ -35,6 +35,7 @@ def create_working_dir_structure(
 
             (output_dir / subfolder / "input").mkdir(parents=True)
             (output_dir / subfolder / "output").mkdir(parents=True)
+            (output_dir / subfolder / "finished").mkdir(parents=True)
             (output_dir / subfolder / "failed").mkdir(parents=True)
 
             # copy template files to sub-folder
