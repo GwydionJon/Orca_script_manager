@@ -106,7 +106,7 @@ class WorkManager:
     def check_completed_job_status(self):
         """
         Check if a job was succesfull and if not try to find out what the cause was.
-
+        # TODO: implement a method to handle failed slurm jobs
         """
         new_finished = 0
         new_walltime_error = 0
@@ -179,6 +179,10 @@ class WorkManager:
             self.check_input_dir()
             self.prepare_jobs()
             self.submit_jobs()
+
+            # this should catch submission errors
+            time.sleep(60)
+
             self.check_output_dir()
             self.check_completed_job_status()
             self.manage_failed_jobs()
