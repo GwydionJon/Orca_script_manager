@@ -181,7 +181,7 @@ class WorkManager:
             self.submit_jobs()
 
             # this should catch submission errors
-            time.sleep(60)
+            time.sleep(10)
 
             self.check_output_dir()
             self.check_completed_job_status()
