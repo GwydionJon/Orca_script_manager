@@ -1,3 +1,4 @@
+import shutil
 from script_maker2000.orca import OrcaModule
 from script_maker2000.work_manager import WorkManager
 
@@ -28,7 +29,9 @@ def test_workmanager(clean_tmp_dir, all_job_ids, monkeypatch):
         assert len(list(input_dir.glob("*.*"))) == 3
 
     monkeypatch.setattr("shutil.which", lambda x: True)
-    monkeypatch.setattr("subprocess.run", mock_run_job)
+
+    if shutil.which("sbatch") is None:
+        monkeypatch.setattr("subprocess.run", mock_run_job)
     work_manager.submit_jobs()
 
     assert len(work_manager.all_jobs_dict["not_yet_submitted"]) == 0
