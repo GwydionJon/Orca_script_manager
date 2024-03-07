@@ -20,6 +20,7 @@
 backup_function() {
 	echo -e "\n### backup function called.\n###Checkpointing ... at $(date)\n"
 	mkdir -pv "${SLURM_SUBMIT_DIR}"
+	mkdir -pv "${SLURM_OUTPUT_DIR}/backup_results"
 
 	echo "Creating tgz-file '${SLURM_SUBMIT_DIR}/backup_results_${SLURM_JOB_ID}.tgz' ..."
 	tar --xform="s%^%backup_results_${SLURM_JOB_ID}/%" -zcvf "${SLURM_OUTPUT_DIR}/backup_results/backup${SLURM_JOB_NAME}__timestemp.tgz" *
@@ -28,6 +29,21 @@ backup_function() {
 	trap - USR1
 }
 trap 'backup_function' USR1
+
+#SBATCH --signal=B:USR2@20
+#20 seconds before the end of the job, write a file to the output directory indicating that the job didn't finish
+bwalltime_error_function() {
+	echo -e "Walltime Error" > "${SLURM_OUTPUT_DIR}/walltime_error.txt"
+	
+}
+trap 'bwalltime_error_function' USR2
+
+
+
+
+
+
+
 
 echo " "
 echo "### Setting up shell environment and defaults for environment vars ..."
