@@ -81,7 +81,7 @@ class TemplateModule:
         raise NotImplementedError
 
     @classmethod
-    def check_result_integrity(single_experiment) -> bool:
+    def check_job_status(single_experiment) -> bool:
         """provide some method to verify if a single calculation was succesful.
         This should be handled indepentendly from the existence of this class object.
 

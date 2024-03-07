@@ -3,6 +3,7 @@ import copy
 from datetime import datetime
 import subprocess
 import shutil
+import re
 
 
 from script_maker2000.template import TemplateModule
@@ -81,7 +82,7 @@ class OrcaModule(TemplateModule):
                 "__memcore": options["ram_per_core"],
                 "__walltime": options["walltime"],
                 "__scratchsize": options["disk_storage"],
-                "__input_dir": working_dir / "input",
+                "__input_dir": working_dir / "input" / key,
                 "__output_dir": working_dir / "output" / f"{key}",
                 "__input_file": f"{key}.inp",
                 "__output_file": working_dir / "output" / f"{key}" / f"{key}.out",
@@ -254,28 +255,57 @@ class OrcaModule(TemplateModule):
         return process
 
     @classmethod
-    def check_result_integrity(job_dir: str | Path) -> int:
+    def check_job_status(cls, job_out_dir: str | Path) -> int:
         """provide some method to verify if a single calculation was succesful.
         This should be handled indepentendly from the existence of this class object.
 
 
         """
 
-        if isinstance(job_dir, str):
-            job_dir = Path(job_dir)
+        def check_slurm_walltime_error(input_text):
+            pattern = re.compile(
+                r"slurmstepd: error: \*\*\* JOB [0-9]+ ON [A-Za-z0-9]+ "
+                + r"CANCELLED AT [0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}"
+                + r"(\.[0-9]{1,3})? DUE TO TIME LIMIT \*\*\*",
+                re.IGNORECASE,
+            )
+            return pattern.search(input_text)
+
+        def check_orca_memory_error(input_text):
+            pattern = re.compile(
+                r"Error  \(ORCA_SCF\): Not enough memory available!", re.IGNORECASE
+            )
+            return pattern.search(input_text)
+
+        def check_orca_normal_termination(input_text):
+            pattern = re.compile(r"ORCA TERMINATED NORMALLY")
+            return pattern.search(input_text)
+
+        if isinstance(job_out_dir, str):
+            job_out_dir = Path(job_out_dir)
 
         # check for walltime error
-        if list(job_dir.glob("walltime_error.txt")):
+        if list(job_out_dir.glob("walltime_error.txt")):
             return "walltime_error"
 
         # get orca output file
-        orca_out_file = job_dir / job_dir.stem + ".out"
+        orca_out_file = job_out_dir / (job_out_dir.stem + ".out")
+        slurm_file = list(job_out_dir.glob("slurm*"))[0]
 
-        # check for orca errors
+        # check for orca errors only if xyz file exists
         with open(orca_out_file) as f:
-            file_contents = f.readlines()
-            for line in file_contents[::-1]:
-                if "ORCA TERMINATED NORMALLY" in line:
-                    return "all_good"
-                if "Error  (ORCA_SCF): Not enough memory available!" in line:
-                    return "memory_error"
+            file_contents = f.read()
+            print(check_orca_memory_error(file_contents))
+            print(check_orca_normal_termination(file_contents))
+
+            if check_orca_normal_termination(file_contents):
+                return "all_good"
+            if check_orca_memory_error(file_contents):
+                return "missing_ram_error"
+
+        with open(slurm_file) as f:
+            file_contents = f.read()
+            if check_slurm_walltime_error(file_contents):
+                return "walltime_error"
+
+        return "unknown_error"
