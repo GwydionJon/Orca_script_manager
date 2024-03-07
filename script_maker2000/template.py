@@ -1,6 +1,7 @@
 # this module is onlz intendet to be used as a template class and provides necessary function
 # for another module to be properly useful in the scope of this program.
 from pathlib import Path
+import logging
 from script_maker2000.files import read_config
 
 
@@ -16,9 +17,6 @@ class TemplateModule:
 
         In addition to these functions you can use any number of helper functions, as long as they are contained within.
 
-
-
-
         Args:
             main_config (dict): The main config file
             config_key (str): which loop_config key this object is handling.
@@ -31,8 +29,21 @@ class TemplateModule:
         if isinstance(main_config, Path):
             main_config = read_config(main_config, perform_validation=False)
         self.main_config = main_config
+        self.config_key = config_key
         self.internal_config = self.create_internal_config(main_config, config_key)
         self.working_dir = Path(main_config["main_config"]["output_dir"]) / config_key
+
+        # set up logging for this module
+        self.log = logging.getLogger(self.config_key)
+        formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        )
+        file_handler_log = logging.FileHandler(self.working_dir / "log.log")
+        file_handler_log.setFormatter(formatter)
+
+        self.log.addHandler(file_handler_log)
+
+        self.log.setLevel("DEBUG")
 
     def create_internal_config(self, main_config, config_key) -> dict:
         """
@@ -50,7 +61,7 @@ class TemplateModule:
         """
         raise NotImplementedError
 
-    def run_job(self) -> None:
+    def run_job(self, key) -> None:
         """Interface to send the job to the server.
 
         Raises:

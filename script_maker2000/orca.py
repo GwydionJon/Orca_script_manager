@@ -239,9 +239,28 @@ class OrcaModule(TemplateModule):
         return process
 
     @classmethod
-    def check_result_integrity(single_experiment) -> bool:
+    def check_result_integrity(job_dir: str | Path) -> int:
         """provide some method to verify if a single calculation was succesful.
         This should be handled indepentendly from the existence of this class object.
 
+
         """
-        raise NotImplementedError
+
+        if isinstance(job_dir, str):
+            job_dir = Path(job_dir)
+
+        # check for walltime error
+        if list(job_dir.glob("walltime_error.txt")):
+            return "walltime_error"
+
+        # get orca output file
+        orca_out_file = job_dir / job_dir.stem + ".out"
+
+        # check for orca errors
+        with open(orca_out_file) as f:
+            file_contents = f.readlines()
+            for line in file_contents[::-1]:
+                if "ORCA TERMINATED NORMALLY" in line:
+                    return "all_good"
+                if "Error  (ORCA_SCF): Not enough memory available!" in line:
+                    return "memory_error"

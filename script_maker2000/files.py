@@ -35,6 +35,7 @@ def create_working_dir_structure(
 
             (output_dir / subfolder / "input").mkdir(parents=True)
             (output_dir / subfolder / "output").mkdir(parents=True)
+            (output_dir / subfolder / "failed").mkdir(parents=True)
 
             # copy template files to sub-folder
             if main_config["loop_config"][str(subfolder)]["type"] == "orca":
@@ -49,7 +50,7 @@ def create_working_dir_structure(
 
     # move input files and main_settings in output folder
     # save config into working dir
-    with open(output_dir / "example_config.json", "w") as json_file:
+    with open(output_dir / "example_config.json", "w", encoding="utf-8") as json_file:
         json.dump(main_config, json_file)
 
     # copy input files
@@ -112,7 +113,7 @@ def read_config(config_file, perform_validation=True):
         config_file (_type_): _description_
     """
 
-    with open(config_file, "r") as f:
+    with open(config_file, "r", encoding="utf-8") as f:
         main_config = json.load(f)
 
     output_dir = pathlib.Path(main_config["main_config"]["output_dir"])
