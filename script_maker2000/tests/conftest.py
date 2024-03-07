@@ -80,6 +80,8 @@ def clean_tmp_dir():
     example_mol_dir = (current_path / ".." / ".." / "data" / "example_xyz").resolve()
 
     example_csv = shutil.copytree(str(example_mol_dir), str(tmp_dir / "example_xyz"))
+    # copy input files to module working space
+
     main_dict["main_config"]["input_file_path"] = str(example_csv)
 
     with open(tmp_dir / "example_config.json", "w") as json_file:
@@ -90,8 +92,16 @@ def clean_tmp_dir():
     # input_location = temp_work_dir / "example_molecules.csv"
     create_working_dir_structure(main_config)
 
-    # copy template file
-    #  template_sbatch_path = (current_path / ".." / ".." / "data" / "template_orca_sbatch.sbatch").resolve()
-    # shutil.copy(    template_sbatch_path, tmp_dir)
-
+    shutil.copytree(
+        tmp_dir / "example_xyz",
+        tmp_dir / "example_xyz_output" / "sp_config" / "input",
+        dirs_exist_ok=True,
+    )
     return tmp_dir
+
+
+@pytest.fixture
+def all_job_ids(clean_tmp_dir):
+    example_dir = clean_tmp_dir / "example_xyz"
+    file_filst = list(example_dir.glob("*.xyz"))
+    return [file.stem.split("START_")[1] for file in file_filst]
