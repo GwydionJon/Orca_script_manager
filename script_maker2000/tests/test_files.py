@@ -36,7 +36,7 @@ def test_create_working_dir_structure(temp_work_dir):
 
     assert len(list(output_path.glob("*"))) == 8
     # check that sub dirs are present
-    assert len(list(output_path.glob("*/*"))) == 21
+    assert len(list(output_path.glob("*/*"))) == 27
 
     with pytest.raises(FileExistsError):
         main_config = read_config(temp_work_dir / "example_config4.json")
@@ -49,4 +49,4 @@ def test_create_working_dir_structure(temp_work_dir):
 
     assert len(list(output_path.glob("*"))) == 9
     # check that two new sub dirs are present
-    assert len(list(output_path.glob("*/*"))) == 23
+    assert len(list(output_path.glob("*/*"))) == 31

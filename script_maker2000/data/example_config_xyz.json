@@ -8,7 +8,8 @@
         "max_run_time": "60:00:00",
         "input_file_path": "example_xyz",
         "input_type": "xyz",
-        "orca_version": "5.0.2"
+        "orca_version": "5.0.2",
+        "wait_for_results_time":1800
     },
     "structure_check_config": {
         "run_checks": true
@@ -19,6 +20,7 @@
     "loop_config": {
         "crest_config": {
             "type": "crest",
+            "step": 0,
             "options:": {
                 "n_tasks": 20,
                 "n_cores": 40,
@@ -28,6 +30,7 @@
         },
         "opt_config": {
             "type": "orca",
+            "step": 1,
             "options": {
                 "method": "HF",
                 "basisset": " DEF2-SVP",
@@ -46,6 +49,7 @@
         },
         "sp_config": {
             "type": "orca",
+            "step": 2,
             "options": {
                 "method": "HF",
                 "basisset": " DEF2-SVP",

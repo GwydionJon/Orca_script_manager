@@ -2,62 +2,68 @@ import shutil
 import subprocess
 import pytest
 import time
-
+from pathlib import Path
 from script_maker2000.orca import OrcaModule
 
 
 def test_OrcaModule(clean_tmp_dir):
     config_path = clean_tmp_dir / "example_config.json"
 
-    # copy input files to module working space
-    shutil.copytree(
-        clean_tmp_dir / "example_xyz",
-        clean_tmp_dir / "example_xyz_output" / "sp_config" / "input",
-        dirs_exist_ok=True,
-    )
-
-    OrcaModule(config_path, "sp_config")
+    orca_test = OrcaModule(config_path, "sp_config")
+    xyz_list = list((orca_test.working_dir / "input").glob("*.xyz"))
+    orca_test.prepare_jobs(xyz_list)
 
     assert len(
-        (list(clean_tmp_dir.glob("example_xyz_output/sp_config/input/*.inp")))
-    ) == len(list(clean_tmp_dir.glob("*/*.xyz")))
+        (list(clean_tmp_dir.glob("example_xyz_output/sp_config/input/*/*.inp")))
+    ) == len(list(clean_tmp_dir.glob("example_xyz_output/start_input_files/*.xyz")))
 
     assert len(
-        (list(clean_tmp_dir.glob("example_xyz_output/sp_config/input/*.sbatch")))
-    ) == len(list(clean_tmp_dir.glob("*/*.xyz")))
+        (list(clean_tmp_dir.glob("example_xyz_output/sp_config/input/*/*.sbatch")))
+    ) == len(list(clean_tmp_dir.glob("example_xyz_output/start_input_files/*.xyz")))
     # run orca test only when available.
     if shutil.which("orca"):
 
         # toggle to skip these tests
         skip = True
-        for input in clean_tmp_dir.glob("example_xyz_output/sp_config/input/*.inp"):
+        if skip is False:
 
-            if skip is False:
-                subprocess.run([shutil.which("orca"), input])
+            for input_file in clean_tmp_dir.glob(
+                "example_xyz_output/sp_config/input/*/*.inp"
+            ):
 
-            else:
-
-                pass
+                subprocess.run([shutil.which("orca"), input_file])
 
 
-def test_orca_submission(clean_tmp_dir):
+def test_orca_submission(clean_tmp_dir, monkeypatch):
+
+    def mock_run_job(args, shell, **kw):
+        return args
+
     config_path = clean_tmp_dir / "example_config.json"
 
-    # copy input files to module working space
-    shutil.copytree(
-        clean_tmp_dir / "example_xyz",
-        clean_tmp_dir / "example_xyz_output" / "sp_config" / "input",
-        dirs_exist_ok=True,
-    )
-
     orca_test = OrcaModule(config_path, "sp_config")
-    for key in orca_test.slurm_path_dict:
+    xyz_list = list((orca_test.working_dir / "input").glob("*.xyz"))
+    orca_test.prepare_jobs(xyz_list)
+
+    input_dirs = list(orca_test.working_dir.glob("input/*"))
+    for input_dir in input_dirs:
 
         if shutil.which("sbatch"):
-            process = orca_test.run_job(key)
+            process = orca_test.run_job(input_dir)
             time.sleep(0.3)
             assert process.returncode == 0
 
         else:
-            with pytest.raises(FileNotFoundError):
-                orca_test.run_job(key)
+            with pytest.raises(ValueError):
+                orca_test.run_job(input_dir)
+
+    # test with monkeypatch
+
+    monkeypatch.setattr("shutil.which", lambda x: True)
+    monkeypatch.setattr("subprocess.run", mock_run_job)
+
+    for input_dir in input_dirs:
+        process = orca_test.run_job(input_dir)
+        sbatch_file = list(input_dir.glob("*.sbatch"))[0]
+        assert Path(process[1]) == Path(sbatch_file)
+        time.sleep(0.3)
