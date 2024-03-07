@@ -43,7 +43,7 @@ class TemplateModule:
 
         self.log.addHandler(file_handler_log)
 
-        self.log.setLevel("DEBUG")
+        self.log.setLevel("INFO")
 
     def create_internal_config(self, main_config, config_key) -> dict:
         """
@@ -55,9 +55,20 @@ class TemplateModule:
         internal_config = main_config["loop_config"][config_key]
         return internal_config
 
-    def create_slurm_scripts(self) -> str | Path:
+    def create_slurm_scripts(self, slurm_config=None) -> str | Path:
         """Create the slurm script that is used to submit this calculation run to the server.
         This should use the slurm class provided in this module.
+        """
+        raise NotImplementedError
+
+    def prepare_jobs(self, input_files) -> dict:
+        """prepare the job files for submission.
+
+        Args:
+            input_files (list): list of input files.
+
+        Returns:
+            dict: a dict of the sub config.
         """
         raise NotImplementedError
 

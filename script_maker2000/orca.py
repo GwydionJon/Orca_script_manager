@@ -33,15 +33,23 @@ class OrcaModule(TemplateModule):
             "main_config"
         ]["orca_version"]
         # get xyz data
-        xyz_dict = self.read_xyzs()
+
+    def prepare_jobs(self, input_files) -> dict:
+        xyz_dict = self.read_xyzs(input_files)
+
         orca_file_dict = self.create_orca_input_files(xyz_dict)
+        orca_slurm_config = self.prepare_slurm_script(orca_file_dict)
 
-        self.orca_slurm_config = self.prepare_slurm_script(config_key, orca_file_dict)
+        orca_path_dict = self.write_orca_scripts(orca_file_dict)
+        self.create_slurm_scripts(orca_slurm_config)
 
-        self.orca_path_dict = self.write_orca_scripts(orca_file_dict)
-        self.slurm_path_dict = self.create_slurm_scripts()
+        orca_path_values = list(orca_path_dict.values())
+        # get the input dir list
+        input_dir_list = [path.parent for path in orca_path_values]
+        input_dir_dict = {input_dir.stem: input_dir for input_dir in input_dir_list}
+        return input_dir_dict
 
-    def prepare_slurm_script(self, config_key, orca_file_dict) -> str | Path:
+    def prepare_slurm_script(self, orca_file_dict) -> str | Path:
         """
 
         Variables to fill:
@@ -67,7 +75,7 @@ class OrcaModule(TemplateModule):
 
         for key in orca_file_dict.keys():
             slurm_dict[key] = {
-                "__jobname": f"{config_key}_{key}",
+                "__jobname": f"{self.config_key}_{key}",
                 "__VERSION": options["orca_version"],
                 "__ntasks": options["n_cores_per_calculation"],
                 "__memcore": options["ram_per_core"],
@@ -83,7 +91,7 @@ class OrcaModule(TemplateModule):
 
         return slurm_dict
 
-    def create_slurm_scripts(self) -> str | Path:
+    def create_slurm_scripts(self, slurm_config=None) -> str | Path:
         """Create the slurm script that is used to submit this calculation run to the server.
         This should use the slurm class provided in this module.
 
@@ -91,23 +99,25 @@ class OrcaModule(TemplateModule):
         # read slurm template and merge lines in one string
 
         slurm_path_dict = {}
-
         slurm_template_path = self.working_dir / "orca_template.sbatch"
         with open(slurm_template_path, "r", encoding="utf-8") as f:
             slurm_template = f.readlines()
         slurm_template = "".join(slurm_template)
 
-        for key, value in self.orca_slurm_config.items():
+        for key, value in slurm_config.items():
             slurm_dict = value
             slurm_script = copy.copy(slurm_template)
 
             for replace_key, input_value in slurm_dict.items():
                 slurm_script = slurm_script.replace(replace_key, str(input_value))
 
-            slurm_path_dict[key] = self.working_dir / "input" / f"{key}.sbatch"
+            (self.working_dir / "input" / key).mkdir(parents=True, exist_ok=True)
+            slurm_path_dict[key] = self.working_dir / "input" / key / f"{key}.sbatch"
 
             with open(
-                self.working_dir / "input" / f"{key}.sbatch", "w", encoding="utf-8"
+                self.working_dir / "input" / key / f"{key}.sbatch",
+                "w",
+                encoding="utf-8",
             ) as f:
                 f.write(slurm_script)
 
@@ -117,19 +127,17 @@ class OrcaModule(TemplateModule):
         input_dir = self.working_dir / "input"
         orca_path_dict = {}
         for key, value in orca_file_dict.items():
-            orca_path_dict[key] = input_dir / (key + ".inp")
-            with open(input_dir / (key + ".inp"), "w", encoding="utf-8") as f:
+
+            (input_dir / key).mkdir(parents=True, exist_ok=True)
+            orca_path_dict[key] = input_dir / key / (key + ".inp")
+            with open(input_dir / key / (key + ".inp"), "w", encoding="utf-8") as f:
                 for item in value:
                     f.write("%s\n" % item)
         return orca_path_dict
 
-    def read_xyzs(self):
+    def read_xyzs(self, input_files):
 
-        xyz_dir = self.working_dir / "input"
-        if not isinstance(xyz_dir, Path):
-            xyz_dir = Path(xyz_dir)
-
-        xyz_files = xyz_dir.glob("*.xyz")
+        xyz_files = input_files
 
         xyz_dict = {}
 
@@ -147,6 +155,13 @@ class OrcaModule(TemplateModule):
                 "charge": charge,
                 "mul": mul,
             }
+            (self.working_dir / "input" / xyz_path.stem).mkdir(
+                parents=True, exist_ok=True
+            )
+            shutil.move(
+                xyz_path,
+                self.working_dir / "input" / xyz_path.stem / f"{xyz_path.stem}.xyz",
+            )
 
         return xyz_dict
 
@@ -203,17 +218,17 @@ class OrcaModule(TemplateModule):
 
         return orca_file_dict
 
-    def run_job(self, key) -> None:
+    def run_job(self, job_dir) -> None:
         """Interface to send the job to the server.
 
         Returns:
             subprocess.CompletedProcess: the process object that was created by the subprocess.run command.
             can be used to check for succesful submission.
         """
-
-        slurm_file = self.slurm_path_dict[key]
-        orca_file = self.orca_path_dict[key]
-        self.log.info(
+        key = job_dir.stem
+        slurm_file = job_dir / (key + ".sbatch")
+        orca_file = job_dir / (key + ".inp")
+        self.log.debug(
             f"Submitting orca job: {key} with slurm file: {slurm_file} and orca file: {orca_file}"
         )
 
@@ -227,7 +242,7 @@ class OrcaModule(TemplateModule):
                     # shell = False is important on justus
                 )
             else:
-                raise FileNotFoundError(
+                raise ValueError(
                     "sbatch not found in path. Please make sure that slurm is installed on your system."
                 )
 

@@ -1,4 +1,5 @@
 import logging
+import shutil
 
 
 class WorkManager:
@@ -26,6 +27,7 @@ class WorkManager:
 
         self.all_jobs_dict = {
             "not_yet_found": all_job_ids,
+            "not_yet_prepared": [],
             "not_yet_submitted": [],
             "submitted": [],
             "finished": [],
@@ -46,27 +48,58 @@ class WorkManager:
     def check_input_dir(self):
         """Check the input dir for new xyz files."""
 
-        found_files = list(self.input_dir.glob("*xyz"))
-
-        for file in found_files:
+        found_xyz_files = list(self.input_dir.glob("*.xyz"))
+        for file in found_xyz_files:
             file_stem = file.stem.split("_", maxsplit=1)[1]
             if file_stem in self.all_jobs_dict["not_yet_found"]:
                 self.all_jobs_dict["not_yet_found"].remove(file_stem)
 
-        self.all_jobs_dict["not_yet_submitted"] += found_files
-        self.log.info(f"Found {len(found_files)} new jobs.")
+        self.all_jobs_dict["not_yet_prepared"] += found_xyz_files
+        self.log.info(f"Found {len(found_xyz_files)} new xyz files.")
 
     def check_output_dir(self):
         pass
 
+    def prepare_jobs(self):
+        if self.all_jobs_dict["not_yet_prepared"]:
+            input_dir_dict = self.workModule.prepare_jobs(
+                self.all_jobs_dict["not_yet_prepared"]
+            )
+
+            # move jobs to not_yet_submitted
+            for key, job_dir in input_dir_dict.items():
+                self.all_jobs_dict["not_yet_submitted"].append(job_dir)
+                self.all_jobs_dict["not_yet_prepared"].remove(
+                    job_dir.parents[0] / (key + ".xyz")
+                )
+
     def submit_jobs(self):
-        pass
+        for job_dir in self.all_jobs_dict["not_yet_submitted"]:
+            self.workModule.run_job(job_dir)
+            self.all_jobs_dict["submitted"].append(job_dir)
+
+        self.all_jobs_dict["not_yet_submitted"] = []
+        self.post_submit_cleanup()
+
+    def post_submit_cleanup(self):
+        """
+        Archive up the input dir after submission.
+        Delete now archived input files.
+        """
+        for job_dir in self.all_jobs_dict["submitted"]:
+            shutil.make_archive(
+                job_dir.parents[0] / ("archive_" + str(job_dir.stem)),
+                "zip",
+                job_dir,
+            )
+            shutil.rmtree(job_dir)
 
     def check_completed_job_status(self):
         """
         Check if a job was succesfull and if not try to find out what the cause was.
 
         """
+        pass
 
     def manage_failed_jobs(self):
 
