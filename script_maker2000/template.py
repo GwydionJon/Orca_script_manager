@@ -3,11 +3,14 @@
 from pathlib import Path
 import logging
 from script_maker2000.files import read_config
+import pandas as pd
 
 
 class TemplateModule:
 
-    def __init__(self, main_config: dict, config_key: str) -> None:
+    def __init__(
+        self, main_config: dict, config_key: str, input_df: pd.DataFrame = None
+    ) -> None:
         """
         This class is only used as a template guide to have all derived classes follow the same generell layout.
 
@@ -32,6 +35,13 @@ class TemplateModule:
         self.config_key = config_key
         self.internal_config = self.create_internal_config(main_config, config_key)
         self.working_dir = Path(main_config["main_config"]["output_dir"]) / config_key
+        if input_df is None:
+            self.input_df = pd.read_csv(
+                self.working_dir.parents[0] / "input.csv", index_col=0
+            )
+            self.input_df.set_index("key", inplace=True)
+        else:
+            self.input_df = input_df
 
         # set up logging for this module
         self.log = logging.getLogger(self.config_key)

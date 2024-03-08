@@ -75,7 +75,11 @@ def create_working_dir_structure(
         input_path.parent, output_dir / "start_input_files"
     )
 
-    return output_dir, new_input_path
+    # save input csv in output folder
+    new_csv_file = output_dir / "input.csv"
+    input_df.to_csv(output_dir / "input.csv")
+
+    return output_dir, new_input_path, new_csv_file
 
 
 def move_files(input_path, output_path, copy=True):

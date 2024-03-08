@@ -2,6 +2,7 @@ import logging
 import time
 import shutil
 from pathlib import Path
+import asyncio
 
 
 class WorkManager:
@@ -28,6 +29,7 @@ class WorkManager:
         self.input_dir = self.workModule.working_dir / "input"
         self.output_dir = self.workModule.working_dir / "output"
         self.finished_dir = self.workModule.working_dir / "finished"
+        self.failed_dir = self.workModule.working_dir / "failed"
 
         self.all_jobs_dict = {
             "not_yet_found": all_job_ids,
@@ -180,15 +182,29 @@ class WorkManager:
         # restart with more ram or longer walltime/ start from intermediate structure
         pass
 
-    def loop(self):
+    async def loop(self):
+        """
+        Executes the main loop for the work manager.
+
+        This method continuously checks the status of jobs, prepares and submits new jobs,
+        and manages completed or failed jobs until all jobs are done or the maximum number
+        of loops is reached.
+
+        Returns:
+            bool: True if all jobs are done, False otherwise.
+        """
+
         def all_jobs_done():
-            total_jobs_done = (
-                len(self.all_jobs_dict["finished"])
-                + len(self.all_jobs_dict["walltime_error"])
-                + len(self.all_jobs_dict["missing_ram_error"])
-                + len(self.all_jobs_dict["unknown_error"])
+
+            total_jobs_remaining = (
+                len(self.all_jobs_dict["not_yet_found"])
+                + len(self.all_jobs_dict["not_yet_prepared"])
+                + len(self.all_jobs_dict["not_yet_submitted"])
+                + len(self.all_jobs_dict["submitted"])
+                + len(self.all_jobs_dict["returned_jobs"])
             )
-            return total_jobs_done == self.n_total_jobs
+            self.log.info(f"Total jobs remaining: {total_jobs_remaining}")
+            return total_jobs_remaining == 0
 
         n_loops = 0
         while not all_jobs_done():
@@ -197,7 +213,7 @@ class WorkManager:
             self.submit_jobs()
 
             # this should catch submission errors
-            time.sleep(10)
+            time.sleep(3)
 
             self.check_output_dir()
             self.check_completed_job_status()
@@ -206,12 +222,14 @@ class WorkManager:
             if all_jobs_done():
                 break
 
-            time.sleep(self.wait_time)
+            # time.sleep(self.wait_time)
+            await asyncio.sleep(self.wait_time)
+
             n_loops += 1
             if self.max_loop > 0 and n_loops >= self.max_loop:
                 self.log.info(f"Breaking loop after {n_loops}.")
 
-                break
+                return f"Breaking loop after {n_loops}."
         self.log.info(f"All jobs done after {n_loops}.")
         self.is_finished = True
-        return self.is_finished
+        return f"All jobs done after {n_loops}."

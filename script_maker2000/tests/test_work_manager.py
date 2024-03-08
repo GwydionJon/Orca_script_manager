@@ -2,6 +2,7 @@ import shutil
 from pathlib import Path
 from script_maker2000.orca import OrcaModule
 from script_maker2000.work_manager import WorkManager
+import asyncio
 
 
 def test_workmanager(pre_config_tmp_dir, all_job_ids, monkeypatch):
@@ -90,7 +91,9 @@ def test_workmanager_loop(pre_config_tmp_dir, all_job_ids, monkeypatch):
     monkeypatch.setattr("shutil.which", lambda x: True)
     monkeypatch.setattr("subprocess.run", mock_run_job)
 
-    work_manager.loop()
+    asyncio.run(work_manager.loop())
+    # wait for async to finish
+
     assert len(work_manager.all_jobs_dict["finished"]) == 4
     assert len(work_manager.all_jobs_dict["walltime_error"]) == 4
     assert len(work_manager.all_jobs_dict["missing_ram_error"]) == 3

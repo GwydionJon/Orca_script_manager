@@ -5,7 +5,6 @@ import subprocess
 import shutil
 import re
 import pandas as pd
-
 from script_maker2000.template import TemplateModule
 
 
@@ -15,7 +14,9 @@ class OrcaModule(TemplateModule):
     #   This includes config setup, creation of Orca_Scripts and
     # corresponding slurm scripts as well as handeling the submission logic.
 
-    def __init__(self, main_config: dict, config_key: str) -> None:
+    def __init__(
+        self, main_config: dict, config_key: str, input_df: pd.DataFrame = None
+    ) -> None:
         """Setup the orca files from the main config.
         Since different orca setups can be defined in the config
         we need to pass the corresponding kyword ( eg.: opimization or single_point)
@@ -27,17 +28,12 @@ class OrcaModule(TemplateModule):
         Raises:
             NotImplementedError: _description_
         """
-        super(OrcaModule, self).__init__(main_config, config_key)
+        super(OrcaModule, self).__init__(main_config, config_key, input_df)
         self.log.info(f"Creating orca object from key: {config_key}")
 
         self.internal_config["options"]["orca_version"] = self.main_config[
             "main_config"
         ]["orca_version"]
-
-        self.input_df = pd.read_csv(
-            self.main_config["main_config"]["input_file_path"], index_col=0
-        )
-        self.input_df.set_index("key", inplace=True)
 
     def prepare_jobs(self, input_files) -> dict:
         xyz_dict = self.read_xyzs(input_files)
