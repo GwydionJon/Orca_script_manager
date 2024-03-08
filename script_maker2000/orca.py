@@ -4,7 +4,7 @@ from datetime import datetime
 import subprocess
 import shutil
 import re
-
+import pandas as pd
 
 from script_maker2000.template import TemplateModule
 
@@ -33,7 +33,11 @@ class OrcaModule(TemplateModule):
         self.internal_config["options"]["orca_version"] = self.main_config[
             "main_config"
         ]["orca_version"]
-        # get xyz data
+
+        self.input_df = pd.read_csv(
+            self.main_config["main_config"]["input_file_path"], index_col=0
+        )
+        self.input_df.set_index("key", inplace=True)
 
     def prepare_jobs(self, input_files) -> dict:
         xyz_dict = self.read_xyzs(input_files)
@@ -136,21 +140,27 @@ class OrcaModule(TemplateModule):
                     f.write("%s\n" % item)
         return orca_path_dict
 
-    def read_xyzs(self, input_files):
+    def read_charge_mul(self, xyz_path):
 
-        xyz_files = input_files
+        xyz_key = xyz_path.stem.split("_", maxsplit=1)[1]
+
+        charge = self.input_df.loc[xyz_key]["charge"]
+        mul = self.input_df.loc[xyz_key]["multiplicity"]
+        return charge, mul
+
+    def read_xyzs(self, input_files):
 
         xyz_dict = {}
 
-        for xyz_path in xyz_files:
+        for xyz_path in input_files:
             with open(xyz_path, "r", encoding="utf-8") as f:
-                charge_mul_coords = f.readlines()[1:]
+                charge_mul_coords = f.readlines()[2:]
                 # remove trailing spaces and line breaks
-            charge_mul = charge_mul_coords[0]
 
             coords = [coord.strip() for coord in charge_mul_coords[1:]]
-            charge = int(charge_mul.split("charge:")[1].split(",")[0])
-            mul = int(charge_mul.split("multiplicity:")[1])
+
+            charge, mul = self.read_charge_mul(xyz_path)
+
             xyz_dict[xyz_path.stem] = {
                 "coords": coords,
                 "charge": charge,
@@ -295,8 +305,6 @@ class OrcaModule(TemplateModule):
         # check for orca errors only if xyz file exists
         with open(orca_out_file) as f:
             file_contents = f.read()
-            print(check_orca_memory_error(file_contents))
-            print(check_orca_normal_termination(file_contents))
 
             if check_orca_normal_termination(file_contents):
                 return "all_good"

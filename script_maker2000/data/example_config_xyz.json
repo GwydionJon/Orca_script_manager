@@ -6,10 +6,12 @@
         "max_nodes": 50,
         "output_dir": "example_xyz_output",
         "max_run_time": "60:00:00",
-        "input_file_path": "example_xyz",
+        "input_file_path": "example_xyz/example_molecules.csv",
         "input_type": "xyz",
+        "parallel_layer_run": false,
         "orca_version": "5.0.2",
-        "wait_for_results_time":1800
+        "wait_for_results_time": 300,
+        "common_input_files": "xyz"
     },
     "structure_check_config": {
         "run_checks": true
@@ -21,6 +23,7 @@
         "crest_config": {
             "type": "crest",
             "step": 0,
+            "additional_input_files": "",
             "options:": {
                 "n_tasks": 20,
                 "n_cores": 40,
@@ -31,6 +34,7 @@
         "opt_config": {
             "type": "orca",
             "step": 1,
+            "additional_input_files": "",
             "options": {
                 "method": "HF",
                 "basisset": " DEF2-SVP",
@@ -50,6 +54,7 @@
         "sp_config": {
             "type": "orca",
             "step": 2,
+            "additional_input_files": "",
             "options": {
                 "method": "HF",
                 "basisset": " DEF2-SVP",

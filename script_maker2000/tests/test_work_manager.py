@@ -4,7 +4,7 @@ from script_maker2000.orca import OrcaModule
 from script_maker2000.work_manager import WorkManager
 
 
-def test_workmanager(clean_tmp_dir, all_job_ids, monkeypatch):
+def test_workmanager(pre_config_tmp_dir, all_job_ids, monkeypatch):
     def mock_run_job(args, **kw):
 
         # move output files to output dir
@@ -19,7 +19,7 @@ def test_workmanager(clean_tmp_dir, all_job_ids, monkeypatch):
 
         return args
 
-    config_path = clean_tmp_dir / "example_config.json"
+    config_path = pre_config_tmp_dir / "example_config.json"
 
     orca_test = OrcaModule(config_path, "sp_config")
 
@@ -65,7 +65,7 @@ def test_workmanager(clean_tmp_dir, all_job_ids, monkeypatch):
     assert len(list(work_manager.output_dir.glob("*"))) == 0
 
 
-def test_workmanager_loop(clean_tmp_dir, all_job_ids, monkeypatch):
+def test_workmanager_loop(pre_config_tmp_dir, all_job_ids, monkeypatch):
     def mock_run_job(args, **kw):
 
         # move output files to output dir
@@ -80,7 +80,7 @@ def test_workmanager_loop(clean_tmp_dir, all_job_ids, monkeypatch):
 
         return args
 
-    config_path = clean_tmp_dir / "example_config.json"
+    config_path = pre_config_tmp_dir / "example_config.json"
 
     orca_test = OrcaModule(config_path, "sp_config")
 

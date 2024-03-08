@@ -2,7 +2,8 @@ import json
 import logging
 import pathlib
 import shutil
-
+from collections import OrderedDict
+import pandas as pd
 
 script_maker_log = logging.getLogger("Script_maker_log")
 script_maker_error = logging.getLogger("Script_maker_error")
@@ -55,7 +56,24 @@ def create_working_dir_structure(
         json.dump(main_config, json_file)
 
     # copy input files
-    new_input_path = shutil.copytree(input_path, output_dir / "start_input_files")
+
+    # check that all input files start with START_
+
+    # read input files from csv
+    input_df = pd.read_csv(input_path)
+
+    all_input_files = input_df["path"].values
+    for file in all_input_files:
+        if isinstance(file, str):
+            file = pathlib.Path(file)
+        if file.stem.startswith("START_") is False:
+            raise ValueError(
+                f"Input file {file} does not start with 'START_'."
+                + " Please make sure all input files start with 'START_'."
+            )
+    new_input_path = shutil.copytree(
+        input_path.parent, output_dir / "start_input_files"
+    )
 
     return output_dir, new_input_path
 
@@ -88,9 +106,7 @@ def check_config(main_config):
     output_dir = pathlib.Path(main_config["main_config"]["output_dir"])
     sub_dir_names = [pathlib.Path(key) for key in main_config["loop_config"]]
     if len(sub_dir_names) == 0:
-        raise ValueError(
-            "Can't find loop configs. did you name them similar to 'test_config'?"
-        )
+        raise ValueError("Can't find loop configs. ?")
     for sub_dir in sub_dir_names:
 
         if (output_dir / sub_dir).exists() and main_config["main_config"][
@@ -116,6 +132,7 @@ def read_config(config_file, perform_validation=True):
 
     with open(config_file, "r", encoding="utf-8") as f:
         main_config = json.load(f)
+    main_config = OrderedDict(main_config)
 
     output_dir = pathlib.Path(main_config["main_config"]["output_dir"])
     # when giving a relativ path resolve it in relation to the config file.

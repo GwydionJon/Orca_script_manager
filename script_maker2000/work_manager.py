@@ -21,11 +21,13 @@ class WorkManager:
 
         self.main_config = WorkModule.main_config
         self.workModule = WorkModule
+        self.config_key = self.workModule.config_key
         self.module_config = WorkModule.internal_config
         self.log = logging.getLogger(self.workModule.config_key)
 
         self.input_dir = self.workModule.working_dir / "input"
         self.output_dir = self.workModule.working_dir / "output"
+        self.finished_dir = self.workModule.working_dir / "finished"
 
         self.all_jobs_dict = {
             "not_yet_found": all_job_ids,
@@ -39,6 +41,12 @@ class WorkManager:
             "unknown_error": [],
         }
         self.n_total_jobs = len(all_job_ids)
+        self.is_finished = False
+
+        # this way the wait time can be adjusted with monkeypatch for faster testing
+        self.wait_time = self.main_config["main_config"]["wait_for_results_time"]
+        self.max_loop = -1  # -1 means infinite loop until all jobs are done
+        # change max loop with monkeypatch for testing
 
     # check input dir
     # check output dir
@@ -51,8 +59,17 @@ class WorkManager:
     # check if all jobs are done
 
     def check_input_dir(self):
-        """Check the input dir for new xyz files."""
+        """
+        Checks the input directory for new XYZ files and updates the job status accordingly.
 
+        This method searches for XYZ files in the input directory and updates the job status
+        based on the files found. It removes the job ID from the "not_yet_found" list if the
+        corresponding XYZ file is found. It adds the found XYZ files to the "not_yet_prepared"
+        list. Finally, it logs the number of new XYZ files found.
+
+        Returns:
+            None
+        """
         found_xyz_files = list(self.input_dir.glob("*.xyz"))
         for file in found_xyz_files:
             # split at first _ to get the job id
@@ -173,8 +190,7 @@ class WorkManager:
             )
             return total_jobs_done == self.n_total_jobs
 
-        wait_time = 300
-
+        n_loops = 0
         while not all_jobs_done():
             self.check_input_dir()
             self.prepare_jobs()
@@ -190,6 +206,12 @@ class WorkManager:
             if all_jobs_done():
                 break
 
-            time.sleep(wait_time)
+            time.sleep(self.wait_time)
+            n_loops += 1
+            if self.max_loop > 0 and n_loops >= self.max_loop:
+                self.log.info(f"Breaking loop after {n_loops}.")
 
-        self.log.info("All jobs done.")
+                break
+        self.log.info(f"All jobs done after {n_loops}.")
+        self.is_finished = True
+        return self.is_finished

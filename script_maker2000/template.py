@@ -38,7 +38,7 @@ class TemplateModule:
         formatter = logging.Formatter(
             "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         )
-        file_handler_log = logging.FileHandler(self.working_dir / "log.log")
+        file_handler_log = logging.FileHandler(self.working_dir / f"{config_key}.log")
         file_handler_log.setFormatter(formatter)
 
         self.log.addHandler(file_handler_log)
