@@ -135,6 +135,7 @@ def clean_tmp_dir():
     df["path"] = [
         path.resolve() for path in list((tmp_dir / "example_xyz").glob("*.xyz"))
     ]
+    df.to_csv(tmp_dir / "example_xyz" / "example_molecules.csv", index=False)
 
     main_dict["main_config"]["input_file_path"] = str(
         Path(example_xyz) / "example_molecules.csv"
