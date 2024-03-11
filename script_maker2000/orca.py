@@ -150,10 +150,10 @@ class OrcaModule(TemplateModule):
 
         for xyz_path in input_files:
             with open(xyz_path, "r", encoding="utf-8") as f:
-                charge_mul_coords = f.readlines()[2:]
+                coords = f.readlines()[2:]
                 # remove trailing spaces and line breaks
 
-            coords = [coord.strip() for coord in charge_mul_coords[1:]]
+            coords = [coord.strip() for coord in coords]
 
             charge, mul = self.read_charge_mul(xyz_path)
 
@@ -303,6 +303,7 @@ class OrcaModule(TemplateModule):
         slurm_file = list(job_out_dir.glob("slurm*"))[0]
 
         # check for orca errors only if xyz file exists
+
         with open(orca_out_file) as f:
             file_contents = f.read()
 
