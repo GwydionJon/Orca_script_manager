@@ -130,6 +130,12 @@ def clean_tmp_dir():
     example_xyz = shutil.copytree(str(example_mol_dir), str(tmp_dir / "example_xyz"))
     # copy input files to module working space
 
+    # change xyz file locations in .csv
+    df = pd.read_csv(tmp_dir / "example_xyz" / "example_molecules.csv")
+    df["path"] = [
+        path.resolve() for path in list((tmp_dir / "example_xyz").glob("*.xyz"))
+    ]
+
     main_dict["main_config"]["input_file_path"] = str(
         Path(example_xyz) / "example_molecules.csv"
     )
