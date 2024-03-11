@@ -33,6 +33,12 @@ def temp_work_dir():
     main_dict["main_config"]["input_file_path"] = str(
         Path(example_xyz) / "example_molecules.csv"
     )
+    # change xyz file locations in .csv
+    df = pd.read_csv(tmp_dir / "example_xyz" / "example_molecules.csv")
+    df["path"] = [
+        path.resolve() for path in list((tmp_dir / "example_xyz").glob("*.xyz"))
+    ]
+    df.to_csv(tmp_dir / "example_xyz" / "example_molecules.csv", index=False)
 
     with open(tmp_dir / "example_config.json", "w") as json_file:
         json.dump(main_dict, json_file)
@@ -88,6 +94,13 @@ def pre_config_tmp_dir():
     main_dict["main_config"]["input_file_path"] = str(
         Path(example_xyz) / "example_molecules.csv"
     )
+
+    # change xyz file locations in .csv
+    df = pd.read_csv(tmp_dir / "example_xyz" / "example_molecules.csv")
+    df["path"] = [
+        path.resolve() for path in list((tmp_dir / "example_xyz").glob("*.xyz"))
+    ]
+    df.to_csv(tmp_dir / "example_xyz" / "example_molecules.csv", index=False)
 
     with open(tmp_dir / "example_config.json", "w") as json_file:
         json.dump(main_dict, json_file)
