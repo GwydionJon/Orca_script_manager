@@ -5,6 +5,7 @@ import shutil
 import copy
 import pytest
 from pathlib import Path
+import pandas as pd
 from script_maker2000.files import read_config, create_working_dir_structure
 
 
@@ -144,3 +145,90 @@ def all_job_ids(pre_config_tmp_dir):
     example_dir = pre_config_tmp_dir / "example_xyz"
     file_filst = list(example_dir.glob("*.xyz"))
     return [file.stem.split("START_")[1] for file in file_filst]
+
+
+@pytest.fixture
+def expected_df_only_failed_jobs():
+    expected_df_only_failed_jobs = pd.DataFrame(
+        {
+            "opt_config": [
+                "walltime_error",
+                "walltime_error",
+                "walltime_error",
+                "walltime_error",
+                "not_yet_submitted",
+                "not_yet_submitted",
+                "not_yet_submitted",
+                "not_yet_submitted",
+                "missing_ram_error",
+                "missing_ram_error",
+                "missing_ram_error",
+            ],
+            "sp_config": [
+                "cancelled",
+                "cancelled",
+                "cancelled",
+                "cancelled",
+                "not_yet_submitted",
+                "not_yet_submitted",
+                "not_yet_submitted",
+                "not_yet_submitted",
+                "cancelled",
+                "cancelled",
+                "cancelled",
+            ],
+        },
+        index=[
+            "a001_b001",
+            "a001_b004_2",
+            "a002_b006",
+            "a003_b004",
+            "a004_b007",
+            "a007_b021_2",
+            "a007_b022_2",
+            "a007_b026",
+            "a007_b027",
+            "a007_b027_2",
+            "a007_b069",
+        ],
+    )
+    expected_df_only_failed_jobs.index.name = "key"
+    return expected_df_only_failed_jobs
+
+
+@pytest.fixture
+def expected_df_first_log_jobs(expected_df_only_failed_jobs):
+    expected_df_first_log_jobs = expected_df_only_failed_jobs.copy()
+    expected_df_first_log_jobs["opt_config"] = [
+        "walltime_error",
+        "walltime_error",
+        "walltime_error",
+        "walltime_error",
+        "finished",
+        "finished",
+        "finished",
+        "finished",
+        "missing_ram_error",
+        "missing_ram_error",
+        "missing_ram_error",
+    ]
+    return expected_df_first_log_jobs
+
+
+@pytest.fixture
+def expected_df_second_log_jobs(expected_df_first_log_jobs):
+    expected_df_second_log_jobs = expected_df_first_log_jobs.copy()
+    expected_df_second_log_jobs["sp_config"] = [
+        "cancelled",
+        "cancelled",
+        "cancelled",
+        "cancelled",
+        "finished",
+        "finished",
+        "finished",
+        "finished",
+        "cancelled",
+        "cancelled",
+        "cancelled",
+    ]
+    return expected_df_second_log_jobs

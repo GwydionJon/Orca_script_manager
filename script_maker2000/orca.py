@@ -187,12 +187,16 @@ class OrcaModule(TemplateModule):
 
         """
 
+        orca_ram_scaling = (
+            0.75  # 75% of the available ram is used for orca this is subject to change
+        )
+
         options = self.internal_config["options"]
         # extract setup from config
         method = options["method"]
         basisset = options["basisset"]
         add_setting = options["additional_settings"]
-        maxcore = options["ram_per_core"]
+        maxcore = options["ram_per_core"] * orca_ram_scaling
         nprocs = options["n_cores_per_calculation"]
         args = options["args"]
 

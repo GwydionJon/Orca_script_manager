@@ -2,7 +2,8 @@ from collections import OrderedDict
 import shutil
 import asyncio
 import pandas as pd
-
+import time
+import logging
 from script_maker2000.files import read_config, create_working_dir_structure
 from script_maker2000.work_manager import WorkManager
 from script_maker2000.orca import OrcaModule
@@ -30,6 +31,22 @@ class BatchManager:
 
         self.work_managers = self.setup_work_modules_manager()
         self.copy_input_files_to_first_work_manager()
+
+        # parameter for loop
+        self.wait_time = self.main_config["main_config"]["wait_for_results_time"]
+        self.max_loop = -1  # -1 means infinite loop until all jobs are done
+
+        # set up logging for this module
+        self.log = logging.getLogger("BatchManager")
+        formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        )
+        file_handler_log = logging.FileHandler(self.working_dir / "BatchManager.log")
+        file_handler_log.setFormatter(formatter)
+
+        self.log.addHandler(file_handler_log)
+
+        self.log.setLevel("INFO")
 
     # only for initilization
     def read_config(self, main_config_path):
@@ -83,12 +100,6 @@ class BatchManager:
         )
 
     # end init
-    def start_work_manager_loops(self):
-        # start work manager loops with threading
-        work_output = []
-        for work_manager in self.work_managers.values():
-            work_output.append(asyncio.run(work_manager.loop()))
-        return work_output
 
     # TODO tell the work managers which jobs got cancelled so they can remove them from the list
     # otherwise they will never finish
@@ -107,13 +118,13 @@ class BatchManager:
         for work_key, work_manager in self.work_managers.items():
             # work_manager.manage_failed_jobs()
 
-            for key, error_list in work_manager.all_jobs_dict.items():
-                if "_error" in key:
-                    error_ids = [error.stem.split("_", 1)[1] for error in error_list]
+            for status_key, job_list in work_manager.all_jobs_dict.items():
+                if "_error" in status_key:
+                    job_ids = [error.stem.split("_", 1)[1] for error in job_list]
 
-                    if error_ids:
+                    if job_ids:
                         # Update the status of the failed jobs in the input dataframe
-                        self.input_df.loc[error_ids, work_key] = key
+                        self.input_df.loc[job_ids, work_key] = status_key
 
                         # Get all following work keys and set status to cancelled
                         following_work_keys = list(
@@ -126,12 +137,12 @@ class BatchManager:
                         for following_key in following_work_keys:
                             # Remove the failed jobs from the expected input in the following work managers
                             self.work_managers[following_key].log.info(
-                                f"Removing {len(error_ids)} jobs from expected input due to {key}."
+                                f"Removing {len(job_ids)} jobs from expected input due to {status_key}."
                             )
-                            self.input_df.loc[error_ids, following_key] = "cancelled"
+                            self.input_df.loc[job_ids, following_key] = "cancelled"
 
                             # Remove the failed jobs from the lists of following work managers
-                            for id in error_ids:
+                            for id in job_ids:
                                 self.work_managers[following_key].all_jobs_dict[
                                     "not_yet_found"
                                 ].remove(id)
@@ -139,8 +150,18 @@ class BatchManager:
         # Save the updated input dataframe to the new csv file
         self.input_df.to_csv(self.new_csv_file)
 
-    def manage_finished_jobs(self):
-        pass
+    def manage_job_logging(self):
+
+        # failed jobs are handled in manage_failed_jobs
+        # then manage all other jobs
+        for work_key, work_manager in self.work_managers.items():
+            for status_key, job_list in work_manager.all_jobs_dict.items():
+                if "_error" not in status_key and status_key != "not_yet_found":
+                    job_ids = [error.stem.split("_", 1)[1] for error in job_list]
+                    if job_ids:
+                        self.input_df.loc[job_ids, work_key] = status_key
+
+        self.input_df.to_csv(self.new_csv_file)
 
     def move_files(self):
         for i, (key, work_manager) in enumerate(self.work_managers.items()):
@@ -169,6 +190,8 @@ class BatchManager:
                     target_files += list(
                         work_manager_finished_dir.glob(f"*/*{file_type}")
                     )
+                if not target_files:
+                    continue
 
                 next_work_manager = list(self.work_managers.values())[i + 1]
                 target_name = next_work_manager.config_key
@@ -183,3 +206,55 @@ class BatchManager:
                     shutil.copytree(file, target_dir / file.name)
                 elif file.is_file():
                     shutil.copy(file, target_dir / file.name)
+
+    def start_work_manager_loops(self):
+        # start work manager loops with threading
+        manager_runs = set()
+        times = []
+        for work_manager in self.work_managers.values():
+            task = asyncio.create_task(
+                work_manager.loop(), name=work_manager.config_key
+            )
+            times.append(time.time())
+            manager_runs.add(task)
+
+        self.log.info(f"Time start all loops: {times[1]-times[0]} seconds.")
+
+        return manager_runs
+
+    async def batch_processing_loop(self):
+        """This sets up the main batch processing loop and runs it until all tasks are done.
+
+        Returns:
+            _type_: _description_
+        """
+        manager_runs = self.start_work_manager_loops()
+        self.log.info(f"Background tasks first: {manager_runs}")
+
+        i = 1
+        while True:
+            self.move_files()
+            self.manage_failed_jobs()
+            self.manage_job_logging()
+            await asyncio.sleep(self.wait_time)
+
+            i += 1
+
+            if all([task.done() for task in manager_runs]):
+                self.log.info(f"All tasks done after {i} loops")
+                break
+
+            if i > self.max_loop and self.max_loop > 0:
+                self.log.info("Breaking main loop after 10.")
+                break
+        return manager_runs
+
+    def run_batch_processing(self):
+        """This function will start the batch processing loop and return the results.
+            It will block until all tasks are done.
+            This is the main working loop.
+
+        Returns:
+            _type_: _description_
+        """
+        return asyncio.run(self.batch_processing_loop())
