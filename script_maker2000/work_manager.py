@@ -169,45 +169,52 @@ class WorkManager:
             pure_file_name = job_out_dir.name.split("_", 1)[1]
             new_job_out_dir = old_label + new_label + "_" + pure_file_name
             new_job_out_dir = Path(new_job_out_dir)
+            new_job_out_dir.mkdir(parents=True, exist_ok=True)
 
-            if job_status == "all_good":
-                new_finished += 1
-                self.all_jobs_dict["finished"].append(new_job_out_dir)
-                shutil.move(
-                    job_out_dir,
-                    self.workModule.working_dir / "finished" / new_job_out_dir,
-                )
+            for file in job_out_dir.glob("*"):
 
-            elif job_status == "walltime_error":
-                new_walltime_error += 1
-                self.all_jobs_dict["walltime_error"].append(job_out_dir)
-                shutil.move(
-                    job_out_dir,
-                    self.workModule.working_dir
-                    / "failed"
-                    / ("WALLTIME-" + str(new_job_out_dir.stem)),
-                )
+                file_name = file.name
+                pure_file_name = file_name.split("_", 1)[1]
+                new_file_name = old_label + new_label + "_" + pure_file_name
+                new_file_name = Path(new_file_name)
 
-            elif job_status == "missing_ram_error":
-                new_missing_ram_error += 1
-                self.all_jobs_dict["missing_ram_error"].append(new_job_out_dir)
-                shutil.move(
-                    job_out_dir,
-                    self.workModule.working_dir
-                    / "failed"
-                    / ("RAM-" + str(new_job_out_dir.stem)),
-                )
-            else:
-                new_unknown_error += 1
-                self.all_jobs_dict["unknown_error"].append(new_job_out_dir)
-                shutil.move(
-                    job_out_dir,
-                    self.workModule.working_dir
-                    / "failed"
-                    / ("ERROR-" + str(new_job_out_dir.stem)),
-                )
+                if job_status == "all_good":
+                    new_finished += 1
+                    self.all_jobs_dict["finished"].append(new_job_out_dir)
+                    target_dir = (
+                        self.workModule.working_dir / "finished" / new_job_out_dir,
+                    )
 
-            self.cleanup(job_out_dir)
+                elif job_status == "walltime_error":
+                    new_walltime_error += 1
+                    self.all_jobs_dict["walltime_error"].append(job_out_dir)
+
+                    target_dir = (
+                        self.workModule.working_dir
+                        / "failed"
+                        / ("WALLTIME-" + str(new_job_out_dir.stem))
+                    )
+
+                elif job_status == "missing_ram_error":
+                    new_missing_ram_error += 1
+                    self.all_jobs_dict["missing_ram_error"].append(new_job_out_dir)
+
+                    target_dir = (
+                        self.workModule.working_dir
+                        / "failed"
+                        / ("RAM-" + str(new_job_out_dir.stem))
+                    )
+
+                else:
+                    new_unknown_error += 1
+                    self.all_jobs_dict["unknown_error"].append(new_job_out_dir)
+                    target_dir = (
+                        self.workModule.working_dir
+                        / "failed"
+                        / ("ERROR-" + str(new_job_out_dir.stem))
+                    )
+                shutil.move(file, target_dir / new_file_name)
+                self.cleanup(job_out_dir)
 
         self.log.info(
             f"From {len(self.all_jobs_dict['returned_jobs'])} returned jobs: "
