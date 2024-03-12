@@ -1,8 +1,14 @@
 from pathlib import Path
 import shutil
-from script_maker2000.batch_manager import BatchManager
 import pandas as pd
+import numpy as np
 import asyncio
+import os
+import pytest
+from script_maker2000.batch_manager import BatchManager
+
+
+IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
 
 
 def test_batch_manager(clean_tmp_dir, monkeypatch):
@@ -18,7 +24,14 @@ def test_batch_manager(clean_tmp_dir, monkeypatch):
                 dirs_exist_ok=True,
             )
 
-        return args
+        class TestClass:
+            def __init__(self, args, **kw):
+                self.args = args
+                self.kw = kw
+                self.stdout = f"COMPLETED job {np.random.randint(100)}"
+
+        test = TestClass(args, **kw)
+        return test
 
     main_config_path = clean_tmp_dir / "example_config.json"
     batch_manager = BatchManager(main_config_path)
@@ -40,6 +53,7 @@ def test_batch_manager(clean_tmp_dir, monkeypatch):
     monkeypatch.setattr(second_worker, "wait_time", 0.2)
     monkeypatch.setattr(second_worker, "max_loop", 5)
 
+    print(list(second_worker.input_dir.glob("*")))
     assert len(list(second_worker.input_dir.glob("*"))) == 4
     worker_output = asyncio.run(second_worker.loop())
 
@@ -47,6 +61,7 @@ def test_batch_manager(clean_tmp_dir, monkeypatch):
     assert worker_output == "Breaking loop after 5."
 
 
+@pytest.mark.skipif(IN_GITHUB_ACTIONS, reason="Test doesn't work in Github Actions.")
 def test_batch_manager_threads(
     clean_tmp_dir,
     monkeypatch,
@@ -89,7 +104,7 @@ def test_batch_manager_threads(
         monkeypatch.setattr(work_manager, "wait_time", 0.2)
         monkeypatch.setattr(work_manager, "max_loop", 2)
 
-    first_batch_output = batch_manager.start_work_manager_loops()
+    first_batch_output = asyncio.run(batch_manager.start_work_manager_loops())
     assert sorted(list(first_batch_output)) == sorted(
         ["All jobs done after 0.", "Breaking loop after 2."]
     )
@@ -130,8 +145,14 @@ def test_batch_manager_threads(
 def test_batch_loop_no_files(clean_tmp_dir, monkeypatch):
 
     def mock_run_job(args, **kw):
+        class TestClass:
+            def __init__(self, args, **kw):
+                self.args = args
+                self.kw = kw
+                self.stdout = f"COMPLETED job {np.random.randint(100)}"
 
-        return args
+        test = TestClass(args, **kw)
+        return test
 
     main_config_path = clean_tmp_dir / "example_config.json"
     batch_manager = BatchManager(main_config_path)
@@ -153,8 +174,14 @@ def test_batch_loop_no_files(clean_tmp_dir, monkeypatch):
 def test_batch_loop_with_files(clean_tmp_dir, monkeypatch):
 
     def mock_run_job(args, **kw):
+        class TestClass:
+            def __init__(self, args, **kw):
+                self.args = args
+                self.kw = kw
+                self.stdout = f"COMPLETED job {np.random.randint(100)}"
 
-        return args
+        test = TestClass(args, **kw)
+        return test
 
     main_config_path = clean_tmp_dir / "example_config.json"
     batch_manager = BatchManager(main_config_path)

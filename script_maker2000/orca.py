@@ -250,6 +250,8 @@ class OrcaModule(TemplateModule):
                     [shutil.which("sbatch"), str(slurm_file)],
                     shell=False,
                     check=False,
+                    capture_output=True,
+                    text=True,
                     # shell = False is important on justus
                 )
             else:
@@ -304,17 +306,18 @@ class OrcaModule(TemplateModule):
 
         # check for orca errors only if xyz file exists
 
-        with open(orca_out_file) as f:
-            file_contents = f.read()
+        if orca_out_file.exists():
+            with open(orca_out_file) as f:
+                file_contents = f.read()
 
-            if check_orca_normal_termination(file_contents):
-                return "all_good"
-            if check_orca_memory_error(file_contents):
-                return "missing_ram_error"
-
-        with open(slurm_file) as f:
-            file_contents = f.read()
-            if check_slurm_walltime_error(file_contents):
-                return "walltime_error"
+                if check_orca_normal_termination(file_contents):
+                    return "all_good"
+                if check_orca_memory_error(file_contents):
+                    return "missing_ram_error"
+        if slurm_file.exists():
+            with open(slurm_file) as f:
+                file_contents = f.read()
+                if check_slurm_walltime_error(file_contents):
+                    return "walltime_error"
 
         return "unknown_error"

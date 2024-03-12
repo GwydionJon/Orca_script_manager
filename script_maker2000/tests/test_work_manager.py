@@ -3,6 +3,7 @@ from pathlib import Path
 from script_maker2000.orca import OrcaModule
 from script_maker2000.work_manager import WorkManager
 import asyncio
+import numpy as np
 
 
 def test_workmanager(pre_config_tmp_dir, all_job_ids, monkeypatch):
@@ -18,7 +19,14 @@ def test_workmanager(pre_config_tmp_dir, all_job_ids, monkeypatch):
                 dirs_exist_ok=True,
             )
 
-        return args
+        class TestClass:
+            def __init__(self, args, **kw):
+                self.args = args
+                self.kw = kw
+                self.stdout = f"COMPLETED job {np.random.randint(100)}"
+
+        test = TestClass(args, **kw)
+        return test
 
     config_path = pre_config_tmp_dir / "example_config.json"
 
@@ -79,7 +87,14 @@ def test_workmanager_loop(pre_config_tmp_dir, all_job_ids, monkeypatch):
                 dirs_exist_ok=True,
             )
 
-        return args
+        class TestClass:
+            def __init__(self, args, **kw):
+                self.args = args
+                self.kw = kw
+                self.stdout = f"COMPLETED job {np.random.randint(100)}"
+
+        test = TestClass(args, **kw)
+        return test
 
     config_path = pre_config_tmp_dir / "example_config.json"
 

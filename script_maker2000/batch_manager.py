@@ -142,10 +142,16 @@ class BatchManager:
                             self.input_df.loc[job_ids, following_key] = "cancelled"
 
                             # Remove the failed jobs from the lists of following work managers
-                            for id in job_ids:
-                                self.work_managers[following_key].all_jobs_dict[
-                                    "not_yet_found"
-                                ].remove(id)
+                            for id_ in job_ids:
+                                if (
+                                    id_
+                                    in self.work_managers[following_key].all_jobs_dict[
+                                        "not_yet_found"
+                                    ]
+                                ):
+                                    self.work_managers[following_key].all_jobs_dict[
+                                        "not_yet_found"
+                                    ].remove(id_)
 
         # Save the updated input dataframe to the new csv file
         self.input_df.to_csv(self.new_csv_file)
@@ -156,7 +162,10 @@ class BatchManager:
         # then manage all other jobs
         for work_key, work_manager in self.work_managers.items():
             for status_key, job_list in work_manager.all_jobs_dict.items():
-                if "_error" not in status_key and status_key != "not_yet_found":
+                if "_error" not in status_key and status_key not in [
+                    "not_yet_found",
+                    "submitted_ids_files",
+                ]:
                     job_ids = [error.stem.split("_", 1)[1] for error in job_list]
                     if job_ids:
                         self.input_df.loc[job_ids, work_key] = status_key
@@ -167,6 +176,7 @@ class BatchManager:
         for i, (key, work_manager) in enumerate(self.work_managers.items()):
 
             work_manager_finished_dir = work_manager.finished_dir
+            # skip if work manager is finished
 
             if i == len(self.work_managers) - 1:  # -1 because of 0 indexing
                 # move files from last work manager to finished folder
@@ -185,15 +195,24 @@ class BatchManager:
                         self.main_config["loop_config"][key]["additional_input_files"]
                     )
 
-                target_files = []
+                # collect all files in finished dir
+                potential_target_files = []
                 for file_type in target_file_types:
-                    target_files += list(
+                    potential_target_files += list(
                         work_manager_finished_dir.glob(f"*/*{file_type}")
                     )
-                if not target_files:
+                if not potential_target_files:
                     continue
 
                 next_work_manager = list(self.work_managers.values())[i + 1]
+
+                # check which jobs from finished dir have not yet been submitted to the next worker
+                target_files = []
+                for potential_target_file in potential_target_files:
+                    job_id = potential_target_file.stem.split("_", 1)[1]
+                    if job_id in next_work_manager.all_jobs_dict["not_yet_found"]:
+                        target_files.append(potential_target_file)
+
                 target_name = next_work_manager.config_key
                 work_manager.log.info(
                     f"Moving {len(target_files)} files to {target_name} input"

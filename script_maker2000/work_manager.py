@@ -3,6 +3,7 @@ import time
 import shutil
 from pathlib import Path
 import asyncio
+import subprocess
 
 
 class WorkManager:
@@ -36,6 +37,7 @@ class WorkManager:
             "not_yet_prepared": [],
             "not_yet_submitted": [],
             "submitted": [],
+            "submitted_ids_files": {},  # job_dir:job_id
             "returned_jobs": [],
             "finished": [],
             "walltime_error": [],
@@ -97,19 +99,43 @@ class WorkManager:
 
     def submit_jobs(self):
         for job_dir in self.all_jobs_dict["not_yet_submitted"]:
-            self.workModule.run_job(job_dir)
+            process = self.workModule.run_job(job_dir)
+            job_id = int(process.stdout.split("job ")[1])
             self.all_jobs_dict["submitted"].append(job_dir)
+            self.all_jobs_dict["submitted_ids_files"][job_dir.stem] = job_id
+
             time.sleep(0.3)
         self.all_jobs_dict["not_yet_submitted"] = []
 
+    def check_slurm_status(self, id) -> bool:
+        process = subprocess.run(
+            [shutil.which("sacct"), "-j", f"{id}", "-o", "state"],
+            shell=False,
+            check=False,
+            capture_output=True,  # Python >= 3.7 only
+            text=True,  # Python >= 3.7 only
+            # shell = False is important on justus
+        )
+        process_out = process.stdout
+        process_out = " ".join(process_out.split())
+        if "COMPLETED" in process_out:
+            return True
+        else:
+            return False
+
     def check_output_dir(self):
-        """find new jobs in output dir"""
+        """find new jobs in output dir and check if they are finished."""
         output_dirs = list(self.output_dir.glob("*"))
         for output_dir in output_dirs:
             if self.input_dir / output_dir.stem in self.all_jobs_dict["submitted"]:
 
-                self.all_jobs_dict["submitted"].remove(self.input_dir / output_dir.stem)
-                self.all_jobs_dict["returned_jobs"].append(output_dir)
+                job_id = self.all_jobs_dict["submitted_ids_files"][output_dir.stem]
+                # job is only finished if slurm says so
+                if self.check_slurm_status(job_id):
+                    self.all_jobs_dict["submitted"].remove(
+                        self.input_dir / output_dir.stem
+                    )
+                    self.all_jobs_dict["returned_jobs"].append(output_dir)
 
     def cleanup(self, job_out_dir: Path):
         # archive input files
