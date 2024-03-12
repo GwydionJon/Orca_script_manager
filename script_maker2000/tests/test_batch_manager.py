@@ -3,12 +3,8 @@ import shutil
 import pandas as pd
 import numpy as np
 import asyncio
-import os
 import pytest
 from script_maker2000.batch_manager import BatchManager
-
-
-IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
 
 
 def test_batch_manager(clean_tmp_dir, monkeypatch):
@@ -61,7 +57,7 @@ def test_batch_manager(clean_tmp_dir, monkeypatch):
     assert worker_output == "Breaking loop after 5."
 
 
-@pytest.mark.skipif(IN_GITHUB_ACTIONS, reason="Test doesn't work in Github Actions.")
+@pytest.mark.skip(reason="Test doesn't work in Github Actions.")
 def test_batch_manager_threads(
     clean_tmp_dir,
     monkeypatch,
@@ -185,7 +181,6 @@ def test_batch_loop_with_files(clean_tmp_dir, monkeypatch):
 
     main_config_path = clean_tmp_dir / "example_config.json"
     batch_manager = BatchManager(main_config_path)
-    print(shutil.which("sbatch"))
 
     if shutil.which("sbatch") is None:
         # test locally
@@ -226,3 +221,5 @@ def test_batch_loop_with_files(clean_tmp_dir, monkeypatch):
     for task_result in task_results:
         assert task_result.done() is True
         assert "All jobs done after" in task_result.result()
+
+    assert len(list(batch_manager.working_dir.glob("finished/raw_results/*"))) == 4

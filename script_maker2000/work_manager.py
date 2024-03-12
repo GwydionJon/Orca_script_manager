@@ -160,10 +160,23 @@ class WorkManager:
 
         for job_out_dir in self.all_jobs_dict["returned_jobs"]:
             job_status = self.workModule.check_job_status(job_out_dir)
+
+            # rename finished files when moving them to finished dir or failed dir
+            # this should ensure that one can easily check which previous stages were done on this file
+
+            old_label = job_out_dir.name.split("_", 1)[0].replace("_", "-")
+            new_label = self.workModule.config_key.replace("_", "-").upper()
+            pure_file_name = job_out_dir.name.split("_", 1)[1]
+            new_job_out_dir = old_label + new_label + "_" + pure_file_name
+            new_job_out_dir = Path(new_job_out_dir)
+
             if job_status == "all_good":
                 new_finished += 1
-                self.all_jobs_dict["finished"].append(job_out_dir)
-                shutil.move(job_out_dir, self.workModule.working_dir / "finished")
+                self.all_jobs_dict["finished"].append(new_job_out_dir)
+                shutil.move(
+                    job_out_dir,
+                    self.workModule.working_dir / "finished" / new_job_out_dir,
+                )
 
             elif job_status == "walltime_error":
                 new_walltime_error += 1
@@ -172,26 +185,26 @@ class WorkManager:
                     job_out_dir,
                     self.workModule.working_dir
                     / "failed"
-                    / ("walltime_" + str(job_out_dir.stem)),
+                    / ("WALLTIME-" + str(new_job_out_dir.stem)),
                 )
 
             elif job_status == "missing_ram_error":
                 new_missing_ram_error += 1
-                self.all_jobs_dict["missing_ram_error"].append(job_out_dir)
+                self.all_jobs_dict["missing_ram_error"].append(new_job_out_dir)
                 shutil.move(
                     job_out_dir,
                     self.workModule.working_dir
                     / "failed"
-                    / ("ram_" + str(job_out_dir.stem)),
+                    / ("RAM-" + str(new_job_out_dir.stem)),
                 )
             else:
                 new_unknown_error += 1
-                self.all_jobs_dict["unknown_error"].append(job_out_dir)
+                self.all_jobs_dict["unknown_error"].append(new_job_out_dir)
                 shutil.move(
                     job_out_dir,
                     self.workModule.working_dir
                     / "failed"
-                    / ("error_" + str(job_out_dir.stem)),
+                    / ("ERROR-" + str(new_job_out_dir.stem)),
                 )
 
             self.cleanup(job_out_dir)

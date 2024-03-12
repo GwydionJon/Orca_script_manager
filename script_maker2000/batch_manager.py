@@ -180,8 +180,11 @@ class BatchManager:
 
             if i == len(self.work_managers) - 1:  # -1 because of 0 indexing
                 # move files from last work manager to finished folder
-                target_files = list(work_manager_finished_dir.glob("*"))
 
+                print("Test")
+                target_files = list(work_manager_finished_dir.glob("*"))
+                print(work_manager_finished_dir)
+                print(target_files)
                 target_dir = self.working_dir / "finished" / "raw_results"
 
             else:
@@ -255,7 +258,6 @@ class BatchManager:
             self.move_files()
             self.manage_failed_jobs()
             self.manage_job_logging()
-            await asyncio.sleep(self.wait_time)
 
             i += 1
 
@@ -266,6 +268,9 @@ class BatchManager:
             if i > self.max_loop and self.max_loop > 0:
                 self.log.info("Breaking main loop after 10.")
                 break
+
+            await asyncio.sleep(self.wait_time)
+
         return manager_runs
 
     def run_batch_processing(self):

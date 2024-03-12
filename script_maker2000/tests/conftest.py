@@ -160,6 +160,45 @@ def clean_tmp_dir():
     return tmp_dir
 
 
+def multilayer_tmp_dir():
+    # tmp_dir = pathlib.Path(mkdtemp())
+
+    current_path = pathlib.Path(__file__)
+    (current_path.parents[0] / "tests_dir").mkdir(exist_ok=True)
+    tmp_dir = pathlib.Path(mkdtemp(dir=(current_path.parents[0] / "tests_dir")))
+
+    # load example config
+    example_config_path = (
+        current_path / ".." / ".." / "data" / "example_config_xyz_multilayer.json"
+    ).resolve()
+
+    # copy config to tmp dir
+    new_config_path = shutil.copy(example_config_path, tmp_dir)
+    with open(new_config_path, "r") as f:
+        main_dict = json.load(f)
+
+    example_mol_dir = (current_path / ".." / ".." / "data" / "example_xyz").resolve()
+
+    example_xyz = shutil.copytree(str(example_mol_dir), str(tmp_dir / "example_xyz"))
+    # copy input files to module working space
+
+    # change xyz file locations in .csv
+    df = pd.read_csv(tmp_dir / "example_xyz" / "example_molecules.csv")
+    df["path"] = [
+        path.resolve() for path in list((tmp_dir / "example_xyz").glob("*.xyz"))
+    ]
+    df.to_csv(tmp_dir / "example_xyz" / "example_molecules.csv", index=False)
+
+    main_dict["main_config"]["input_file_path"] = str(
+        Path(example_xyz) / "example_molecules.csv"
+    )
+
+    with open(tmp_dir / "example_config.json", "w") as json_file:
+        json.dump(main_dict, json_file)
+
+    return tmp_dir
+
+
 @pytest.fixture
 def all_job_ids(pre_config_tmp_dir):
     example_dir = pre_config_tmp_dir / "example_xyz"
