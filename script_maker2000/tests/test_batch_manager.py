@@ -160,14 +160,26 @@ def test_batch_loop_no_files(clean_tmp_dir, monkeypatch):
 
     main_config_path = clean_tmp_dir / "example_config.json"
     batch_manager = BatchManager(main_config_path)
-    monkeypatch.setattr("shutil.which", lambda x: True)
-    monkeypatch.setattr("subprocess.run", mock_run_job)
-    monkeypatch.setattr(batch_manager, "wait_time", 0.3)
-    monkeypatch.setattr(batch_manager, "max_loop", 5)
 
-    for work_manager in batch_manager.work_managers.values():
-        monkeypatch.setattr(work_manager, "wait_time", 0.1)
-        monkeypatch.setattr(work_manager, "max_loop", 2)
+    if shutil.which("sbatch") is None:
+
+        monkeypatch.setattr("shutil.which", lambda x: True)
+        monkeypatch.setattr("subprocess.run", mock_run_job)
+
+        monkeypatch.setattr(batch_manager, "wait_time", 0.3)
+        monkeypatch.setattr(batch_manager, "max_loop", 5)
+
+        for work_manager in batch_manager.work_managers.values():
+            monkeypatch.setattr(work_manager, "wait_time", 0.1)
+            monkeypatch.setattr(work_manager, "max_loop", 2)
+
+    else:
+        monkeypatch.setattr(batch_manager, "wait_time", 10)
+        monkeypatch.setattr(batch_manager, "max_loop", 10)
+
+        for work_manager in batch_manager.work_managers.values():
+            monkeypatch.setattr(work_manager, "wait_time", 10)
+            monkeypatch.setattr(work_manager, "max_loop", 10)
 
     task_results = batch_manager.run_batch_processing()
     for task_result in task_results:
