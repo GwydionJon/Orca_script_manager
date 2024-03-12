@@ -6,20 +6,24 @@ from pathlib import Path
 from script_maker2000.orca import OrcaModule
 
 
-def test_OrcaModule(clean_tmp_dir):
-    config_path = clean_tmp_dir / "example_config.json"
+def test_OrcaModule(pre_config_tmp_dir):
+    config_path = pre_config_tmp_dir / "example_config.json"
 
     orca_test = OrcaModule(config_path, "sp_config")
     xyz_list = list((orca_test.working_dir / "input").glob("*.xyz"))
     orca_test.prepare_jobs(xyz_list)
 
     assert len(
-        (list(clean_tmp_dir.glob("example_xyz_output/sp_config/input/*/*.inp")))
-    ) == len(list(clean_tmp_dir.glob("example_xyz_output/start_input_files/*.xyz")))
+        (list(pre_config_tmp_dir.glob("example_xyz_output/sp_config/input/*/*.inp")))
+    ) == len(
+        list(pre_config_tmp_dir.glob("example_xyz_output/start_input_files/*.xyz"))
+    )
 
     assert len(
-        (list(clean_tmp_dir.glob("example_xyz_output/sp_config/input/*/*.sbatch")))
-    ) == len(list(clean_tmp_dir.glob("example_xyz_output/start_input_files/*.xyz")))
+        (list(pre_config_tmp_dir.glob("example_xyz_output/sp_config/input/*/*.sbatch")))
+    ) == len(
+        list(pre_config_tmp_dir.glob("example_xyz_output/start_input_files/*.xyz"))
+    )
     # run orca test only when available.
     if shutil.which("orca"):
 
@@ -27,25 +31,26 @@ def test_OrcaModule(clean_tmp_dir):
         skip = True
         if skip is False:
 
-            for input_file in clean_tmp_dir.glob(
+            for input_file in pre_config_tmp_dir.glob(
                 "example_xyz_output/sp_config/input/*/*.inp"
             ):
 
                 subprocess.run([shutil.which("orca"), input_file])
 
 
-def test_orca_submission(clean_tmp_dir, monkeypatch):
+def test_orca_submission(pre_config_tmp_dir, monkeypatch):
 
     def mock_run_job(args, shell, **kw):
         return args
 
-    config_path = clean_tmp_dir / "example_config.json"
+    config_path = pre_config_tmp_dir / "example_config.json"
 
     orca_test = OrcaModule(config_path, "sp_config")
     xyz_list = list((orca_test.working_dir / "input").glob("*.xyz"))
     orca_test.prepare_jobs(xyz_list)
 
     input_dirs = list(orca_test.working_dir.glob("input/*"))
+    print([input_dir.name for input_dir in input_dirs])
     for input_dir in input_dirs:
 
         if shutil.which("sbatch"):

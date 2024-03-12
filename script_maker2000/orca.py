@@ -4,8 +4,7 @@ from datetime import datetime
 import subprocess
 import shutil
 import re
-
-
+import pandas as pd
 from script_maker2000.template import TemplateModule
 
 
@@ -15,7 +14,9 @@ class OrcaModule(TemplateModule):
     #   This includes config setup, creation of Orca_Scripts and
     # corresponding slurm scripts as well as handeling the submission logic.
 
-    def __init__(self, main_config: dict, config_key: str) -> None:
+    def __init__(
+        self, main_config: dict, config_key: str, input_df: pd.DataFrame = None
+    ) -> None:
         """Setup the orca files from the main config.
         Since different orca setups can be defined in the config
         we need to pass the corresponding kyword ( eg.: opimization or single_point)
@@ -27,13 +28,12 @@ class OrcaModule(TemplateModule):
         Raises:
             NotImplementedError: _description_
         """
-        super(OrcaModule, self).__init__(main_config, config_key)
+        super(OrcaModule, self).__init__(main_config, config_key, input_df)
         self.log.info(f"Creating orca object from key: {config_key}")
 
         self.internal_config["options"]["orca_version"] = self.main_config[
             "main_config"
         ]["orca_version"]
-        # get xyz data
 
     def prepare_jobs(self, input_files) -> dict:
         xyz_dict = self.read_xyzs(input_files)
@@ -136,21 +136,27 @@ class OrcaModule(TemplateModule):
                     f.write("%s\n" % item)
         return orca_path_dict
 
-    def read_xyzs(self, input_files):
+    def read_charge_mul(self, xyz_path):
 
-        xyz_files = input_files
+        xyz_key = xyz_path.stem.split("_", maxsplit=1)[1]
+
+        charge = self.input_df.loc[xyz_key]["charge"]
+        mul = self.input_df.loc[xyz_key]["multiplicity"]
+        return charge, mul
+
+    def read_xyzs(self, input_files):
 
         xyz_dict = {}
 
-        for xyz_path in xyz_files:
+        for xyz_path in input_files:
             with open(xyz_path, "r", encoding="utf-8") as f:
-                charge_mul_coords = f.readlines()[1:]
+                coords = f.readlines()[2:]
                 # remove trailing spaces and line breaks
-            charge_mul = charge_mul_coords[0]
 
-            coords = [coord.strip() for coord in charge_mul_coords[1:]]
-            charge = int(charge_mul.split("charge:")[1].split(",")[0])
-            mul = int(charge_mul.split("multiplicity:")[1])
+            coords = [coord.strip() for coord in coords]
+
+            charge, mul = self.read_charge_mul(xyz_path)
+
             xyz_dict[xyz_path.stem] = {
                 "coords": coords,
                 "charge": charge,
@@ -181,12 +187,16 @@ class OrcaModule(TemplateModule):
 
         """
 
+        orca_ram_scaling = (
+            0.75  # 75% of the available ram is used for orca this is subject to change
+        )
+
         options = self.internal_config["options"]
         # extract setup from config
         method = options["method"]
         basisset = options["basisset"]
         add_setting = options["additional_settings"]
-        maxcore = options["ram_per_core"]
+        maxcore = options["ram_per_core"] * orca_ram_scaling
         nprocs = options["n_cores_per_calculation"]
         args = options["args"]
 
@@ -240,6 +250,8 @@ class OrcaModule(TemplateModule):
                     [shutil.which("sbatch"), str(slurm_file)],
                     shell=False,
                     check=False,
+                    capture_output=True,
+                    text=True,
                     # shell = False is important on justus
                 )
             else:
@@ -293,19 +305,19 @@ class OrcaModule(TemplateModule):
         slurm_file = list(job_out_dir.glob("slurm*"))[0]
 
         # check for orca errors only if xyz file exists
-        with open(orca_out_file) as f:
-            file_contents = f.read()
-            print(check_orca_memory_error(file_contents))
-            print(check_orca_normal_termination(file_contents))
 
-            if check_orca_normal_termination(file_contents):
-                return "all_good"
-            if check_orca_memory_error(file_contents):
-                return "missing_ram_error"
+        if orca_out_file.exists():
+            with open(orca_out_file) as f:
+                file_contents = f.read()
 
-        with open(slurm_file) as f:
-            file_contents = f.read()
-            if check_slurm_walltime_error(file_contents):
-                return "walltime_error"
+                if check_orca_normal_termination(file_contents):
+                    return "all_good"
+                if check_orca_memory_error(file_contents):
+                    return "missing_ram_error"
+        if slurm_file.exists():
+            with open(slurm_file) as f:
+                file_contents = f.read()
+                if check_slurm_walltime_error(file_contents):
+                    return "walltime_error"
 
         return "unknown_error"

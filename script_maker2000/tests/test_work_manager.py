@@ -2,9 +2,11 @@ import shutil
 from pathlib import Path
 from script_maker2000.orca import OrcaModule
 from script_maker2000.work_manager import WorkManager
+import asyncio
+import numpy as np
 
 
-def test_workmanager(clean_tmp_dir, all_job_ids, monkeypatch):
+def test_workmanager(pre_config_tmp_dir, all_job_ids, monkeypatch):
     def mock_run_job(args, **kw):
 
         # move output files to output dir
@@ -17,9 +19,16 @@ def test_workmanager(clean_tmp_dir, all_job_ids, monkeypatch):
                 dirs_exist_ok=True,
             )
 
-        return args
+        class TestClass:
+            def __init__(self, args, **kw):
+                self.args = args
+                self.kw = kw
+                self.stdout = f"COMPLETED job {np.random.randint(100)}"
 
-    config_path = clean_tmp_dir / "example_config.json"
+        test = TestClass(args, **kw)
+        return test
+
+    config_path = pre_config_tmp_dir / "example_config.json"
 
     orca_test = OrcaModule(config_path, "sp_config")
 
@@ -65,7 +74,7 @@ def test_workmanager(clean_tmp_dir, all_job_ids, monkeypatch):
     assert len(list(work_manager.output_dir.glob("*"))) == 0
 
 
-def test_workmanager_loop(clean_tmp_dir, all_job_ids, monkeypatch):
+def test_workmanager_loop(pre_config_tmp_dir, all_job_ids, monkeypatch):
     def mock_run_job(args, **kw):
 
         # move output files to output dir
@@ -78,9 +87,16 @@ def test_workmanager_loop(clean_tmp_dir, all_job_ids, monkeypatch):
                 dirs_exist_ok=True,
             )
 
-        return args
+        class TestClass:
+            def __init__(self, args, **kw):
+                self.args = args
+                self.kw = kw
+                self.stdout = f"COMPLETED job {np.random.randint(100)}"
 
-    config_path = clean_tmp_dir / "example_config.json"
+        test = TestClass(args, **kw)
+        return test
+
+    config_path = pre_config_tmp_dir / "example_config.json"
 
     orca_test = OrcaModule(config_path, "sp_config")
 
@@ -90,7 +106,9 @@ def test_workmanager_loop(clean_tmp_dir, all_job_ids, monkeypatch):
     monkeypatch.setattr("shutil.which", lambda x: True)
     monkeypatch.setattr("subprocess.run", mock_run_job)
 
-    work_manager.loop()
+    asyncio.run(work_manager.loop())
+    # wait for async to finish
+
     assert len(work_manager.all_jobs_dict["finished"]) == 4
     assert len(work_manager.all_jobs_dict["walltime_error"]) == 4
     assert len(work_manager.all_jobs_dict["missing_ram_error"]) == 3

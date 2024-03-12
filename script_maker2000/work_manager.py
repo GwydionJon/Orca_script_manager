@@ -2,6 +2,8 @@ import logging
 import time
 import shutil
 from pathlib import Path
+import asyncio
+import subprocess
 
 
 class WorkManager:
@@ -21,17 +23,21 @@ class WorkManager:
 
         self.main_config = WorkModule.main_config
         self.workModule = WorkModule
+        self.config_key = self.workModule.config_key
         self.module_config = WorkModule.internal_config
         self.log = logging.getLogger(self.workModule.config_key)
 
         self.input_dir = self.workModule.working_dir / "input"
         self.output_dir = self.workModule.working_dir / "output"
+        self.finished_dir = self.workModule.working_dir / "finished"
+        self.failed_dir = self.workModule.working_dir / "failed"
 
         self.all_jobs_dict = {
             "not_yet_found": all_job_ids,
             "not_yet_prepared": [],
             "not_yet_submitted": [],
             "submitted": [],
+            "submitted_ids_files": {},  # job_dir:job_id
             "returned_jobs": [],
             "finished": [],
             "walltime_error": [],
@@ -39,6 +45,12 @@ class WorkManager:
             "unknown_error": [],
         }
         self.n_total_jobs = len(all_job_ids)
+        self.is_finished = False
+
+        # this way the wait time can be adjusted with monkeypatch for faster testing
+        self.wait_time = self.main_config["main_config"]["wait_for_results_time"]
+        self.max_loop = -1  # -1 means infinite loop until all jobs are done
+        # change max loop with monkeypatch for testing
 
     # check input dir
     # check output dir
@@ -51,8 +63,17 @@ class WorkManager:
     # check if all jobs are done
 
     def check_input_dir(self):
-        """Check the input dir for new xyz files."""
+        """
+        Checks the input directory for new XYZ files and updates the job status accordingly.
 
+        This method searches for XYZ files in the input directory and updates the job status
+        based on the files found. It removes the job ID from the "not_yet_found" list if the
+        corresponding XYZ file is found. It adds the found XYZ files to the "not_yet_prepared"
+        list. Finally, it logs the number of new XYZ files found.
+
+        Returns:
+            None
+        """
         found_xyz_files = list(self.input_dir.glob("*.xyz"))
         for file in found_xyz_files:
             # split at first _ to get the job id
@@ -78,19 +99,43 @@ class WorkManager:
 
     def submit_jobs(self):
         for job_dir in self.all_jobs_dict["not_yet_submitted"]:
-            self.workModule.run_job(job_dir)
+            process = self.workModule.run_job(job_dir)
+            job_id = int(process.stdout.split("job ")[1])
             self.all_jobs_dict["submitted"].append(job_dir)
+            self.all_jobs_dict["submitted_ids_files"][job_dir.stem] = job_id
+
             time.sleep(0.3)
         self.all_jobs_dict["not_yet_submitted"] = []
 
+    def check_slurm_status(self, id) -> bool:
+        process = subprocess.run(
+            [shutil.which("sacct"), "-j", f"{id}", "-o", "state"],
+            shell=False,
+            check=False,
+            capture_output=True,  # Python >= 3.7 only
+            text=True,  # Python >= 3.7 only
+            # shell = False is important on justus
+        )
+        process_out = process.stdout
+        process_out = " ".join(process_out.split())
+        if "COMPLETED" in process_out:
+            return True
+        else:
+            return False
+
     def check_output_dir(self):
-        """find new jobs in output dir"""
+        """find new jobs in output dir and check if they are finished."""
         output_dirs = list(self.output_dir.glob("*"))
         for output_dir in output_dirs:
             if self.input_dir / output_dir.stem in self.all_jobs_dict["submitted"]:
 
-                self.all_jobs_dict["submitted"].remove(self.input_dir / output_dir.stem)
-                self.all_jobs_dict["returned_jobs"].append(output_dir)
+                job_id = self.all_jobs_dict["submitted_ids_files"][output_dir.stem]
+                # job is only finished if slurm says so
+                if self.check_slurm_status(job_id):
+                    self.all_jobs_dict["submitted"].remove(
+                        self.input_dir / output_dir.stem
+                    )
+                    self.all_jobs_dict["returned_jobs"].append(output_dir)
 
     def cleanup(self, job_out_dir: Path):
         # archive input files
@@ -163,25 +208,38 @@ class WorkManager:
         # restart with more ram or longer walltime/ start from intermediate structure
         pass
 
-    def loop(self):
+    async def loop(self):
+        """
+        Executes the main loop for the work manager.
+
+        This method continuously checks the status of jobs, prepares and submits new jobs,
+        and manages completed or failed jobs until all jobs are done or the maximum number
+        of loops is reached.
+
+        Returns:
+            bool: True if all jobs are done, False otherwise.
+        """
+
         def all_jobs_done():
-            total_jobs_done = (
-                len(self.all_jobs_dict["finished"])
-                + len(self.all_jobs_dict["walltime_error"])
-                + len(self.all_jobs_dict["missing_ram_error"])
-                + len(self.all_jobs_dict["unknown_error"])
+
+            total_jobs_remaining = (
+                len(self.all_jobs_dict["not_yet_found"])
+                + len(self.all_jobs_dict["not_yet_prepared"])
+                + len(self.all_jobs_dict["not_yet_submitted"])
+                + len(self.all_jobs_dict["submitted"])
+                + len(self.all_jobs_dict["returned_jobs"])
             )
-            return total_jobs_done == self.n_total_jobs
+            self.log.info(f"Total jobs remaining: {total_jobs_remaining}")
+            return total_jobs_remaining == 0
 
-        wait_time = 300
-
+        n_loops = 0
         while not all_jobs_done():
             self.check_input_dir()
             self.prepare_jobs()
             self.submit_jobs()
 
             # this should catch submission errors
-            time.sleep(10)
+            time.sleep(3)
 
             self.check_output_dir()
             self.check_completed_job_status()
@@ -190,6 +248,14 @@ class WorkManager:
             if all_jobs_done():
                 break
 
-            time.sleep(wait_time)
+            # time.sleep(self.wait_time)
+            await asyncio.sleep(self.wait_time)
 
-        self.log.info("All jobs done.")
+            n_loops += 1
+            if self.max_loop > 0 and n_loops >= self.max_loop:
+                self.log.info(f"Breaking loop after {n_loops}.")
+
+                return f"Breaking loop after {n_loops}."
+        self.log.info(f"All jobs done after {n_loops}.")
+        self.is_finished = True
+        return f"All jobs done after {n_loops}."

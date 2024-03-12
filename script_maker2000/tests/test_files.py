@@ -34,9 +34,9 @@ def test_create_working_dir_structure(temp_work_dir):
     # check that log files, settings, inputs and dirs are at the correct level
     output_path = pathlib.Path(main_config["main_config"]["output_dir"])
 
-    assert len(list(output_path.glob("*"))) == 8
+    assert len(list(output_path.glob("*"))) == 9
     # check that sub dirs are present
-    assert len(list(output_path.glob("*/*"))) == 27
+    assert len(list(output_path.glob("*/*"))) == 28
 
     with pytest.raises(FileExistsError):
         main_config = read_config(temp_work_dir / "example_config4.json")
@@ -47,6 +47,6 @@ def test_create_working_dir_structure(temp_work_dir):
 
     create_working_dir_structure(main_config)
 
-    assert len(list(output_path.glob("*"))) == 9
+    assert len(list(output_path.glob("*"))) == 10
     # check that two new sub dirs are present
-    assert len(list(output_path.glob("*/*"))) == 31
+    assert len(list(output_path.glob("*/*"))) == 32
