@@ -71,6 +71,7 @@ def create_working_dir_structure(
                 f"Input file {file} does not start with 'START_'."
                 + " Please make sure all input files start with 'START_'."
             )
+
     new_input_path = shutil.copytree(
         input_path.parent, output_dir / "start_input_files"
     )

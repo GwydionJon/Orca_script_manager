@@ -137,8 +137,8 @@ class OrcaModule(TemplateModule):
         return orca_path_dict
 
     def read_charge_mul(self, xyz_path):
-
-        xyz_key = xyz_path.stem.split("_", maxsplit=1)[1]
+        print(xyz_path.stem)
+        xyz_key = xyz_path.stem.split("___", maxsplit=1)[1]
 
         charge = self.input_df.loc[xyz_key]["charge"]
         mul = self.input_df.loc[xyz_key]["multiplicity"]

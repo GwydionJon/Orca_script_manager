@@ -98,6 +98,9 @@ class BatchManager:
         shutil.copytree(
             self.new_input_path, first_manager.input_dir, dirs_exist_ok=True
         )
+        for file in list(first_manager.input_dir.glob("*")):
+            new_file = str(file).replace("START_", "START___")
+            file.rename(new_file)
 
     # end init
 
@@ -120,7 +123,7 @@ class BatchManager:
 
             for status_key, job_list in work_manager.all_jobs_dict.items():
                 if "_error" in status_key:
-                    job_ids = [error.stem.split("_", 1)[1] for error in job_list]
+                    job_ids = [error.stem.split("___", 1)[1] for error in job_list]
 
                     if job_ids:
                         # Update the status of the failed jobs in the input dataframe
@@ -166,7 +169,7 @@ class BatchManager:
                     "not_yet_found",
                     "submitted_ids_files",
                 ]:
-                    job_ids = [error.stem.split("_", 1)[1] for error in job_list]
+                    job_ids = [error.stem.split("___", 1)[1] for error in job_list]
                     if job_ids:
                         self.input_df.loc[job_ids, work_key] = status_key
 
@@ -175,16 +178,13 @@ class BatchManager:
     def move_files(self):
         for i, (key, work_manager) in enumerate(self.work_managers.items()):
 
-            work_manager_finished_dir = work_manager.finished_dir
+            work_manager_finished_dir = work_manager.finished_dir / "raw_results"
             # skip if work manager is finished
 
             if i == len(self.work_managers) - 1:  # -1 because of 0 indexing
                 # move files from last work manager to finished folder
 
-                print("Test")
                 target_files = list(work_manager_finished_dir.glob("*"))
-                print(work_manager_finished_dir)
-                print(target_files)
                 target_dir = self.working_dir / "finished" / "raw_results"
 
             else:
@@ -204,6 +204,7 @@ class BatchManager:
                     potential_target_files += list(
                         work_manager_finished_dir.glob(f"*/*{file_type}")
                     )
+
                 if not potential_target_files:
                     continue
 
@@ -212,7 +213,7 @@ class BatchManager:
                 # check which jobs from finished dir have not yet been submitted to the next worker
                 target_files = []
                 for potential_target_file in potential_target_files:
-                    job_id = potential_target_file.stem.split("_", 1)[1]
+                    job_id = potential_target_file.stem.split("___", 1)[1]
                     if job_id in next_work_manager.all_jobs_dict["not_yet_found"]:
                         target_files.append(potential_target_file)
 

@@ -12,12 +12,19 @@ def test_workmanager(pre_config_tmp_dir, all_job_ids, monkeypatch):
         # move output files to output dir
         example_output_files = Path(__file__).parent / "test_data" / "example_outputs"
         if len(list((orca_test.working_dir / "output").glob("*"))) == 0:
-            print("copy data")
             shutil.copytree(
                 example_output_files,
                 orca_test.working_dir / "output",
                 dirs_exist_ok=True,
             )
+            for dir in (orca_test.working_dir / "output").glob("*"):
+                new_dir = str(dir).replace("START_", "START___")
+                new_dir = Path(new_dir)
+                new_dir.mkdir()
+                for file in dir.glob("*"):
+                    new_file = str(file.name).replace("START_", "START___")
+                    file.rename(Path(new_dir) / new_file)
+                shutil.rmtree(dir)
 
         class TestClass:
             def __init__(self, args, **kw):
@@ -56,6 +63,7 @@ def test_workmanager(pre_config_tmp_dir, all_job_ids, monkeypatch):
     assert len(work_manager.all_jobs_dict["submitted"]) == 11
 
     work_manager.check_output_dir()
+
     assert len(work_manager.all_jobs_dict["submitted"]) == 0
     assert len(work_manager.all_jobs_dict["returned_jobs"]) == 11
 
@@ -66,12 +74,16 @@ def test_workmanager(pre_config_tmp_dir, all_job_ids, monkeypatch):
     assert len(work_manager.all_jobs_dict["unknown_error"]) == 0
     assert len(work_manager.all_jobs_dict["returned_jobs"]) == 0
 
-    assert len(list(work_manager.workModule.working_dir.glob("finished/*"))) == 4
+    assert (
+        len(list(work_manager.workModule.working_dir.glob("finished/raw_results/*")))
+        == 4
+    )
     assert len(list(work_manager.workModule.working_dir.glob("failed/*"))) == 7
 
     assert len(list(work_manager.input_dir.glob("*"))) == 11
     assert len(list(work_manager.input_dir.glob("*tar*"))) == 11
-    assert len(list(work_manager.output_dir.glob("*"))) == 0
+    assert len(list(work_manager.output_dir.glob("*"))) == 11
+    assert len(list(work_manager.output_dir.glob("*tar*"))) == 11
 
 
 def test_workmanager_loop(pre_config_tmp_dir, all_job_ids, monkeypatch):
@@ -80,12 +92,19 @@ def test_workmanager_loop(pre_config_tmp_dir, all_job_ids, monkeypatch):
         # move output files to output dir
         example_output_files = Path(__file__).parent / "test_data" / "example_outputs"
         if len(list((orca_test.working_dir / "output").glob("*"))) == 0:
-            print("copy data")
             shutil.copytree(
                 example_output_files,
                 orca_test.working_dir / "output",
                 dirs_exist_ok=True,
             )
+            for dir in (orca_test.working_dir / "output").glob("*"):
+                new_dir = str(dir).replace("START_", "START___")
+                new_dir = Path(new_dir)
+                new_dir.mkdir()
+                for file in dir.glob("*"):
+                    new_file = str(file.name).replace("START_", "START___")
+                    file.rename(Path(new_dir) / new_file)
+                shutil.rmtree(dir)
 
         class TestClass:
             def __init__(self, args, **kw):
@@ -105,6 +124,8 @@ def test_workmanager_loop(pre_config_tmp_dir, all_job_ids, monkeypatch):
 
     monkeypatch.setattr("shutil.which", lambda x: True)
     monkeypatch.setattr("subprocess.run", mock_run_job)
+    monkeypatch.setattr(work_manager, "max_loop", 2)
+    monkeypatch.setattr(work_manager, "wait_time", 2)
 
     asyncio.run(work_manager.loop())
     # wait for async to finish
@@ -115,9 +136,15 @@ def test_workmanager_loop(pre_config_tmp_dir, all_job_ids, monkeypatch):
     assert len(work_manager.all_jobs_dict["unknown_error"]) == 0
     assert len(work_manager.all_jobs_dict["returned_jobs"]) == 0
 
-    assert len(list(work_manager.workModule.working_dir.glob("finished/*"))) == 4
+    assert (
+        len(list(work_manager.workModule.working_dir.glob("finished/raw_results/*")))
+        == 4
+    )
     assert len(list(work_manager.workModule.working_dir.glob("failed/*"))) == 7
 
     assert len(list(work_manager.input_dir.glob("*"))) == 11
     assert len(list(work_manager.input_dir.glob("*tar*"))) == 11
-    assert len(list(work_manager.output_dir.glob("*"))) == 0
+    assert len(list(work_manager.input_dir.glob("*"))) == 11
+    assert len(list(work_manager.input_dir.glob("*tar*"))) == 11
+    assert len(list(work_manager.output_dir.glob("*"))) == 11
+    assert len(list(work_manager.output_dir.glob("*tar*"))) == 11

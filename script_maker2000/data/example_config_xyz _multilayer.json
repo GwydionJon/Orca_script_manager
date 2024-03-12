@@ -1,0 +1,95 @@
+{
+    "main_config": {
+        "continue_previous_run": false,
+        "max_n_jobs": 20,
+        "max_ram_per_core": 2500,
+        "max_nodes": 50,
+        "output_dir": "example_xyz_output",
+        "max_run_time": "60:00:00",
+        "input_file_path": "example_xyz/example_molecules.csv",
+        "input_type": "xyz",
+        "parallel_layer_run": false,
+        "orca_version": "5.0.2",
+        "wait_for_results_time": 300,
+        "common_input_files": "xyz"
+    },
+    "structure_check_config": {
+        "run_checks": true
+    },
+    "analysis_config": {
+        "run_benchmark": true
+    },
+    "loop_config": {
+        "crest_config": {
+            "type": "crest",
+            "step": 0,
+            "additional_input_files": "",
+            "options:": {
+                "n_tasks": 20,
+                "n_cores": 40,
+                "ram_per_core": 2000,
+                "args": {}
+            }
+        },
+        "opt_config": {
+            "type": "orca",
+            "step": 1,
+            "additional_input_files": "",
+            "options": {
+                "method": "HF",
+                "basisset": " DEF2-SVP",
+                "additional_settings": "",
+                "ram_per_core": 20,
+                "n_cores_per_calculation": 12,
+                "n_calculation_at_once": 30,
+                "disk_storage": 0,
+                "walltime": "0:2:00",
+                "args": {
+                    "scf": [
+                        "MAXITER 0"
+                    ]
+                }
+            }
+        },
+        "sp_config1": {
+            "type": "orca",
+            "step": 2,
+            "additional_input_files": "",
+            "options": {
+                "method": "HF",
+                "basisset": " DEF2-SVP",
+                "additional_settings": "",
+                "ram_per_core": 20,
+                "n_cores_per_calculation": 2,
+                "n_calculation_at_once": 30,
+                "disk_storage": 0,
+                "walltime": "0:2:00",
+                "args": {
+                    "scf": [
+                        "MAXITER 0"
+                    ]
+                }
+            }
+        },
+        "sp_config2": {
+            "type": "orca",
+            "step": 2,
+            "additional_input_files": "",
+            "options": {
+                "method": "HF",
+                "basisset": " DEF2-SVP",
+                "additional_settings": "",
+                "ram_per_core": 40,
+                "n_cores_per_calculation": 4,
+                "n_calculation_at_once": 30,
+                "disk_storage": 0,
+                "walltime": "0:2:00",
+                "args": {
+                    "scf": [
+                        "MAXITER 0"
+                    ]
+                }
+            }
+        }
+    }
+}

@@ -89,6 +89,10 @@ def pre_config_tmp_dir():
     example_mol_dir = (current_path / ".." / ".." / "data" / "example_xyz").resolve()
 
     example_xyz = shutil.copytree(str(example_mol_dir), str(tmp_dir / "example_xyz"))
+
+    for file in (tmp_dir / "example_xyz").glob("*.xyz"):
+        file.rename(str(file).replace("START", "START__"))
+
     # copy input files to module working space
 
     main_dict["main_config"]["input_file_path"] = str(
@@ -203,7 +207,7 @@ def multilayer_tmp_dir():
 def all_job_ids(pre_config_tmp_dir):
     example_dir = pre_config_tmp_dir / "example_xyz"
     file_filst = list(example_dir.glob("*.xyz"))
-    return [file.stem.split("START_")[1] for file in file_filst]
+    return [file.stem.split("START___")[1] for file in file_filst]
 
 
 @pytest.fixture

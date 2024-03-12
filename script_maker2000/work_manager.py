@@ -77,7 +77,7 @@ class WorkManager:
         found_xyz_files = list(self.input_dir.glob("*.xyz"))
         for file in found_xyz_files:
             # split at first _ to get the job id
-            file_stem = file.stem.split("_", maxsplit=1)[1]
+            file_stem = file.stem.split("___", maxsplit=1)[1]
             if file_stem in self.all_jobs_dict["not_yet_found"]:
                 self.all_jobs_dict["not_yet_found"].remove(file_stem)
 
@@ -127,11 +127,14 @@ class WorkManager:
         """find new jobs in output dir and check if they are finished."""
         output_dirs = list(self.output_dir.glob("*"))
         for output_dir in output_dirs:
+
             if self.input_dir / output_dir.stem in self.all_jobs_dict["submitted"]:
 
                 job_id = self.all_jobs_dict["submitted_ids_files"][output_dir.stem]
                 # job is only finished if slurm says so
+                print(self.check_slurm_status(job_id))
                 if self.check_slurm_status(job_id):
+                    print("should remove")
                     self.all_jobs_dict["submitted"].remove(
                         self.input_dir / output_dir.stem
                     )
@@ -145,8 +148,56 @@ class WorkManager:
             self.input_dir,
             job_out_dir.stem,
         )
+        shutil.make_archive(
+            job_out_dir.parents[0] / ("archive_" + str(job_out_dir.stem)),
+            "gztar",
+            job_out_dir.parents[0],
+            job_out_dir.stem,
+            verbose=True,
+        )
+
         # remove input files
         shutil.rmtree(self.input_dir / job_out_dir.stem)
+        shutil.rmtree(job_out_dir)
+
+    def manage_file_names(self, job_out_dir):
+        """Geberate new job out dir name and change all file names accordingly.
+
+        Returns:
+            _type_: _description_
+        """
+        label_id_split = "___"
+        label_split = "__"
+        # test if START_ is in label, if so delete it
+        # if "START" == job_out_dir.name.split("___", 1)[0]:
+        #    old_label = job_out_dir.name.split("___", 1)[0]
+        # else:
+        old_label = job_out_dir.name.split(label_id_split, 1)[0]
+
+        new_label = self.workModule.config_key.upper()
+
+        complete_label = old_label + label_split + new_label + label_id_split
+
+        # create new job out dir
+        new_job_out_dir = str(job_out_dir).replace(
+            old_label + label_id_split, complete_label
+        )
+        new_job_out_dir = Path(new_job_out_dir)
+
+        # new_job_out_dir.mkdir(parents=True, exist_ok=True)
+
+        # rename all files in job_out_dir
+        for file in job_out_dir.glob("*"):
+
+            new_file_name = file.parents[0] / str(file.name).replace(
+                old_label + label_id_split, complete_label
+            )
+            file.rename(new_file_name)
+
+        # remove old dir
+        # shutil.rmtree(job_out_dir)
+
+        return new_job_out_dir
 
     def check_completed_job_status(self):
         """
@@ -164,57 +215,51 @@ class WorkManager:
             # rename finished files when moving them to finished dir or failed dir
             # this should ensure that one can easily check which previous stages were done on this file
 
-            old_label = job_out_dir.name.split("_", 1)[0].replace("_", "-")
-            new_label = self.workModule.config_key.replace("_", "-").upper()
-            pure_file_name = job_out_dir.name.split("_", 1)[1]
-            new_job_out_dir = old_label + new_label + "_" + pure_file_name
-            new_job_out_dir = Path(new_job_out_dir)
-            new_job_out_dir.mkdir(parents=True, exist_ok=True)
+            new_job_out_dir = self.manage_file_names(job_out_dir)
 
-            for file in job_out_dir.glob("*"):
+            if job_status == "all_good":
+                new_finished += 1
+                self.all_jobs_dict["finished"].append(new_job_out_dir)
+                target_dir = Path(
+                    self.workModule.working_dir
+                    / "finished"
+                    / "raw_results"
+                    / new_job_out_dir.stem,
+                )
+                target_dir.mkdir(parents=True, exist_ok=True)
 
-                file_name = file.name
-                pure_file_name = file_name.split("_", 1)[1]
-                new_file_name = old_label + new_label + "_" + pure_file_name
-                new_file_name = Path(new_file_name)
+            elif job_status == "walltime_error":
+                new_walltime_error += 1
+                self.all_jobs_dict["walltime_error"].append(job_out_dir)
 
-                if job_status == "all_good":
-                    new_finished += 1
-                    self.all_jobs_dict["finished"].append(new_job_out_dir)
-                    target_dir = (
-                        self.workModule.working_dir / "finished" / new_job_out_dir,
-                    )
+                target_dir = Path(
+                    self.workModule.working_dir
+                    / "failed"
+                    / ("WALLTIME-" + str(new_job_out_dir.stem))
+                )
 
-                elif job_status == "walltime_error":
-                    new_walltime_error += 1
-                    self.all_jobs_dict["walltime_error"].append(job_out_dir)
+            elif job_status == "missing_ram_error":
+                new_missing_ram_error += 1
+                self.all_jobs_dict["missing_ram_error"].append(new_job_out_dir)
 
-                    target_dir = (
-                        self.workModule.working_dir
-                        / "failed"
-                        / ("WALLTIME-" + str(new_job_out_dir.stem))
-                    )
+                target_dir = Path(
+                    self.workModule.working_dir
+                    / "failed"
+                    / ("RAM-" + str(new_job_out_dir.stem))
+                )
 
-                elif job_status == "missing_ram_error":
-                    new_missing_ram_error += 1
-                    self.all_jobs_dict["missing_ram_error"].append(new_job_out_dir)
+            else:
+                new_unknown_error += 1
+                self.all_jobs_dict["unknown_error"].append(new_job_out_dir)
+                target_dir = Path(
+                    self.workModule.working_dir
+                    / "failed"
+                    / ("ERROR-" + str(new_job_out_dir.stem))
+                )
 
-                    target_dir = (
-                        self.workModule.working_dir
-                        / "failed"
-                        / ("RAM-" + str(new_job_out_dir.stem))
-                    )
-
-                else:
-                    new_unknown_error += 1
-                    self.all_jobs_dict["unknown_error"].append(new_job_out_dir)
-                    target_dir = (
-                        self.workModule.working_dir
-                        / "failed"
-                        / ("ERROR-" + str(new_job_out_dir.stem))
-                    )
-                shutil.move(file, target_dir / new_file_name)
-                self.cleanup(job_out_dir)
+            shutil.copytree(job_out_dir, target_dir, dirs_exist_ok=True)
+            # use old job_out_dir for cleanup
+            self.cleanup(job_out_dir)
 
         self.log.info(
             f"From {len(self.all_jobs_dict['returned_jobs'])} returned jobs: "
@@ -249,6 +294,7 @@ class WorkManager:
                 + len(self.all_jobs_dict["submitted"])
                 + len(self.all_jobs_dict["returned_jobs"])
             )
+
             self.log.info(f"Total jobs remaining: {total_jobs_remaining}")
             return total_jobs_remaining == 0
 

@@ -19,6 +19,14 @@ def test_batch_manager(clean_tmp_dir, monkeypatch):
                 first_worker.output_dir,
                 dirs_exist_ok=True,
             )
+            for dir in first_worker.output_dir.glob("*"):
+                new_dir = str(dir).replace("START_", "START___")
+                new_dir = Path(new_dir)
+                new_dir.mkdir()
+                for file in dir.glob("*"):
+                    new_file = str(file.name).replace("START_", "START___")
+                    file.rename(Path(new_dir) / new_file)
+                shutil.rmtree(dir)
 
         class TestClass:
             def __init__(self, args, **kw):
@@ -39,7 +47,7 @@ def test_batch_manager(clean_tmp_dir, monkeypatch):
     monkeypatch.setattr("shutil.which", lambda x: True)
     monkeypatch.setattr("subprocess.run", mock_run_job)
     monkeypatch.setattr(first_worker, "wait_time", 0.2)
-    monkeypatch.setattr(first_worker, "max_loop", 5)
+    monkeypatch.setattr(first_worker, "max_loop", 2)
 
     worker_output = asyncio.run(first_worker.loop())
     assert worker_output == "All jobs done after 0."
@@ -47,14 +55,14 @@ def test_batch_manager(clean_tmp_dir, monkeypatch):
     batch_manager.move_files()
     second_worker = list(batch_manager.work_managers.values())[1]
     monkeypatch.setattr(second_worker, "wait_time", 0.2)
-    monkeypatch.setattr(second_worker, "max_loop", 5)
+    monkeypatch.setattr(second_worker, "max_loop", 2)
 
     print(list(second_worker.input_dir.glob("*")))
     assert len(list(second_worker.input_dir.glob("*"))) == 4
     worker_output = asyncio.run(second_worker.loop())
 
     # no handling of failed jobs is done here so the worker will loop until max_loop
-    assert worker_output == "Breaking loop after 5."
+    assert worker_output == "Breaking loop after 2."
 
 
 @pytest.mark.skip(reason="Test doesn't work in Github Actions.")
@@ -201,6 +209,29 @@ def test_batch_loop_with_files(clean_tmp_dir, monkeypatch):
                 target_dir,
                 dirs_exist_ok=True,
             )
+        # move example output files to output dirs and replace name for new naming scheme
+        for out_dir in target_dirs:
+
+            if "opt_config" in str(out_dir):
+                replacement = "START___"
+            elif "sp_config" in str(out_dir):
+                replacement = "START__OPT_CONFIG___"
+            for dir in out_dir.glob("*"):
+                new_dir = str(dir).replace("START_", replacement)
+                new_dir = Path(new_dir)
+                new_dir.mkdir()
+                for file in dir.glob("*"):
+
+                    new_file = str(file.name).replace("START_", replacement)
+                    if "slurm" in new_file:
+                        new_file = "slurm_output.out"
+
+                    file.rename(Path(new_dir) / new_file)
+                shutil.rmtree(dir)
+
+        import time
+
+        time.sleep(1)
 
         monkeypatch.setattr(batch_manager, "wait_time", 0.3)
         monkeypatch.setattr(batch_manager, "max_loop", 5)
