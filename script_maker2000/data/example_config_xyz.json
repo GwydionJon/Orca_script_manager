@@ -22,7 +22,7 @@
     "loop_config": {
         "crest_config": {
             "type": "crest",
-            "step": 0,
+            "step_id": 0,
             "additional_input_files": "",
             "options:": {
                 "n_tasks": 20,
@@ -33,7 +33,7 @@
         },
         "opt_config": {
             "type": "orca",
-            "step": 1,
+            "step_id": 1,
             "additional_input_files": "",
             "options": {
                 "method": "HF",
@@ -53,7 +53,7 @@
         },
         "sp_config": {
             "type": "orca",
-            "step": 2,
+            "step_id": 2,
             "additional_input_files": "",
             "options": {
                 "method": "HF",

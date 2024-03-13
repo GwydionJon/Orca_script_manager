@@ -123,6 +123,23 @@ def check_config(main_config):
                 + "'continue_previous_run'-option in the main config"
             )
 
+    is_multilayer = main_config["main_config"]["parallel_layer_run"]
+
+    step_list = []
+    for loop_config in main_config["loop_config"]:
+        step_list.append(int(main_config["loop_config"][loop_config]["step_id"]))
+    # check if double in step list
+    if len(step_list) != len(set(step_list)) and is_multilayer is False:
+        raise ValueError(
+            "When running without 'parallel_layer_run' mode, the step numbers must be unique."
+        )
+    for step in step_list:
+        if step < 0:
+            raise ValueError("Step numbers must be positive.")
+        if step != max(step_list):
+            if step + 1 not in step_list:
+                raise ValueError("The step numbers must be consecutive.")
+
     script_maker_log.info("Config seems in order.")
 
 

@@ -164,6 +164,7 @@ def clean_tmp_dir():
     return tmp_dir
 
 
+@pytest.fixture
 def multilayer_tmp_dir():
     # tmp_dir = pathlib.Path(mkdtemp())
 

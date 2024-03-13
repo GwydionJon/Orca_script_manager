@@ -8,7 +8,7 @@
         "max_run_time": "60:00:00",
         "input_file_path": "example_xyz/example_molecules.csv",
         "input_type": "xyz",
-        "parallel_layer_run": false,
+        "parallel_layer_run": true,
         "orca_version": "5.0.2",
         "wait_for_results_time": 300,
         "common_input_files": "xyz"
@@ -22,7 +22,7 @@
     "loop_config": {
         "crest_config": {
             "type": "crest",
-            "step": 0,
+            "step_id": 0,
             "additional_input_files": "",
             "options:": {
                 "n_tasks": 20,
@@ -31,9 +31,9 @@
                 "args": {}
             }
         },
-        "opt_config": {
+        "opt_config1": {
             "type": "orca",
-            "step": 1,
+            "step_id": 1,
             "additional_input_files": "",
             "options": {
                 "method": "HF",
@@ -51,9 +51,29 @@
                 }
             }
         },
+        "opt_config2": {
+            "type": "orca",
+            "step_id": 1,
+            "additional_input_files": "",
+            "options": {
+                "method": "HF",
+                "basisset": " DEF2-SVP",
+                "additional_settings": "",
+                "ram_per_core": 30,
+                "n_cores_per_calculation": 4,
+                "n_calculation_at_once": 30,
+                "disk_storage": 0,
+                "walltime": "0:2:00",
+                "args": {
+                    "scf": [
+                        "MAXITER 0"
+                    ]
+                }
+            }
+        },
         "sp_config1": {
             "type": "orca",
-            "step": 2,
+            "step_id": 2,
             "additional_input_files": "",
             "options": {
                 "method": "HF",
@@ -73,7 +93,7 @@
         },
         "sp_config2": {
             "type": "orca",
-            "step": 2,
+            "step_id": 2,
             "additional_input_files": "",
             "options": {
                 "method": "HF",

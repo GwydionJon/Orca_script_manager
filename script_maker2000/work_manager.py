@@ -25,6 +25,7 @@ class WorkManager:
         self.workModule = WorkModule
         self.config_key = self.workModule.config_key
         self.module_config = WorkModule.internal_config
+        self.step_id = self.module_config["step_id"]
         self.log = logging.getLogger(self.workModule.config_key)
 
         self.input_dir = self.workModule.working_dir / "input"
@@ -132,9 +133,7 @@ class WorkManager:
 
                 job_id = self.all_jobs_dict["submitted_ids_files"][output_dir.stem]
                 # job is only finished if slurm says so
-                print(self.check_slurm_status(job_id))
                 if self.check_slurm_status(job_id):
-                    print("should remove")
                     self.all_jobs_dict["submitted"].remove(
                         self.input_dir / output_dir.stem
                     )

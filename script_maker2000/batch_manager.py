@@ -1,4 +1,4 @@
-from collections import OrderedDict
+from collections import defaultdict
 import shutil
 import asyncio
 import pandas as pd
@@ -75,7 +75,7 @@ class BatchManager:
 
     def setup_work_modules_manager(self):
 
-        work_managers = OrderedDict()
+        work_managers = defaultdict(list)
 
         for key, value in self.main_config["loop_config"].items():
             if value["type"] == "orca":
@@ -83,7 +83,8 @@ class BatchManager:
                 work_manager = WorkManager(
                     orca_module, all_job_ids=self.all_job_ids.copy()
                 )
-                work_managers[key] = work_manager
+                work_managers[work_manager.step_id].append(work_manager)
+
             elif value["type"] == "crest":
                 pass  # this is not implemented yet
             else:
@@ -94,13 +95,27 @@ class BatchManager:
         return work_managers
 
     def copy_input_files_to_first_work_manager(self):
-        first_manager = list(self.work_managers.values())[0]
-        shutil.copytree(
-            self.new_input_path, first_manager.input_dir, dirs_exist_ok=True
-        )
-        for file in list(first_manager.input_dir.glob("*")):
-            new_file = str(file).replace("START_", "START___")
-            file.rename(new_file)
+
+        # find lowest valid step id
+        id_list = []
+        for work_manager_list in self.work_managers.values():
+            for work_manager in work_manager_list:
+                id_list.append(work_manager.step_id)
+        self.min_step_id = min(id_list)
+        self.max_step_id = max(id_list)
+        for work_manager_list in self.work_managers.values():
+            for work_manager in work_manager_list:
+                if work_manager.step_id == self.min_step_id:
+                    work_manager.log.info(
+                        f"Copying input files to {work_manager.config_key} input dir."
+                    )
+
+                    shutil.copytree(
+                        self.new_input_path, work_manager.input_dir, dirs_exist_ok=True
+                    )
+                    for file in list(work_manager.input_dir.glob("*")):
+                        new_file = str(file).replace("START_", "START___")
+                        file.rename(new_file)
 
     # end init
 
@@ -118,43 +133,35 @@ class BatchManager:
         Returns:
             None
         """
-        for work_key, work_manager in self.work_managers.items():
-            # work_manager.manage_failed_jobs()
+        for step_id, work_manager_list in self.work_managers.items():
+            for work_manager in work_manager_list:
+                work_key = work_manager.config_key
+                for status_key, job_list in work_manager.all_jobs_dict.items():
+                    if "_error" in status_key:
+                        job_ids = [error.stem.split("___", 1)[1] for error in job_list]
 
-            for status_key, job_list in work_manager.all_jobs_dict.items():
-                if "_error" in status_key:
-                    job_ids = [error.stem.split("___", 1)[1] for error in job_list]
+                        if job_ids:
+                            # Update the status of the failed jobs in the input dataframe
+                            self.input_df.loc[job_ids, work_key] = status_key
 
-                    if job_ids:
-                        # Update the status of the failed jobs in the input dataframe
-                        self.input_df.loc[job_ids, work_key] = status_key
-
-                        # Get all following work keys and set status to cancelled
-                        following_work_keys = list(
-                            self.main_config["loop_config"].keys()
-                        )[
-                            list(self.main_config["loop_config"].keys()).index(work_key)
-                            + 1 :
-                        ]
-
-                        for following_key in following_work_keys:
-                            # Remove the failed jobs from the expected input in the following work managers
-                            self.work_managers[following_key].log.info(
-                                f"Removing {len(job_ids)} jobs from expected input due to {status_key}."
-                            )
-                            self.input_df.loc[job_ids, following_key] = "cancelled"
-
-                            # Remove the failed jobs from the lists of following work managers
-                            for id_ in job_ids:
-                                if (
-                                    id_
-                                    in self.work_managers[following_key].all_jobs_dict[
-                                        "not_yet_found"
-                                    ]
-                                ):
-                                    self.work_managers[following_key].all_jobs_dict[
-                                        "not_yet_found"
-                                    ].remove(id_)
+                            # Cancel the jobs in the following work managers and remove the failed jobs from their lists
+                            for (
+                                other_step_id,
+                                other_work_manager_list,
+                            ) in self.work_managers.items():
+                                if other_step_id <= step_id:
+                                    continue
+                                for following_work_manager in other_work_manager_list:
+                                    for id_ in job_ids:
+                                        if (
+                                            id_
+                                            in following_work_manager.all_jobs_dict[
+                                                "not_yet_found"
+                                            ]
+                                        ):
+                                            following_work_manager.all_jobs_dict[
+                                                "not_yet_found"
+                                            ].remove(id_)
 
         # Save the updated input dataframe to the new csv file
         self.input_df.to_csv(self.new_csv_file)
@@ -163,83 +170,102 @@ class BatchManager:
 
         # failed jobs are handled in manage_failed_jobs
         # then manage all other jobs
-        for work_key, work_manager in self.work_managers.items():
-            for status_key, job_list in work_manager.all_jobs_dict.items():
-                if "_error" not in status_key and status_key not in [
-                    "not_yet_found",
-                    "submitted_ids_files",
-                ]:
-                    job_ids = [error.stem.split("___", 1)[1] for error in job_list]
-                    if job_ids:
-                        self.input_df.loc[job_ids, work_key] = status_key
+        for work_manager_list in self.work_managers.values():
+            for work_manager in work_manager_list:
+                work_key = work_manager.config_key
+                for status_key, job_list in work_manager.all_jobs_dict.items():
+                    if "_error" not in status_key and status_key not in [
+                        "not_yet_found",
+                        "submitted_ids_files",
+                    ]:
+                        job_ids = [error.stem.split("___", 1)[1] for error in job_list]
+                        if job_ids:
+                            self.input_df.loc[job_ids, work_key] = status_key
 
         self.input_df.to_csv(self.new_csv_file)
 
+    def _find_target_files(self, work_manager_finished_dir, key, work_step_id):
+        # setup target files
+        target_file_types = [
+            self.main_config["main_config"]["common_input_files"],
+        ]
+        if self.main_config["loop_config"][key]["additional_input_files"]:
+            target_file_types.append(
+                self.main_config["loop_config"][key]["additional_input_files"]
+            )
+        # collect all files in finished dir
+        potential_target_files = []
+        for file_type in target_file_types:
+            potential_target_files += list(
+                work_manager_finished_dir.glob(f"*/*{file_type}")
+            )
+
+        if not potential_target_files:
+            return {}
+
+        next_work_managers_list = self.work_managers[work_step_id + 1].copy()
+        next_work_manager_dict = {}
+        for next_work_manager in next_work_managers_list:
+            # check which jobs from finished dir have not yet been submitted to the next worker
+            target_files = []
+            for potential_target_file in potential_target_files:
+                job_id = potential_target_file.stem.split("___", 1)[1]
+                if job_id in next_work_manager.all_jobs_dict["not_yet_found"]:
+                    target_files.append(potential_target_file)
+                next_work_manager_dict[next_work_manager] = target_files
+        return next_work_manager_dict
+
     def move_files(self):
-        for i, (key, work_manager) in enumerate(self.work_managers.items()):
+        for work_step_id, work_manager_list in self.work_managers.items():
+            for work_manager in work_manager_list:
 
-            work_manager_finished_dir = work_manager.finished_dir / "raw_results"
-            # skip if work manager is finished
+                key = work_manager.config_key
+                work_manager_finished_dir = work_manager.finished_dir / "raw_results"
 
-            if i == len(self.work_managers) - 1:  # -1 because of 0 indexing
-                # move files from last work manager to finished folder
+                # the last steps should copy their output directly in the finished dir
+                if work_step_id == self.max_step_id:
+                    # move files from last work manager to finished folder
+                    target_files = list(work_manager_finished_dir.glob("*"))
+                    target_dir = self.working_dir / "finished" / "raw_results"
+                    for file in target_files:
+                        if file.is_dir():
+                            shutil.copytree(file, target_dir / file.name)
+                        elif file.is_file():
+                            shutil.copy(file, target_dir / file.name)
 
-                target_files = list(work_manager_finished_dir.glob("*"))
-                target_dir = self.working_dir / "finished" / "raw_results"
-
-            else:
-                # move files from current work manager to next work manager
-
-                target_file_types = [
-                    self.main_config["main_config"]["common_input_files"],
-                ]
-                if self.main_config["loop_config"][key]["additional_input_files"]:
-                    target_file_types.append(
-                        self.main_config["loop_config"][key]["additional_input_files"]
+                else:
+                    # move files from current work manager to next work manager
+                    next_work_manager_dict = self._find_target_files(
+                        work_manager_finished_dir, key, work_step_id
                     )
+                    for (
+                        next_work_manager,
+                        target_files,
+                    ) in next_work_manager_dict.items():
+                        target_name = next_work_manager.config_key
+                        work_manager.log.info(
+                            f"Moving {len(target_files)} files to {target_name} input"
+                        )
 
-                # collect all files in finished dir
-                potential_target_files = []
-                for file_type in target_file_types:
-                    potential_target_files += list(
-                        work_manager_finished_dir.glob(f"*/*{file_type}")
-                    )
+                        target_dir = next_work_manager.input_dir
 
-                if not potential_target_files:
-                    continue
-
-                next_work_manager = list(self.work_managers.values())[i + 1]
-
-                # check which jobs from finished dir have not yet been submitted to the next worker
-                target_files = []
-                for potential_target_file in potential_target_files:
-                    job_id = potential_target_file.stem.split("___", 1)[1]
-                    if job_id in next_work_manager.all_jobs_dict["not_yet_found"]:
-                        target_files.append(potential_target_file)
-
-                target_name = next_work_manager.config_key
-                work_manager.log.info(
-                    f"Moving {len(target_files)} files to {target_name} input"
-                )
-
-                target_dir = next_work_manager.input_dir
-
-            for file in target_files:
-                if file.is_dir():
-                    shutil.copytree(file, target_dir / file.name)
-                elif file.is_file():
-                    shutil.copy(file, target_dir / file.name)
+                        for file in target_files:
+                            if file.is_dir():
+                                shutil.copytree(file, target_dir / file.name)
+                            elif file.is_file():
+                                shutil.copy(file, target_dir / file.name)
 
     def start_work_manager_loops(self):
         # start work manager loops with threading
         manager_runs = set()
         times = []
-        for work_manager in self.work_managers.values():
-            task = asyncio.create_task(
-                work_manager.loop(), name=work_manager.config_key
-            )
-            times.append(time.time())
-            manager_runs.add(task)
+        for work_managers_list in self.work_managers.values():
+            for work_manager in work_managers_list:
+                task = asyncio.create_task(
+                    work_manager.loop(), name=work_manager.config_key
+                )
+                times.append(time.time())
+                manager_runs.add(task)
 
         self.log.info(f"Time start all loops: {times[1]-times[0]} seconds.")
 

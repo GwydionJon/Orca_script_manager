@@ -13,7 +13,6 @@ def test_batch_manager(clean_tmp_dir, monkeypatch):
         # move output files to output dir
         example_output_files = Path(__file__).parent / "test_data" / "example_outputs"
         if len(list((first_worker.output_dir).glob("*"))) == 0:
-            print("copy data")
             shutil.copytree(
                 example_output_files,
                 first_worker.output_dir,
@@ -57,7 +56,6 @@ def test_batch_manager(clean_tmp_dir, monkeypatch):
     monkeypatch.setattr(second_worker, "wait_time", 0.2)
     monkeypatch.setattr(second_worker, "max_loop", 2)
 
-    print(list(second_worker.input_dir.glob("*")))
     assert len(list(second_worker.input_dir.glob("*"))) == 4
     worker_output = asyncio.run(second_worker.loop())
 
@@ -210,10 +208,10 @@ def test_batch_loop_with_files(clean_tmp_dir, monkeypatch):
         # copy output files into dir
 
         example_output_files = Path(__file__).parent / "test_data" / "example_outputs"
-        target_dirs = [
-            work_manager.output_dir
-            for work_manager in batch_manager.work_managers.values()
-        ]
+        target_dirs = []
+        for work_manager_list in batch_manager.work_managers.values():
+            for work_manager in work_manager_list:
+                target_dirs.append(work_manager.output_dir)
 
         for target_dir in target_dirs:
             shutil.copytree(
@@ -248,17 +246,19 @@ def test_batch_loop_with_files(clean_tmp_dir, monkeypatch):
         monkeypatch.setattr(batch_manager, "wait_time", 0.3)
         monkeypatch.setattr(batch_manager, "max_loop", 5)
 
-        for work_manager in batch_manager.work_managers.values():
-            monkeypatch.setattr(work_manager, "wait_time", 0.3)
-            monkeypatch.setattr(work_manager, "max_loop", 2)
+        for work_manager_list in batch_manager.work_managers.values():
+            for work_manager in work_manager_list:
+                monkeypatch.setattr(work_manager, "wait_time", 0.3)
+                monkeypatch.setattr(work_manager, "max_loop", 2)
 
     else:
         monkeypatch.setattr(batch_manager, "wait_time", 10)
         monkeypatch.setattr(batch_manager, "max_loop", -1)
 
-        for work_manager in batch_manager.work_managers.values():
-            monkeypatch.setattr(work_manager, "wait_time", 10)
-            monkeypatch.setattr(work_manager, "max_loop", -1)
+        for work_manager_list in batch_manager.work_managers.values():
+            for work_manager in work_manager_list:
+                monkeypatch.setattr(work_manager, "wait_time", 10)
+                monkeypatch.setattr(work_manager, "max_loop", -1)
 
     task_results = batch_manager.run_batch_processing()
     for task_result in task_results:
@@ -266,3 +266,118 @@ def test_batch_loop_with_files(clean_tmp_dir, monkeypatch):
         assert "All jobs done after" in task_result.result()
 
     assert len(list(batch_manager.working_dir.glob("finished/raw_results/*"))) == 4
+
+
+def test_parallel_steps(multilayer_tmp_dir, monkeypatch):
+
+    def mock_run_job(args, **kw):
+        class TestClass:
+            def __init__(self, args, **kw):
+                self.args = args
+                self.kw = kw
+                self.stdout = f"COMPLETED job {np.random.randint(100)}"
+
+        test = TestClass(args, **kw)
+        return test
+
+    main_config_path = multilayer_tmp_dir / "example_config.json"
+    batch_manager = BatchManager(main_config_path)
+
+    if shutil.which("sbatch") is None:
+        # test locally
+        monkeypatch.setattr("shutil.which", lambda x: True)
+        monkeypatch.setattr("subprocess.run", mock_run_job)
+
+        # copy output files into dir
+
+        example_output_files = Path(__file__).parent / "test_data" / "example_outputs"
+
+        # move files for opt_config 1 + 2
+        working_dir = batch_manager.working_dir
+        target_dirs = [
+            working_dir / "opt_config1" / "output",
+            working_dir / "opt_config2" / "output",
+        ]
+
+        for target_dir in target_dirs:
+            shutil.copytree(
+                example_output_files,
+                target_dir,
+                dirs_exist_ok=True,
+            )
+        for out_dir in target_dirs:
+            replacement = "START___"
+            for dir in out_dir.glob("*"):
+                new_dir = str(dir).replace("START_", replacement)
+                new_dir = Path(new_dir)
+                new_dir.mkdir()
+                for file in dir.glob("*"):
+
+                    new_file = str(file.name).replace("START_", replacement)
+                    if "slurm" in new_file:
+                        new_file = "slurm_output.out"
+
+                    file.rename(Path(new_dir) / new_file)
+                shutil.rmtree(dir)
+
+        # move files for sp_config 1 + 2
+
+        succesful_output_ids = ["a004_b007", "a007_b021_2", "a007_b022_2", "a007_b026"]
+        succesful_output_dirs = []
+        for id in succesful_output_ids:
+            output_file = list(example_output_files.glob(f"*{id}*"))[0]
+            succesful_output_dirs.append(output_file)
+
+        # copy and rename these files to the target dirs
+        target_dirs = [
+            working_dir / "sp_config1" / "output",
+            working_dir / "sp_config2" / "output",
+        ]
+
+        for i in range(2):
+            for target_dir in target_dirs:
+                print(target_dir)
+                for output_dir in succesful_output_dirs:
+                    print(output_dir)
+
+                    new_file_path = shutil.copytree(
+                        output_dir, target_dir / output_dir.name, dirs_exist_ok=True
+                    )
+
+                    new_file_name = target_dir / str(output_dir.name).replace(
+                        "START_", f"START__OPT_CONFIG{i+1}___"
+                    )
+                    new_file_path.rename(new_file_name)
+
+        monkeypatch.setattr(batch_manager, "wait_time", 0.3)
+        monkeypatch.setattr(batch_manager, "max_loop", 5)
+
+        for work_manager_list in batch_manager.work_managers.values():
+            for work_manager in work_manager_list:
+                monkeypatch.setattr(work_manager, "wait_time", 0.3)
+                monkeypatch.setattr(work_manager, "max_loop", 2)
+
+    else:
+        monkeypatch.setattr(batch_manager, "wait_time", 10)
+        monkeypatch.setattr(batch_manager, "max_loop", -1)
+
+        for work_manager_list in batch_manager.work_managers.values():
+            for work_manager in work_manager_list:
+                monkeypatch.setattr(work_manager, "wait_time", 10)
+                monkeypatch.setattr(work_manager, "max_loop", -1)
+
+    task_results = batch_manager.run_batch_processing()
+    for task_result in task_results:
+        assert task_result.done() is True
+        assert "All jobs done after" in task_result.result()
+
+    assert len(list(batch_manager.working_dir.glob("finished/raw_results/*"))) == 8
+    assert (
+        len(list(batch_manager.working_dir.glob("finished/raw_results/*sp_config1*")))
+        == 4
+    )
+    assert (
+        len(list(batch_manager.working_dir.glob("finished/raw_results/*sp_config2*")))
+        == 4
+    )
+    assert len(list(batch_manager.working_dir.glob("finished/raw_results/*opt*"))) == 8
