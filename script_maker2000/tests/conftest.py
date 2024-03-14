@@ -7,120 +7,7 @@ import pytest
 from pathlib import Path
 import pandas as pd
 from script_maker2000.files import read_config, create_working_dir_structure
-
-
-@pytest.fixture
-def temp_work_dir():
-    tmp_dir = pathlib.Path(mkdtemp())
-
-    current_path = pathlib.Path(__file__)
-
-    # load example config
-    example_config_path = (
-        current_path / ".." / ".." / "data" / "example_config_xyz.json"
-    ).resolve()
-
-    # copy config to tmp dir
-    new_config_path = shutil.copy(example_config_path, tmp_dir)
-    with open(new_config_path, "r") as f:
-        main_dict = json.load(f)
-
-    main_dict["main_config"]["output_dir"] = "output"
-
-    example_mol_dir = (current_path / ".." / ".." / "data" / "example_xyz").resolve()
-
-    example_xyz = shutil.copytree(str(example_mol_dir), str(tmp_dir / "example_xyz"))
-    main_dict["main_config"]["input_file_path"] = str(
-        Path(example_xyz) / "example_molecules.csv"
-    )
-    # change xyz file locations in .csv
-    df = pd.read_csv(tmp_dir / "example_xyz" / "example_molecules.csv")
-    df["path"] = [
-        path.resolve() for path in list((tmp_dir / "example_xyz").glob("*.xyz"))
-    ]
-    df.to_csv(tmp_dir / "example_xyz" / "example_molecules.csv", index=False)
-
-    with open(tmp_dir / "example_config.json", "w") as json_file:
-        json.dump(main_dict, json_file)
-
-    # make relativ input test config:
-
-    # make faulty file path
-    new_config2 = copy.deepcopy(main_dict)
-    new_config2["main_config"]["input_file_path"] = "does_not_exist.csv"
-    with open(tmp_dir / "example_config3.json", "w") as json_file:
-        json.dump(new_config2, json_file)
-
-    # add new loop step without changing output dir
-    new_config3 = copy.deepcopy(main_dict)
-    new_config3["loop_config"]["test_config"] = {"type": "test"}
-    with open(tmp_dir / "example_config4.json", "w") as json_file:
-        json.dump(new_config3, json_file)
-
-    # add new loop step and change output dir
-    new_config4 = copy.deepcopy(main_dict)
-    new_config4["main_config"]["output_dir"] = "new_output"
-    new_config4["loop_config"]["test_config"] = {"type": "test"}
-    with open(tmp_dir / "example_config5.json", "w") as json_file:
-        json.dump(new_config4, json_file)
-
-    return tmp_dir
-
-
-@pytest.fixture
-def pre_config_tmp_dir():
-
-    # tmp_dir = pathlib.Path(mkdtemp())
-
-    current_path = pathlib.Path(__file__)
-    (current_path.parents[0] / "tests_dir").mkdir(exist_ok=True)
-    tmp_dir = pathlib.Path(mkdtemp(dir=(current_path.parents[0] / "tests_dir")))
-
-    # load example config
-    example_config_path = (
-        current_path / ".." / ".." / "data" / "example_config_xyz.json"
-    ).resolve()
-
-    # copy config to tmp dir
-    new_config_path = shutil.copy(example_config_path, tmp_dir)
-    with open(new_config_path, "r") as f:
-        main_dict = json.load(f)
-
-    example_mol_dir = (current_path / ".." / ".." / "data" / "example_xyz").resolve()
-
-    example_xyz = shutil.copytree(str(example_mol_dir), str(tmp_dir / "example_xyz"))
-
-    # for file in (tmp_dir / "example_xyz").glob("*.xyz"):
-    #    file.rename(str(file).replace("START", "START__"))
-
-    # copy input files to module working space
-
-    main_dict["main_config"]["input_file_path"] = str(
-        Path(example_xyz) / "example_molecules.csv"
-    )
-
-    # change xyz file locations in .csv
-    df = pd.read_csv(tmp_dir / "example_xyz" / "example_molecules.csv")
-    df["path"] = [
-        path.resolve() for path in list((tmp_dir / "example_xyz").glob("*.xyz"))
-    ]
-    df.to_csv(tmp_dir / "example_xyz" / "example_molecules.csv", index=False)
-
-    with open(tmp_dir / "example_config.json", "w") as json_file:
-        json.dump(main_dict, json_file)
-
-    main_config = read_config(tmp_dir / "example_config.json")
-
-    # input_location = temp_work_dir / "example_molecules.csv"
-    create_working_dir_structure(main_config)
-
-    shutil.copytree(
-        tmp_dir / "example_xyz",
-        tmp_dir / "example_xyz_output" / "sp_config" / "input",
-        dirs_exist_ok=True,
-        ignore=shutil.ignore_patterns("*.csv"),
-    )
-    return tmp_dir
+from script_maker2000.batch_manager import BatchManager
 
 
 @pytest.fixture
@@ -152,6 +39,7 @@ def clean_tmp_dir():
     df["path"] = [
         path.resolve() for path in list((tmp_dir / "example_xyz").glob("*.xyz"))
     ]
+
     df.to_csv(tmp_dir / "example_xyz" / "example_molecules.csv", index=False)
 
     main_dict["main_config"]["input_file_path"] = str(
@@ -161,6 +49,100 @@ def clean_tmp_dir():
     with open(tmp_dir / "example_config.json", "w") as json_file:
         json.dump(main_dict, json_file)
 
+    return tmp_dir
+
+
+@pytest.fixture
+def test_setup_work_dir(clean_tmp_dir):
+
+    tmp_dir = clean_tmp_dir
+    new_config_path = tmp_dir / "example_config.json"
+    with open(new_config_path, "r") as f:
+        main_dict = json.load(f)
+
+    # make faulty file path
+    new_config2 = copy.deepcopy(main_dict)
+    new_config2["main_config"]["input_file_path"] = "does_not_exist.csv"
+    with open(tmp_dir / "example_config3.json", "w") as json_file:
+        json.dump(new_config2, json_file)
+
+    # add new loop step without changing output dir
+    new_config3 = copy.deepcopy(main_dict)
+    new_config3["loop_config"]["test_config"] = {"type": "test", "step_id": 2}
+    with open(tmp_dir / "example_config4.json", "w") as json_file:
+        json.dump(new_config3, json_file)
+
+    # add new loop step and change output dir
+    new_config4 = copy.deepcopy(main_dict)
+    new_config4["main_config"]["output_dir"] = "new_output"
+    new_config4["loop_config"]["test_config"] = {"type": "test", "step_id": 2}
+    with open(tmp_dir / "example_config5.json", "w") as json_file:
+        json.dump(new_config4, json_file)
+
+    new_config5 = copy.deepcopy(main_dict)
+    new_config5["main_config"]["output_dir"] = "new_output2"
+    new_config5["loop_config"]["test_config"] = {"type": "test", "step_id": 1}
+    with open(tmp_dir / "example_config6.json", "w") as json_file:
+        json.dump(new_config5, json_file)
+
+    # add new loop step and change output dir
+    new_config6 = copy.deepcopy(main_dict)
+    new_config6["main_config"]["output_dir"] = "new_output3"
+    new_config6["loop_config"]["test_config"] = {"type": "test", "step_id": 5}
+    with open(tmp_dir / "example_config7.json", "w") as json_file:
+        json.dump(new_config6, json_file)
+
+    return tmp_dir
+
+
+@pytest.fixture
+def pre_config_tmp_dir():
+
+    # tmp_dir = pathlib.Path(mkdtemp())
+
+    current_path = pathlib.Path(__file__)
+    (current_path.parents[0] / "tests_dir").mkdir(exist_ok=True)
+    tmp_dir = pathlib.Path(mkdtemp(dir=(current_path.parents[0] / "tests_dir")))
+
+    # load example config
+    example_config_path = (
+        current_path / ".." / ".." / "data" / "example_config_xyz.json"
+    ).resolve()
+
+    # copy config to tmp dir
+    new_config_path = shutil.copy(example_config_path, tmp_dir)
+    with open(new_config_path, "r") as f:
+        main_dict = json.load(f)
+
+    example_mol_dir = (current_path / ".." / ".." / "data" / "example_xyz").resolve()
+
+    example_xyz = shutil.copytree(str(example_mol_dir), str(tmp_dir / "example_xyz"))
+
+    main_dict["main_config"]["input_file_path"] = str(
+        Path(example_xyz) / "example_molecules.csv"
+    )
+
+    # change xyz file locations in .csv
+    df = pd.read_csv(tmp_dir / "example_xyz" / "example_molecules.csv")
+    df["path"] = [
+        path.resolve() for path in list((tmp_dir / "example_xyz").glob("*.xyz"))
+    ]
+    df.to_csv(tmp_dir / "example_xyz" / "example_molecules.csv", index=False)
+
+    with open(tmp_dir / "example_config.json", "w") as json_file:
+        json.dump(main_dict, json_file)
+
+    main_config = read_config(tmp_dir / "example_config.json")
+
+    # input_location = temp_work_dir / "example_molecules.csv"
+    create_working_dir_structure(main_config)
+
+    shutil.copytree(
+        tmp_dir / "example_xyz",
+        tmp_dir / "example_xyz_output" / "sp_config" / "input",
+        dirs_exist_ok=True,
+        ignore=shutil.ignore_patterns("*.csv"),
+    )
     return tmp_dir
 
 
@@ -202,6 +184,13 @@ def multilayer_tmp_dir():
         json.dump(main_dict, json_file)
 
     return tmp_dir
+
+
+@pytest.fixture
+def job_dict(clean_tmp_dir):
+    main_config_path = clean_tmp_dir / "example_config.json"
+    batch_manager = BatchManager(main_config_path)
+    return batch_manager.job_dict
 
 
 @pytest.fixture

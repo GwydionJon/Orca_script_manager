@@ -35,7 +35,7 @@ class Job:
         self.multiplicity = multiplicity
 
         self.current_key = "not_assigned"
-        self.current_status = (
+        self._current_status = (
             "not_assigned"  # not_assigned,found, submitted, finished, failed
         )
         self.current_dirs = {
@@ -95,6 +95,15 @@ class Job:
             self.finished_per_key[key] = working_dir / key / "finished" / id_for_step
             self.failed_per_key[key] = working_dir / key / "failed" / id_for_step
 
+    @property
+    def current_status(self):
+        return self._current_status
+
+    @current_status.setter
+    def current_status(self, value):
+        self._current_status = value
+        self.status_per_key[self.current_key] = value
+
     def _check_slurm_completed(self, key):
         process = subprocess.run(
             [
@@ -152,6 +161,7 @@ class Job:
         if key in self.status_per_key:
 
             if self.status_per_key[key] == "submitted":
+                print("checking slurm", self._check_slurm_completed(key))
                 if self._check_slurm_completed(key):
                     return "returned"
                 else:

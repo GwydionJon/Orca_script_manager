@@ -109,10 +109,10 @@ class WorkManager:
 
         finished_jobs = []
         for job in submitted_jobs:
-
+            print(job.current_status)
             if job.check_status_for_key(self.config_key) == "returned":
                 finished_jobs.append(job)
-
+            print(job.check_status_for_key(self.config_key))
         self.log.info(f"Collected {len(finished_jobs)} returned jobs.")
 
         return finished_jobs
