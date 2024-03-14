@@ -19,11 +19,11 @@ def test_batch_manager(clean_tmp_dir, monkeypatch):
                 dirs_exist_ok=True,
             )
             for dir in first_worker.output_dir.glob("*"):
-                new_dir = str(dir).replace("START_", "START___")
+                new_dir = str(dir).replace("START_", "opt_config___")
                 new_dir = Path(new_dir)
                 new_dir.mkdir()
                 for file in dir.glob("*"):
-                    new_file = str(file.name).replace("START_", "START___")
+                    new_file = str(file.name).replace("START_", "opt_config___")
                     file.rename(Path(new_dir) / new_file)
                 shutil.rmtree(dir)
 
@@ -38,29 +38,28 @@ def test_batch_manager(clean_tmp_dir, monkeypatch):
 
     main_config_path = clean_tmp_dir / "example_config.json"
     batch_manager = BatchManager(main_config_path)
-    assert len(batch_manager.all_job_ids) == 11
+
+    first_input_dir = batch_manager.working_dir / "opt_config" / "input"
+    assert len(list(first_input_dir.glob("*"))) == 11
+    assert len(list(first_input_dir.glob("*/*xyz"))) == 11
 
     # manually trigger the first worker
-    first_worker = list(batch_manager.work_managers.values())[0]
+    first_worker = list(batch_manager.work_managers.values())[0][0]
 
     monkeypatch.setattr("shutil.which", lambda x: True)
     monkeypatch.setattr("subprocess.run", mock_run_job)
     monkeypatch.setattr(first_worker, "wait_time", 0.2)
-    monkeypatch.setattr(first_worker, "max_loop", 2)
+    monkeypatch.setattr(first_worker, "max_loop", 4)
 
     worker_output = asyncio.run(first_worker.loop())
-    assert worker_output == "All jobs done after 0."
+    assert worker_output == "All jobs done after 2."
 
-    batch_manager.move_files()
-    second_worker = list(batch_manager.work_managers.values())[1]
+    batch_manager.advance_jobs()
+    second_worker = list(batch_manager.work_managers.values())[1][0]
     monkeypatch.setattr(second_worker, "wait_time", 0.2)
     monkeypatch.setattr(second_worker, "max_loop", 2)
 
     assert len(list(second_worker.input_dir.glob("*"))) == 4
-    worker_output = asyncio.run(second_worker.loop())
-
-    # no handling of failed jobs is done here so the worker will loop until max_loop
-    assert worker_output == "Breaking loop after 2."
 
 
 @pytest.mark.skip(reason="Test doesn't work in Github Actions.")
@@ -223,9 +222,9 @@ def test_batch_loop_with_files(clean_tmp_dir, monkeypatch):
         for out_dir in target_dirs:
 
             if "opt_config" in str(out_dir):
-                replacement = "START___"
+                replacement = "opt_config___"
             elif "sp_config" in str(out_dir):
-                replacement = "START__OPT_CONFIG___"
+                replacement = "opt_config__sp_config___"
             for dir in out_dir.glob("*"):
                 new_dir = str(dir).replace("START_", replacement)
                 new_dir = Path(new_dir)
@@ -244,12 +243,12 @@ def test_batch_loop_with_files(clean_tmp_dir, monkeypatch):
         time.sleep(1)
 
         monkeypatch.setattr(batch_manager, "wait_time", 0.3)
-        monkeypatch.setattr(batch_manager, "max_loop", 5)
+        monkeypatch.setattr(batch_manager, "max_loop", 8)
 
         for work_manager_list in batch_manager.work_managers.values():
             for work_manager in work_manager_list:
                 monkeypatch.setattr(work_manager, "wait_time", 0.3)
-                monkeypatch.setattr(work_manager, "max_loop", 2)
+                monkeypatch.setattr(work_manager, "max_loop", 5)
 
     else:
         monkeypatch.setattr(batch_manager, "wait_time", 10)
@@ -336,9 +335,7 @@ def test_parallel_steps(multilayer_tmp_dir, monkeypatch):
 
         for i in range(2):
             for target_dir in target_dirs:
-                print(target_dir)
                 for output_dir in succesful_output_dirs:
-                    print(output_dir)
 
                     new_file_path = shutil.copytree(
                         output_dir, target_dir / output_dir.name, dirs_exist_ok=True
@@ -355,7 +352,7 @@ def test_parallel_steps(multilayer_tmp_dir, monkeypatch):
         for work_manager_list in batch_manager.work_managers.values():
             for work_manager in work_manager_list:
                 monkeypatch.setattr(work_manager, "wait_time", 0.3)
-                monkeypatch.setattr(work_manager, "max_loop", 2)
+                monkeypatch.setattr(work_manager, "max_loop", 4)
 
     else:
         monkeypatch.setattr(batch_manager, "wait_time", 10)

@@ -4,7 +4,7 @@
         "max_n_jobs": 20,
         "max_ram_per_core": 2500,
         "max_nodes": 50,
-        "output_dir": "example_xyz_output",
+        "output_dir": "output",
         "max_run_time": "60:00:00",
         "input_file_path": "example_xyz/example_molecules.csv",
         "input_type": "xyz",
@@ -20,20 +20,9 @@
         "run_benchmark": true
     },
     "loop_config": {
-        "crest_config": {
-            "type": "crest",
-            "step_id": 0,
-            "additional_input_files": "",
-            "options:": {
-                "n_tasks": 20,
-                "n_cores": 40,
-                "ram_per_core": 2000,
-                "args": {}
-            }
-        },
         "opt_config1": {
             "type": "orca",
-            "step_id": 1,
+            "step_id": 0,
             "additional_input_files": "",
             "options": {
                 "method": "HF",
@@ -53,7 +42,7 @@
         },
         "opt_config2": {
             "type": "orca",
-            "step_id": 1,
+            "step_id": 0,
             "additional_input_files": "",
             "options": {
                 "method": "HF",
@@ -73,7 +62,7 @@
         },
         "sp_config1": {
             "type": "orca",
-            "step_id": 2,
+            "step_id": 1,
             "additional_input_files": "",
             "options": {
                 "method": "HF",
@@ -93,7 +82,7 @@
         },
         "sp_config2": {
             "type": "orca",
-            "step_id": 2,
+            "step_id": 1,
             "additional_input_files": "",
             "options": {
                 "method": "HF",

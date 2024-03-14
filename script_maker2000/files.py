@@ -49,6 +49,7 @@ def create_working_dir_structure(
 
     (output_dir / "finished" / "raw_results").mkdir(parents=True)
     (output_dir / "finished" / "results").mkdir(parents=True)
+    (output_dir / "failed").mkdir(parents=True)
 
     # move input files and main_settings in output folder
     # save config into working dir
@@ -71,6 +72,8 @@ def create_working_dir_structure(
                 f"Input file {file} does not start with 'START_'."
                 + " Please make sure all input files start with 'START_'."
             )
+        new_file_name = file.parent / file.name.replace("START_", "START___")
+        file.rename(new_file_name)
 
     new_input_path = shutil.copytree(
         input_path.parent, output_dir / "start_input_files"
@@ -139,6 +142,8 @@ def check_config(main_config):
         if step != max(step_list):
             if step + 1 not in step_list:
                 raise ValueError("The step numbers must be consecutive.")
+    if min(step_list) != 0:
+        raise ValueError("The first step number must be 0.")
 
     script_maker_log.info("Config seems in order.")
 

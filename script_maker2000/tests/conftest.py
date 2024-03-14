@@ -90,8 +90,8 @@ def pre_config_tmp_dir():
 
     example_xyz = shutil.copytree(str(example_mol_dir), str(tmp_dir / "example_xyz"))
 
-    for file in (tmp_dir / "example_xyz").glob("*.xyz"):
-        file.rename(str(file).replace("START", "START__"))
+    # for file in (tmp_dir / "example_xyz").glob("*.xyz"):
+    #    file.rename(str(file).replace("START", "START__"))
 
     # copy input files to module working space
 
