@@ -4,6 +4,8 @@ import pandas as pd
 import time
 import logging
 import itertools
+import json
+from pathlib import Path
 
 from script_maker2000.files import read_config, create_working_dir_structure
 from script_maker2000.work_manager import WorkManager
@@ -16,29 +18,38 @@ class BatchManager:
     organizing the file structure and starting the work managers.
     """
 
-    def __init__(self, main_config_path) -> None:
+    def __init__(self, main_config_path, override_continue_job=False) -> None:
 
-        self.main_config = self.read_config(main_config_path)
-        (
-            self.working_dir,
-            self.new_input_path,
-            self.input_job_ids,
-            self.new_csv_file,
-            self.all_input_files,
-        ) = self.initialize_files()
+        if Path(main_config_path).is_dir():
+            main_config_path = Path(main_config_path) / "example_config.json"
 
-        self.input_df = pd.read_csv(self.new_csv_file, index_col=0)
-        self.input_df.set_index("key", inplace=True)
+        self.main_config = self.read_config(
+            main_config_path, override_continue_job=override_continue_job
+        )
 
-        # add a column for each work step to the csv file
-        for key in self.main_config["loop_config"].keys():
-            self.input_df[key] = "not_yet_submitted"
-        self.input_df.to_csv(self.new_csv_file)
+        if self.main_config["main_config"]["continue_previous_run"] is False:
+            (
+                self.working_dir,
+                self.new_input_path,
+                self.input_job_ids,
+                self.new_csv_file,
+                self.all_input_files,
+            ) = self.initialize_files()
 
-        self.job_dict = self._prepare_job_database()
+            self.input_df = pd.read_csv(self.new_csv_file, index_col=0)
+            self.input_df.set_index("key", inplace=True)
+            self.job_dict = self._jobs_from_csv(self.input_df)
 
-        self.work_managers = self.setup_work_modules_manager()
-        self.copy_input_files_to_first_work_manager()
+            self.work_managers = self.setup_work_modules_manager()
+            self.copy_input_files_to_first_work_manager()
+        else:
+            self.working_dir = Path(self.main_config["main_config"]["output_dir"])
+            self.new_input_path = self.working_dir / "start_input_files"
+            self.new_csv_file = self.working_dir / "new_input.csv"
+            input_json_file = self.working_dir / "job_backup.json"
+            self.job_dict = self._jobs_from_backup_json(input_json_file)
+
+            self.work_managers = self.setup_work_modules_manager()
 
         # parameter for loop
         self.wait_time = self.main_config["main_config"]["wait_for_results_time"]
@@ -57,8 +68,10 @@ class BatchManager:
         self.log.setLevel("INFO")
 
     # only for initilization
-    def read_config(self, main_config_path):
-        return read_config(main_config_path)
+    def read_config(self, main_config_path, override_continue_job):
+        return read_config(
+            main_config_path, override_continue_job=override_continue_job
+        )
 
     def initialize_files(self):
         """
@@ -81,8 +94,7 @@ class BatchManager:
         input_job_ids = [file.stem.split("START___")[1] for file in all_input_files]
         return working_dir, new_input_path, input_job_ids, new_csv_file, all_input_files
 
-    def _prepare_job_database(self):
-        # prepare all job ids
+    def _jobs_from_csv(self, input_df):
         input_job_ids = self.input_job_ids
 
         # get all stages and their config keys from the main config
@@ -100,12 +112,25 @@ class BatchManager:
         jobs = []
         for combination in combinations:
             for job_id in input_job_ids:
-                charge = self.input_df.loc[job_id, "charge"]
-                multiplicity = self.input_df.loc[job_id, "multiplicity"]
+                charge = input_df.loc[job_id, "charge"]
+                multiplicity = input_df.loc[job_id, "multiplicity"]
 
                 job = Job(job_id, combination, self.working_dir, charge, multiplicity)
                 jobs.append(job)
         job_dict = {job.unique_job_id: job for job in jobs}
+        return job_dict
+
+    def _jobs_from_backup_json(self, json_file_path):
+        # prepare all job ids
+        job_dict = {}
+        with open(json_file_path, "r") as json_file:
+            job_backup = json.load(json_file)
+
+        for job_id_backup, job_dict_backup in job_backup.items():
+            job_dict[job_id_backup] = Job.import_from_dict(
+                job_dict_backup, self.working_dir
+            )
+
         return job_dict
 
     def setup_work_modules_manager(self):
@@ -180,6 +205,15 @@ class BatchManager:
 
         return manager_runs
 
+    def save_current_jobs(self):
+
+        job_backup = {}
+        for job in self.job_dict.values():
+            job_backup[job.unique_job_id] = job.export_as_dict()
+
+        with open(self.working_dir / "job_backup.json", "w") as json_file:
+            json.dump(job_backup, json_file)
+
     async def batch_processing_loop(self):
         """This sets up the main batch processing loop and runs it until all tasks are done.
 
@@ -192,7 +226,7 @@ class BatchManager:
         i = 1
         while True:
             self.advance_jobs()
-
+            self.save_current_jobs()
             i += 1
 
             if all([task.done() for task in manager_runs]):

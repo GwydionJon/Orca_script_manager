@@ -1,5 +1,6 @@
 import shutil
 import subprocess
+from pathlib import Path
 
 
 class Job:
@@ -22,6 +23,7 @@ class Job:
             input_file (str|Path): Location of the original input file.
             all_keys (list[str]): A list of all the calculation steps that will be performed by this job.
         """
+
         # public attributes
         self.mol_id = input_id
         self.unique_job_id = "__".join(all_keys) + "___" + input_id
@@ -380,3 +382,97 @@ class Job:
             # When using parallel jobs, the file of a primary stage might be needed for multiple secondary stages
             # but we don't want to make the calculation multiple times
             shutil.copy(input_file, new_file)
+
+    def export_as_dict(self):
+
+        export_dict = {}
+        export_dict["mol_id"] = self.mol_id
+        export_dict["unique_job_id"] = self.unique_job_id
+        export_dict["current_step"] = self.current_step
+        export_dict["current_step_id"] = self.current_step_id
+        export_dict["all_keys"] = self.all_keys
+        export_dict["input_file_types"] = self.input_file_types
+        export_dict["charge"] = int(self.charge)
+        export_dict["multiplicity"] = int(self.multiplicity)
+        export_dict["current_key"] = self.current_key
+        export_dict["_current_status"] = self._current_status
+        export_dict["finished_keys"] = self.finished_keys
+        export_dict["final_dir"] = str(self.final_dir)
+        export_dict["failed_reason"] = self.failed_reason
+
+        # export_dict["current_dirs"] = {
+        #     str(key): str(value) for key, value in self.current_dirs.items()
+        # }
+
+        # export_dict["input_dir_per_key"] = {
+        #     str(key): str(value) for key, value in self.input_dir_per_key.items()
+        # }
+        # export_dict["output_dir_per_key"] = {
+        #     str(key): str(value) for key, value in self.output_dir_per_key.items()
+        # }
+        # export_dict["failed_per_key"] = {
+        #     str(key): str(value) for key, value in self.failed_per_key.items()
+        # }
+        # export_dict["finished_per_key"] = {
+        #     str(key): str(value) for key, value in self.finished_per_key.items()
+        # }
+        export_dict["slurm_id_per_key"] = {
+            str(key): str(value) for key, value in self.slurm_id_per_key.items()
+        }
+        export_dict["status_per_key"] = {
+            str(key): str(value) for key, value in self.status_per_key.items()
+        }
+        return export_dict
+
+    @classmethod
+    def import_from_dict(cls, input_dict, working_dir):
+        new_job = cls(
+            input_dict["mol_id"],
+            input_dict["all_keys"],
+            working_dir,
+            input_dict["charge"],
+            input_dict["multiplicity"],
+            input_dict["input_file_types"],
+        )
+        new_job.current_step = input_dict["current_step"]
+        new_job.current_step_id = input_dict["current_step_id"]
+        new_job.current_key = input_dict["current_key"]
+        new_job._current_status = input_dict["_current_status"]
+
+        new_job.current_dirs = {
+            "input": new_job.input_dir_per_key[new_job.current_key],
+            "output": new_job.output_dir_per_key[new_job.current_key],
+            "finished": new_job.finished_per_key[new_job.current_key],
+            "missing_ram_error": new_job.failed_per_key[new_job.current_key].parents[0]
+            / "missing_ram_error"
+            / new_job.failed_per_key[new_job.current_key].name,
+            "walltime_error": new_job.failed_per_key[new_job.current_key].parents[0]
+            / "walltime_error"
+            / new_job.failed_per_key[new_job.current_key].name,
+            "unknown_error": new_job.failed_per_key[new_job.current_key].parents[0]
+            / "unknown_error"
+            / new_job.failed_per_key[new_job.current_key].name,
+        }
+
+        new_job.final_dir = Path(input_dict["final_dir"])
+        new_job.failed_reason = input_dict["failed_reason"]
+
+        # new_job.input_dir_per_key = {
+        #     str(key): Path(value)
+        #     for key, value in input_dict["input_dir_per_key"].items()
+        # }
+        # new_job.output_dir_per_key = {
+        #     str(key): Path(value)
+        #     for key, value in input_dict["output_dir_per_key"].items()
+        # }
+        # new_job.failed_per_key = {
+        #     str(key): Path(value) for key, value in input_dict["failed_per_key"].items()
+        # }
+        # new_job.finished_per_key = {
+        #     str(key): Path(value)
+        #     for key, value in input_dict["finished_per_key"].items()
+        # }
+        new_job.slurm_id_per_key = input_dict["slurm_id_per_key"]
+        new_job.status_per_key = input_dict["status_per_key"]
+        new_job.finished_keys = input_dict["finished_keys"]
+        return new_job
