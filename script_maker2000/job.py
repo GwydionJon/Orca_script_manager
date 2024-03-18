@@ -161,7 +161,6 @@ class Job:
         if key in self.status_per_key:
 
             if self.status_per_key[key] == "submitted":
-                print("checking slurm", self._check_slurm_completed(key))
                 if self._check_slurm_completed(key):
                     return "returned"
                 else:
@@ -293,6 +292,21 @@ class Job:
             else:
                 return self.current_status
 
+    def _clean_up(self):
+        """Clean up the input and output directories.
+
+        This method is used to clean up the input and output directories by archiving them and then removing them.
+        """
+        dir_list = list(self.output_dir_per_key.values()) + list(
+            self.input_dir_per_key.values()
+        )
+        for dir in dir_list:
+            if dir.exists():
+                shutil.make_archive(
+                    dir.parents[0] / ("archive_" + dir.stem), "gztar", dir
+                )
+                shutil.rmtree(dir)
+
     def wrap_up_failed(self):
         """
         Performs the necessary actions when a job fails.
@@ -318,6 +332,8 @@ class Job:
             for key in self.all_keys[self.all_keys.index(self.current_key) + 1 :]:
                 self.status_per_key[key] = "failed"
 
+        self._clean_up()
+
         return self.failed_reason
 
     def wrap_up(self):
@@ -331,12 +347,12 @@ class Job:
         """
 
         current_dir = self.current_dirs["finished"]
-        print(current_dir)
         self.final_dir = self.raw_success_dir
         self.current_status = "finalized"
 
         # Copy all finished files to the final success directory
         shutil.copytree(current_dir, self.final_dir / self.unique_job_id)
+        self._clean_up()
 
     def prepare_initial_job(self, key, step, input_file):
         """Prepare the initial job for execution.

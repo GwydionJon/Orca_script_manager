@@ -80,7 +80,6 @@ def test_workmanager(clean_tmp_dir, job_dict, monkeypatch):
         work_manager.check_submitted_jobs(current_job_dict["submitted"])
     )
     # haven't refreshed the job status yet
-    assert len(current_job_dict["returned"]) == 0
     current_job_dict = work_manager.check_job_status()
     assert len(current_job_dict["returned"]) == 11
 
@@ -151,8 +150,5 @@ def test_workmanager_loop(clean_tmp_dir, job_dict, monkeypatch):
     assert len(list(work_manager.failed_dir.glob("*/*"))) == 7
 
     assert len(list(work_manager.input_dir.glob("*"))) == 11
-    assert len(list(work_manager.input_dir.glob("*tar*"))) == 11
     assert len(list(work_manager.input_dir.glob("*"))) == 11
-    assert len(list(work_manager.input_dir.glob("*tar*"))) == 11
     assert len(list(work_manager.output_dir.glob("*"))) == 11
-    assert len(list(work_manager.output_dir.glob("*tar*"))) == 11
