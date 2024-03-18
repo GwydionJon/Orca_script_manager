@@ -156,9 +156,13 @@ class BatchManager:
         advancement_dict = defaultdict(lambda: 0)
         for job in self.job_dict.values():
             advancement_output = job.advance_to_next_key()
+
             advancement_dict[advancement_output] += 1
 
-        self.log.info(f"Advancement dict: {advancement_dict}")
+        log_message = "Advancement dict: "
+        for key, value in advancement_dict.items():
+            log_message += f"{key}: {value} "
+        self.log.info(log_message)
 
     def start_work_manager_loops(self):
         # start work manager loops with threading
@@ -203,6 +207,16 @@ class BatchManager:
 
         return manager_runs
 
+    def collect_result_overview(self):
+        status_dict = defaultdict(lambda: 0)
+        for job in self.job_dict.values():
+            status_dict[job.current_status] += 1
+
+        log_message = "Status overview: "
+        for key, value in status_dict.items():
+            log_message += f"{key}: {value} "
+        self.log.info(log_message)
+
     def run_batch_processing(self):
         """This function will start the batch processing loop and return the results.
             It will block until all tasks are done.
@@ -211,7 +225,10 @@ class BatchManager:
         Returns:
             _type_: _description_
         """
-        return asyncio.run(self.batch_processing_loop())
+        task_results = asyncio.run(self.batch_processing_loop())
+        self.collect_result_overview()
+
+        return task_results
 
     #     for work_manager in self.work_managers[self.min_step_id]:
     #             work_manager.log.info(

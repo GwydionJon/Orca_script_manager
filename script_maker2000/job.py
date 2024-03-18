@@ -218,20 +218,24 @@ class Job:
 
         if return_str == "success":
             self.current_status = "finished"
-            shutil.copytree(self.current_dirs["output"], self.current_dirs["finished"])
+            if not self.current_dirs["finished"].exists():
+                shutil.copytree(
+                    self.current_dirs["output"], self.current_dirs["finished"]
+                )
 
         else:
             self.current_status = "failed"
             self.failed_reason = return_str
 
-            shutil.copytree(
-                self.current_dirs["output"], self.current_dirs[self.failed_reason]
-            )
+            if not self.current_dirs[self.failed_reason].exists():
+                shutil.copytree(
+                    self.current_dirs["output"], self.current_dirs[self.failed_reason]
+                )
 
-        # clean up input and output by archiving
-        for dir in [self.current_dirs["input"], self.current_dirs["output"]]:
-            shutil.make_archive(dir.parents[0] / ("archive_" + dir.stem), "gztar", dir)
-            shutil.rmtree(dir)
+        # # clean up input and output by archiving
+        # for dir in [self.current_dirs["input"], self.current_dirs["output"]]:
+        #     shutil.make_archive(dir.parents[0] / ("archive_" + dir.stem), "gztar", dir)
+        #     shutil.rmtree(dir)
 
     def advance_to_next_key(self):
         """Advance to the next key and update the current status and directories.
@@ -278,11 +282,16 @@ class Job:
 
                 return self.failed_reason
 
+            else:
+                return "not_finished"
+
         else:
             if self.current_status == "finished":
 
                 self.wrap_up()
                 return "finalized"
+            else:
+                return self.current_status
 
     def wrap_up_failed(self):
         """

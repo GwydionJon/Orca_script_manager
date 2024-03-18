@@ -109,10 +109,8 @@ class WorkManager:
 
         finished_jobs = []
         for job in submitted_jobs:
-            print(job.current_status)
             if job.check_status_for_key(self.config_key) == "returned":
                 finished_jobs.append(job)
-            print(job.check_status_for_key(self.config_key))
         self.log.info(f"Collected {len(finished_jobs)} returned jobs.")
 
         return finished_jobs
@@ -123,9 +121,17 @@ class WorkManager:
         return_status_dict = defaultdict(lambda: 0)
 
         for job in finished_jobs:
-            work_module_status = self.workModule.check_job_status(
-                job.current_dirs["output"]
-            )
+            try:
+                work_module_status = self.workModule.check_job_status(
+                    job.current_dirs["output"]
+                )
+            except Exception:
+
+                work_module_status = "unknown_error"
+                raise Exception(
+                    f"Error while checking job status for {job} in dir {job.current_dirs['output']}"
+                )
+
             return_status_dict[work_module_status] += 1
 
             job.manage_return(work_module_status)
@@ -299,6 +305,7 @@ class WorkManager:
                 + log_dict
                 + f"\n\t {total_jobs_remaining} remaining."
             )
+            self.log.info(current_job_dict)
             return total_jobs_remaining == 0
 
         n_loops = 0

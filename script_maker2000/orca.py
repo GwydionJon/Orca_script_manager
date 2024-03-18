@@ -319,4 +319,7 @@ class OrcaModule(TemplateModule):
                 if check_slurm_walltime_error(file_contents):
                     return "walltime_error"
 
+        if not orca_out_file.exists() and not slurm_file.exists():
+            return "missing_files_error"
+
         return "unknown_error"

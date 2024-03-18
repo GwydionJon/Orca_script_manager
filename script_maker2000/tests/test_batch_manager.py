@@ -143,9 +143,7 @@ def test_batch_manager_threads(
     )
 
 
-pytest.mark.skip(reason="Only run this on a cluster.")
-
-
+@pytest.mark.skipif(shutil.which("sbatch") is None, reason="No slurm available.")
 def test_batch_loop_no_files(clean_tmp_dir, monkeypatch):
 
     def mock_run_job(args, **kw):
@@ -308,20 +306,20 @@ def test_parallel_steps(multilayer_tmp_dir, monkeypatch):
                 target_dir,
                 dirs_exist_ok=True,
             )
-        for out_dir in target_dirs:
-            replacement = "START___"
-            for dir in out_dir.glob("*"):
-                new_dir = str(dir).replace("START_", replacement)
+        for i, out_dir in enumerate(target_dirs):
+            replacement = f"opt_config{i+1}___"
+            for dir_ in out_dir.glob("*"):
+                new_dir = str(dir_).replace("START_", replacement)
                 new_dir = Path(new_dir)
                 new_dir.mkdir()
-                for file in dir.glob("*"):
+                for file in dir_.glob("*"):
 
                     new_file = str(file.name).replace("START_", replacement)
                     if "slurm" in new_file:
                         new_file = "slurm_output.out"
 
                     file.rename(Path(new_dir) / new_file)
-                shutil.rmtree(dir)
+                shutil.rmtree(dir_)
 
         # move files for sp_config 1 + 2
 
@@ -337,26 +335,15 @@ def test_parallel_steps(multilayer_tmp_dir, monkeypatch):
             working_dir / "sp_config2" / "output",
         ]
 
-        for i in range(2):
-            for target_dir in target_dirs:
-                for output_dir in succesful_output_dirs:
+        copy_output(target_dirs, succesful_output_dirs)
 
-                    new_file_path = shutil.copytree(
-                        output_dir, target_dir / output_dir.name, dirs_exist_ok=True
-                    )
-
-                    new_file_name = target_dir / str(output_dir.name).replace(
-                        "START_", f"START__OPT_CONFIG{i+1}___"
-                    )
-                    new_file_path.rename(new_file_name)
-
-        monkeypatch.setattr(batch_manager, "wait_time", 0.3)
-        monkeypatch.setattr(batch_manager, "max_loop", 5)
+        monkeypatch.setattr(batch_manager, "wait_time", 0.1)
+        monkeypatch.setattr(batch_manager, "max_loop", 8)
 
         for work_manager_list in batch_manager.work_managers.values():
             for work_manager in work_manager_list:
-                monkeypatch.setattr(work_manager, "wait_time", 0.3)
-                monkeypatch.setattr(work_manager, "max_loop", 4)
+                monkeypatch.setattr(work_manager, "wait_time", 0.1)
+                monkeypatch.setattr(work_manager, "max_loop", 8)
 
     else:
         monkeypatch.setattr(batch_manager, "wait_time", 10)
@@ -372,13 +359,40 @@ def test_parallel_steps(multilayer_tmp_dir, monkeypatch):
         assert task_result.done() is True
         assert "All jobs done after" in task_result.result()
 
-    assert len(list(batch_manager.working_dir.glob("finished/raw_results/*"))) == 8
+    assert len(list(batch_manager.working_dir.glob("finished/raw_results/*"))) == 16
     assert (
         len(list(batch_manager.working_dir.glob("finished/raw_results/*sp_config1*")))
-        == 4
+        == 8
     )
     assert (
         len(list(batch_manager.working_dir.glob("finished/raw_results/*sp_config2*")))
-        == 4
+        == 8
     )
-    assert len(list(batch_manager.working_dir.glob("finished/raw_results/*opt*"))) == 8
+    assert len(list(batch_manager.working_dir.glob("finished/raw_results/*opt*"))) == 16
+
+
+def copy_output(target_dirs, succesful_output_dirs):
+    for i in range(2):
+        for target_dir in target_dirs:
+            for output_dir in succesful_output_dirs:
+                new_dir_path = shutil.copytree(
+                    output_dir, target_dir / output_dir.name, dirs_exist_ok=True
+                )
+                if "sp_config1" in str(target_dir):
+                    j = 1
+                else:
+                    j = 2
+
+                new_dir_name = target_dir / str(output_dir.name).replace(
+                    "START_", f"opt_config{i+1}__sp_config{j}___"
+                )
+                print(new_dir_name)
+                new_dir_path.rename(new_dir_name)
+                for file in new_dir_name.glob("*"):
+                    new_file = str(file.name).replace(
+                        "START_", f"opt_config{i+1}__sp_config{j}___"
+                    )
+                    if "slurm" in new_file:
+                        new_file = "slurm_output.out"
+
+                    file.rename(new_dir_name / new_file)
