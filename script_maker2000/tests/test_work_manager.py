@@ -6,18 +6,25 @@ import asyncio
 import numpy as np
 
 
-def test_workmanager(pre_config_tmp_dir, all_job_ids, monkeypatch):
+def test_workmanager(clean_tmp_dir, job_dict, monkeypatch):
     def mock_run_job(args, **kw):
 
         # move output files to output dir
         example_output_files = Path(__file__).parent / "test_data" / "example_outputs"
         if len(list((orca_test.working_dir / "output").glob("*"))) == 0:
-            print("copy data")
             shutil.copytree(
                 example_output_files,
                 orca_test.working_dir / "output",
                 dirs_exist_ok=True,
             )
+            for dir in (orca_test.working_dir / "output").glob("*"):
+                new_dir = str(dir).replace("START_", "opt_config___")
+                new_dir = Path(new_dir)
+                new_dir.mkdir()
+                for file in dir.glob("*"):
+                    new_file = str(file.name).replace("START_", "opt_config___")
+                    file.rename(Path(new_dir) / new_file)
+                shutil.rmtree(dir)
 
         class TestClass:
             def __init__(self, args, **kw):
@@ -28,64 +35,88 @@ def test_workmanager(pre_config_tmp_dir, all_job_ids, monkeypatch):
         test = TestClass(args, **kw)
         return test
 
-    config_path = pre_config_tmp_dir / "example_config.json"
+    config_path = clean_tmp_dir / "example_config.json"
 
     orca_test = OrcaModule(config_path, "sp_config")
+    work_manager = WorkManager(orca_test, job_dict)
+    # no files present for sp_config yet
+    current_job_dict = work_manager.check_job_status()
+    print(current_job_dict)
+    assert len(current_job_dict["not_found"]) == 11
 
-    work_manager = WorkManager(orca_test, all_job_ids)
-    assert len(work_manager.all_jobs_dict["not_yet_found"]) == 11
-    assert len(work_manager.all_jobs_dict["not_yet_prepared"]) == 0
+    orca_test = OrcaModule(config_path, "opt_config")
+    work_manager = WorkManager(orca_test, job_dict)
 
-    work_manager.check_input_dir()
-    assert len(work_manager.all_jobs_dict["not_yet_found"]) == 0
-    assert len(work_manager.all_jobs_dict["not_yet_prepared"]) == 11
+    # no files present for sp_config yet
+    current_job_dict = work_manager.check_job_status()
+    assert len(current_job_dict["not_found"]) == 0
+    assert len(current_job_dict["found"]) == 11
 
-    work_manager.prepare_jobs()
-    assert len(work_manager.all_jobs_dict["not_yet_prepared"]) == 0
-    assert len(work_manager.all_jobs_dict["not_yet_submitted"]) == 11
+    # prepare jobs
+    current_job_dict["not_started"].extend(
+        work_manager.prepare_jobs(current_job_dict["found"])
+    )
+    assert len(current_job_dict["not_started"]) == 11
 
-    orca_input_dirs = list(orca_test.working_dir.glob("input/*"))
-    for input_dir in orca_input_dirs:
-        assert len(list(input_dir.glob("*.*"))) == 3
+    for dir in (orca_test.working_dir / "input").glob("*"):
+        assert len(list(dir.glob("*inp"))) == 1
+        assert len(list(dir.glob("*xyz"))) == 1
+        assert len(list(dir.glob("*sbatch"))) == 1
 
     monkeypatch.setattr("shutil.which", lambda x: True)
     monkeypatch.setattr("subprocess.run", mock_run_job)
-    work_manager.submit_jobs()
 
-    assert len(work_manager.all_jobs_dict["not_yet_submitted"]) == 0
-    assert len(work_manager.all_jobs_dict["submitted"]) == 11
+    current_job_dict["submitted"].extend(
+        work_manager.submit_jobs(current_job_dict["not_started"])
+    )
 
-    work_manager.check_output_dir()
-    assert len(work_manager.all_jobs_dict["submitted"]) == 0
-    assert len(work_manager.all_jobs_dict["returned_jobs"]) == 11
+    assert len(current_job_dict["submitted"]) == 11
+    assert len(list((orca_test.working_dir / "output").glob("*"))) == 11
+    for job in current_job_dict["submitted"]:
+        assert job.current_status == "submitted"
 
-    work_manager.check_completed_job_status()
-    assert len(work_manager.all_jobs_dict["finished"]) == 4
-    assert len(work_manager.all_jobs_dict["walltime_error"]) == 4
-    assert len(work_manager.all_jobs_dict["missing_ram_error"]) == 3
-    assert len(work_manager.all_jobs_dict["unknown_error"]) == 0
-    assert len(work_manager.all_jobs_dict["returned_jobs"]) == 0
+    # check on submitted jobs
+    current_job_dict["returned"].extend(
+        work_manager.check_submitted_jobs(current_job_dict["submitted"])
+    )
+    # haven't refreshed the job status yet
+    current_job_dict = work_manager.check_job_status()
+    assert len(current_job_dict["returned"]) == 11
 
-    assert len(list(work_manager.workModule.working_dir.glob("finished/*"))) == 4
-    assert len(list(work_manager.workModule.working_dir.glob("failed/*"))) == 7
+    # check on returned jobs
+    # manage finished jobs
+    work_manager.manage_returned_jobs(current_job_dict["returned"])
 
-    assert len(list(work_manager.input_dir.glob("*"))) == 11
-    assert len(list(work_manager.input_dir.glob("*tar*"))) == 11
-    assert len(list(work_manager.output_dir.glob("*"))) == 0
+    current_job_dict = work_manager.check_job_status()
+    print(current_job_dict.keys())
+
+    assert len(current_job_dict["finished"]) == 4
+    assert len(current_job_dict["failed"]) == 7
+    assert len(current_job_dict["not_found"]) == 0
+    assert len(current_job_dict["submitted"]) == 0
+    assert len(current_job_dict["not_started"]) == 0
+    assert len(current_job_dict["returned"]) == 0
 
 
-def test_workmanager_loop(pre_config_tmp_dir, all_job_ids, monkeypatch):
+def test_workmanager_loop(clean_tmp_dir, job_dict, monkeypatch):
     def mock_run_job(args, **kw):
 
         # move output files to output dir
         example_output_files = Path(__file__).parent / "test_data" / "example_outputs"
         if len(list((orca_test.working_dir / "output").glob("*"))) == 0:
-            print("copy data")
             shutil.copytree(
                 example_output_files,
                 orca_test.working_dir / "output",
                 dirs_exist_ok=True,
             )
+            for dir in (orca_test.working_dir / "output").glob("*"):
+                new_dir = str(dir).replace("START_", "opt_config___")
+                new_dir = Path(new_dir)
+                new_dir.mkdir()
+                for file in dir.glob("*"):
+                    new_file = str(file.name).replace("START_", "opt_config___")
+                    file.rename(Path(new_dir) / new_file)
+                shutil.rmtree(dir)
 
         class TestClass:
             def __init__(self, args, **kw):
@@ -96,28 +127,28 @@ def test_workmanager_loop(pre_config_tmp_dir, all_job_ids, monkeypatch):
         test = TestClass(args, **kw)
         return test
 
-    config_path = pre_config_tmp_dir / "example_config.json"
+    config_path = clean_tmp_dir / "example_config.json"
 
-    orca_test = OrcaModule(config_path, "sp_config")
+    orca_test = OrcaModule(config_path, "opt_config")
 
-    work_manager = WorkManager(orca_test, all_job_ids)
-    assert len(work_manager.all_jobs_dict["not_yet_found"]) == 11
+    work_manager = WorkManager(orca_test, job_dict)
+    current_job_dict = work_manager.check_job_status()
+    assert len(current_job_dict["found"]) == 11
 
     monkeypatch.setattr("shutil.which", lambda x: True)
     monkeypatch.setattr("subprocess.run", mock_run_job)
+    monkeypatch.setattr(work_manager, "max_loop", 5)
+    monkeypatch.setattr(work_manager, "wait_time", 0.3)
 
     asyncio.run(work_manager.loop())
     # wait for async to finish
+    current_job_dict = work_manager.check_job_status()
+    assert len(current_job_dict["finished"]) == 4
+    assert len(current_job_dict["failed"]) == 7
 
-    assert len(work_manager.all_jobs_dict["finished"]) == 4
-    assert len(work_manager.all_jobs_dict["walltime_error"]) == 4
-    assert len(work_manager.all_jobs_dict["missing_ram_error"]) == 3
-    assert len(work_manager.all_jobs_dict["unknown_error"]) == 0
-    assert len(work_manager.all_jobs_dict["returned_jobs"]) == 0
-
-    assert len(list(work_manager.workModule.working_dir.glob("finished/*"))) == 4
-    assert len(list(work_manager.workModule.working_dir.glob("failed/*"))) == 7
+    assert len(list(work_manager.finished_dir.glob("*"))) == 4
+    assert len(list(work_manager.failed_dir.glob("*/*"))) == 7
 
     assert len(list(work_manager.input_dir.glob("*"))) == 11
-    assert len(list(work_manager.input_dir.glob("*tar*"))) == 11
-    assert len(list(work_manager.output_dir.glob("*"))) == 0
+    assert len(list(work_manager.input_dir.glob("*"))) == 11
+    assert len(list(work_manager.output_dir.glob("*"))) == 11

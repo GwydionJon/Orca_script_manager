@@ -4,7 +4,6 @@ from datetime import datetime
 import subprocess
 import shutil
 import re
-import pandas as pd
 from script_maker2000.template import TemplateModule
 
 
@@ -15,7 +14,9 @@ class OrcaModule(TemplateModule):
     # corresponding slurm scripts as well as handeling the submission logic.
 
     def __init__(
-        self, main_config: dict, config_key: str, input_df: pd.DataFrame = None
+        self,
+        main_config: dict,
+        config_key: str,
     ) -> None:
         """Setup the orca files from the main config.
         Since different orca setups can be defined in the config
@@ -28,26 +29,32 @@ class OrcaModule(TemplateModule):
         Raises:
             NotImplementedError: _description_
         """
-        super(OrcaModule, self).__init__(main_config, config_key, input_df)
+        super(OrcaModule, self).__init__(main_config, config_key)
         self.log.info(f"Creating orca object from key: {config_key}")
 
         self.internal_config["options"]["orca_version"] = self.main_config[
             "main_config"
         ]["orca_version"]
 
-    def prepare_jobs(self, input_files) -> dict:
-        xyz_dict = self.read_xyzs(input_files)
+    def prepare_jobs(self, input_dirs, **kwargs) -> dict:
+        input_files = []
+
+        charge_list = kwargs.get("charge_list", [])
+        multiplicity_list = kwargs.get("multiplicity_list", [])
+
+        for input_dir in input_dirs:
+            input_files.extend(list(input_dir.glob("*xyz")))
+
+        xyz_dict = self.read_xyzs(input_files, charge_list, multiplicity_list)
 
         orca_file_dict = self.create_orca_input_files(xyz_dict)
         orca_slurm_config = self.prepare_slurm_script(orca_file_dict)
 
-        orca_path_dict = self.write_orca_scripts(orca_file_dict)
+        self.write_orca_scripts(orca_file_dict)
         self.create_slurm_scripts(orca_slurm_config)
 
-        orca_path_values = list(orca_path_dict.values())
         # get the input dir list
-        input_dir_list = [path.parent for path in orca_path_values]
-        input_dir_dict = {input_dir.stem: input_dir for input_dir in input_dir_list}
+        input_dir_dict = {input_dir.stem: input_dir for input_dir in input_dirs}
         return input_dir_dict
 
     def prepare_slurm_script(self, orca_file_dict) -> str | Path:
@@ -136,31 +143,23 @@ class OrcaModule(TemplateModule):
                     f.write("%s\n" % item)
         return orca_path_dict
 
-    def read_charge_mul(self, xyz_path):
-
-        xyz_key = xyz_path.stem.split("_", maxsplit=1)[1]
-
-        charge = self.input_df.loc[xyz_key]["charge"]
-        mul = self.input_df.loc[xyz_key]["multiplicity"]
-        return charge, mul
-
-    def read_xyzs(self, input_files):
+    def read_xyzs(self, input_files, charge_list, multiplicity_list):
 
         xyz_dict = {}
 
-        for xyz_path in input_files:
+        for xyz_path, charge, multiplicity in zip(
+            input_files, charge_list, multiplicity_list
+        ):
             with open(xyz_path, "r", encoding="utf-8") as f:
                 coords = f.readlines()[2:]
                 # remove trailing spaces and line breaks
 
             coords = [coord.strip() for coord in coords]
 
-            charge, mul = self.read_charge_mul(xyz_path)
-
             xyz_dict[xyz_path.stem] = {
                 "coords": coords,
                 "charge": charge,
-                "mul": mul,
+                "mul": multiplicity,
             }
             (self.working_dir / "input" / xyz_path.stem).mkdir(
                 parents=True, exist_ok=True
@@ -311,7 +310,7 @@ class OrcaModule(TemplateModule):
                 file_contents = f.read()
 
                 if check_orca_normal_termination(file_contents):
-                    return "all_good"
+                    return "success"
                 if check_orca_memory_error(file_contents):
                     return "missing_ram_error"
         if slurm_file.exists():
@@ -319,5 +318,8 @@ class OrcaModule(TemplateModule):
                 file_contents = f.read()
                 if check_slurm_walltime_error(file_contents):
                     return "walltime_error"
+
+        if not orca_out_file.exists() and not slurm_file.exists():
+            return "missing_files_error"
 
         return "unknown_error"

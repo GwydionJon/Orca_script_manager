@@ -50,7 +50,6 @@ def test_orca_submission(pre_config_tmp_dir, monkeypatch):
     orca_test.prepare_jobs(xyz_list)
 
     input_dirs = list(orca_test.working_dir.glob("input/*"))
-    print([input_dir.name for input_dir in input_dirs])
     for input_dir in input_dirs:
 
         if shutil.which("sbatch"):
