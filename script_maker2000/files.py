@@ -115,6 +115,7 @@ def check_config(main_config):
     sub_dir_names = [pathlib.Path(key) for key in main_config["loop_config"]]
     if len(sub_dir_names) == 0:
         raise ValueError("Can't find loop configs. ?")
+
     for sub_dir in sub_dir_names:
 
         if (output_dir / sub_dir).exists() and main_config["main_config"][
@@ -148,7 +149,7 @@ def check_config(main_config):
     script_maker_log.info("Config seems in order.")
 
 
-def read_config(config_file, perform_validation=True):
+def read_config(config_file, perform_validation=True, override_continue_job=False):
     """
     This is a very import setup function as it not only reads and provides the main config,
     it also sets the location for the logging files.
@@ -161,6 +162,10 @@ def read_config(config_file, perform_validation=True):
         main_config = json.load(f)
     main_config = OrderedDict(main_config)
 
+    # check if continue_previous_run is set to True
+    if override_continue_job:
+        main_config["main_config"]["continue_previous_run"] = override_continue_job
+
     output_dir = pathlib.Path(main_config["main_config"]["output_dir"])
     # when giving a relativ path resolve it in relation to the config file.
     if output_dir.is_absolute() is False:
@@ -168,6 +173,12 @@ def read_config(config_file, perform_validation=True):
 
     output_dir = output_dir.resolve()
     main_config["main_config"]["output_dir"] = str(output_dir)
+
+    if perform_validation is True:
+        check_config(main_config)
+    else:
+        script_maker_log.info("Skipping config validation.")
+
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # check if input file/folder is present
@@ -178,11 +189,6 @@ def read_config(config_file, perform_validation=True):
 
     input_path = input_path.resolve()
     main_config["main_config"]["input_file_path"] = str(input_path)
-
-    if perform_validation is True:
-        check_config(main_config)
-    else:
-        script_maker_log.info("Skipping config validation.")
 
     # remove previous handlers from logging
     # this is mainly relevant for the tests

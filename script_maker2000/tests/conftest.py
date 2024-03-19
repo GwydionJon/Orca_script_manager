@@ -187,6 +187,16 @@ def multilayer_tmp_dir():
 
 
 @pytest.fixture
+def pre_started_dir(multilayer_tmp_dir):
+
+    current_path = Path(__file__).parents[0]
+    shutil.copy(current_path / "test_data" / "output.tar.gz", multilayer_tmp_dir)
+    shutil.unpack_archive(multilayer_tmp_dir / "output.tar.gz", multilayer_tmp_dir)
+
+    return multilayer_tmp_dir
+
+
+@pytest.fixture
 def job_dict(clean_tmp_dir):
     main_config_path = clean_tmp_dir / "example_config.json"
     batch_manager = BatchManager(main_config_path)

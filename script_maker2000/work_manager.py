@@ -77,6 +77,7 @@ class WorkManager:
         for job in found_jobs:
 
             input_dirs.append(job.current_dirs["input"])
+
             charge_list.append(job.charge)
             multiplicity_list.append(job.multiplicity)
 
@@ -318,11 +319,19 @@ class WorkManager:
 
             # check current status of all jobs
             current_job_dict = self.check_job_status()
+            print("")
+            print("")
+
+            print(current_job_dict["found"])
 
             # prepare jobs
             current_job_dict["not_started"].extend(
                 self.prepare_jobs(current_job_dict["found"])
             )
+            print("")
+
+            print(current_job_dict["found"])
+
             # submit jobs
             current_job_dict["submitted"].extend(
                 self.submit_jobs(current_job_dict["not_started"])
