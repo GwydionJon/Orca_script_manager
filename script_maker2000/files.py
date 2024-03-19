@@ -102,14 +102,19 @@ def move_files(input_path, output_path, copy=True):
         return shutil.move(input_path, output_path)
 
 
-def check_config(main_config):
-    input_path = pathlib.Path(main_config["main_config"]["input_file_path"])
+def check_config(main_config, skip_file_check=False):
 
-    if not input_path.exists():
-        raise FileNotFoundError(
-            f"Can't find input files under {input_path}."
-            + " Please check your file name or provide the necessary files."
-        )
+    if skip_file_check is False:
+        if main_config["main_config"]["input_file_path"] is None:
+            raise FileNotFoundError("No input file path provided.")
+
+        input_path = pathlib.Path(main_config["main_config"]["input_file_path"])
+
+        if not input_path.exists():
+            raise FileNotFoundError(
+                f"Can't find input files under {input_path}."
+                + " Please check your file name or provide the necessary files."
+            )
 
     output_dir = pathlib.Path(main_config["main_config"]["output_dir"])
     sub_dir_names = [pathlib.Path(key) for key in main_config["loop_config"]]
@@ -145,8 +150,6 @@ def check_config(main_config):
                 raise ValueError("The step numbers must be consecutive.")
     if min(step_list) != 0:
         raise ValueError("The first step number must be 0.")
-
-    script_maker_log.info("Config seems in order.")
 
 
 def read_config(config_file, perform_validation=True, override_continue_job=False):

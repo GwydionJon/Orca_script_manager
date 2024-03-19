@@ -28,12 +28,17 @@ dependencies = [
     "rdkit",
     "tqdm",
     "joblib",
+    "dash",
+    "dash-bootstrap-components",
+    "dash-renderjson",
   
 ]
 
 
 
 [project.scripts]
-
+script_maker_config = "script_maker2000.cli:config"
+script_maker_gui = "script_maker2000.cli:ui_handle"
+script_maker_dash = "script_maker2000.cli:open_dash"
 [tool.setuptools]
 packages = ["script_maker2000", "script_maker2000.data"]
