@@ -2,7 +2,8 @@ import dash
 import dash_bootstrap_components as dbc
 from collections import defaultdict
 import dash_renderjson
-
+import dash_cytoscape as cyto
+import json
 from dash import Dash, html, dcc, Input, Output, State, MATCH, ALL
 from pathlib import Path
 from script_maker2000.files import check_config
@@ -176,7 +177,7 @@ def add_main_config(app: Dash) -> Dash:
     json_view = dash_renderjson.DashRenderjson(id="json_view")
 
     acc_column = dbc.Col(accordion, md=4, lg=4, xl=4)
-    new_col = dbc.Col(
+    json_col = dbc.Col(
         [
             button_row,
             dbc.Row(
@@ -194,7 +195,31 @@ def add_main_config(app: Dash) -> Dash:
         ]
     )
 
-    new_row = dbc.Row([acc_column, new_col])
+    cyto_col = dbc.Col(
+        [
+            dbc.Row(
+                cyto.Cytoscape(
+                    id="cytoscape",
+                    layout={"name": "cose"},
+                )
+            ),
+            dbc.Row(
+                html.Pre(
+                    id="cyto_output",
+                    style={
+                        "width": "100%",
+                        "border": "thin lightgrey solid",
+                    },
+                    children="No config file created yet.",
+                ),
+                style={
+                    "margin": "10px",
+                },
+            ),
+        ]
+    )
+
+    new_row = dbc.Row([acc_column, json_col, cyto_col])
 
     app.layout.children.append(new_row)
 
@@ -336,7 +361,7 @@ def add_single_layer_config(i: int):
                         id={"type": "step_id_input", "index": f"{i}"},
                         value=i,
                         min=0,
-                        type="int",
+                        type="number",
                     ),
                 ],
                 style=default_style,
@@ -478,6 +503,53 @@ def create_config_file(
     return [html.Div("Config file created")], settings_dict, config_check_output
 
 
+def create_layer_cyto_graph(settings_dict):
+
+    layer_graph = {
+        "nodes": [],
+        "edges": [],
+    }
+
+    for layer_name, layer_settings in settings_dict["loop_config"].items():
+
+        layer_graph["nodes"].append(
+            {
+                "data": {
+                    "id": layer_name,
+                    "label": layer_name,
+                    "type": layer_settings["layer_type"],
+                    "step_id": layer_settings["step_id"],
+                    "method": layer_settings["method"],
+                    "basis_set": layer_settings["basis_set"],
+                    "additional_calculation_options": layer_settings[
+                        "additional_calculation_options"
+                    ],
+                    "ram_per_core": layer_settings["ram_per_core"],
+                    "n_cores_per_calculation": layer_settings[
+                        "n_cores_per_calculation"
+                    ],
+                    "n_calculation_at_once": layer_settings["n_calculation_at_once"],
+                    "disk_storage": layer_settings["disk_storage"],
+                    "max_run_time": layer_settings["max_run_time"],
+                }
+            }
+        )
+
+    for layer_name, layer_settings in settings_dict["loop_config"].items():
+        for layer_name2, layer_settings2 in settings_dict["loop_config"].items():
+            if int(layer_settings["step_id"]) == int(layer_settings2["step_id"]) - 1:
+                layer_graph["edges"].append(
+                    {
+                        "data": {
+                            "source": layer_name,
+                            "target": layer_name2,
+                        }
+                    }
+                )
+
+    return layer_graph
+
+
 def add_callbacks(app: Dash) -> Dash:
     def check_input_path(
         input_path,
@@ -560,6 +632,9 @@ def add_callbacks(app: Dash) -> Dash:
             additional_settings_block_col_children,
             additional_settings_value_col_children,
         )
+
+    def displayTapNodeData(data):
+        return json.dumps(data, indent=2)
 
     app.callback(
         Output("input_path_input", "valid"),
@@ -664,5 +739,17 @@ def add_callbacks(app: Dash) -> Dash:
         },
         prevent_initial_call=True,
     )(create_config_file)
+
+    app.callback(
+        Output("cytoscape", "elements"),
+        Input("json_view", "data"),
+        prevent_initial_call=True,
+    )(create_layer_cyto_graph)
+
+    app.callback(
+        Output("cyto_output", "children"),
+        Input("cytoscape", "tapNodeData"),
+        prevent_initial_call=True,
+    )(displayTapNodeData)
 
     return app
