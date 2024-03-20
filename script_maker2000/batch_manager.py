@@ -67,8 +67,17 @@ class BatchManager:
 
         self.log.setLevel("INFO")
 
-    # only for initilization
     def read_config(self, main_config_path, override_continue_job):
+        """
+        Reads the main configuration file.
+
+        Args:
+            main_config_path (str): The path to the main configuration file.
+            override_continue_job (bool): Whether to override the continue_previous_run flag in the main configuration.
+
+        Returns:
+            dict: The parsed main configuration.
+        """
         return read_config(
             main_config_path, override_continue_job=override_continue_job
         )
@@ -82,9 +91,8 @@ class BatchManager:
         the file names.
 
         Returns:
-            working_dir (str): The path to the working directory.
-            new_input_path (Path): The path to the new input files.
-            all_job_ids (list): A list of job IDs extracted from the file names.
+            tuple: A tuple containing the working directory path, the new input path,
+            the input job IDs, the new CSV file path, and a list of all input files.
         """
         working_dir, new_input_path, new_csv_file = create_working_dir_structure(
             self.main_config
@@ -95,6 +103,15 @@ class BatchManager:
         return working_dir, new_input_path, input_job_ids, new_csv_file, all_input_files
 
     def _jobs_from_csv(self, input_df):
+        """
+        Creates job objects from the input CSV file.
+
+        Args:
+            input_df (DataFrame): The input DataFrame.
+
+        Returns:
+            dict: A dictionary of job objects, where the keys are the unique job IDs.
+        """
         input_job_ids = self.input_job_ids
 
         # get all stages and their config keys from the main config
@@ -121,6 +138,15 @@ class BatchManager:
         return job_dict
 
     def _jobs_from_backup_json(self, json_file_path):
+        """
+        Creates job objects from a backup JSON file.
+
+        Args:
+            json_file_path (str): The path to the backup JSON file.
+
+        Returns:
+            dict: A dictionary of job objects, where the keys are the unique job IDs.
+        """
         # prepare all job ids
         job_dict = {}
         with open(json_file_path, "r") as json_file:
@@ -134,7 +160,12 @@ class BatchManager:
         return job_dict
 
     def setup_work_modules_manager(self):
+        """
+        Sets up the work managers based on the main configuration.
 
+        Returns:
+            dict: A dictionary of work managers, where the keys are the step IDs.
+        """
         work_managers = defaultdict(list)
 
         for key, value in self.main_config["loop_config"].items():
@@ -153,7 +184,9 @@ class BatchManager:
         return work_managers
 
     def copy_input_files_to_first_work_manager(self):
-
+        """
+        Copies input files to the input directory of the first work manager.
+        """
         # find lowest valid step id
         id_list = []
         for work_manager_list in self.work_managers.values():
@@ -176,8 +209,9 @@ class BatchManager:
                         job.prepare_initial_job(work_key, self.min_step_id, file)
 
     def advance_jobs(self):
-        # advance all jobs to the next step
-
+        """
+        Advances all jobs to the next step.
+        """
         advancement_dict = defaultdict(lambda: 0)
         for job in self.job_dict.values():
             advancement_output = job.advance_to_next_key()
@@ -190,7 +224,12 @@ class BatchManager:
         self.log.info(log_message)
 
     def start_work_manager_loops(self):
-        # start work manager loops with threading
+        """
+        Starts the work manager loops with threading.
+
+        Returns:
+            set: A set of manager tasks.
+        """
         manager_runs = set()
         times = []
         for work_managers_list in self.work_managers.values():
@@ -206,7 +245,9 @@ class BatchManager:
         return manager_runs
 
     def save_current_jobs(self):
-
+        """
+        Saves the current jobs to a backup JSON file.
+        """
         job_backup = {}
         for job in self.job_dict.values():
             job_backup[job.unique_job_id] = job.export_as_dict()
@@ -215,10 +256,11 @@ class BatchManager:
             json.dump(job_backup, json_file)
 
     async def batch_processing_loop(self):
-        """This sets up the main batch processing loop and runs it until all tasks are done.
+        """
+        Sets up the main batch processing loop and runs it until all tasks are done.
 
         Returns:
-            _type_: _description_
+            set: A set of manager tasks.
         """
         manager_tasks = self.start_work_manager_loops()
         self.log.info(f"Background tasks first: {manager_tasks}")
@@ -242,6 +284,9 @@ class BatchManager:
         return manager_tasks
 
     def collect_result_overview(self):
+        """
+        Collects the result overview of the jobs.
+        """
         status_dict = defaultdict(lambda: 0)
         for job in self.job_dict.values():
             status_dict[job.current_status] += 1
@@ -252,12 +297,10 @@ class BatchManager:
         self.log.info(log_message)
 
     def run_batch_processing(self):
-        """This function will start the batch processing loop and return the results.
-            It will block until all tasks are done.
-            This is the main working loop.
-
-        Returns:
-            _type_: _description_
+        """
+        Starts the batch processing loop and returns the results.
+        It will block until all tasks are done.
+        This is the main working loop.
         """
         task_results = asyncio.run(self.batch_processing_loop())
         self.collect_result_overview()
