@@ -61,6 +61,33 @@ def add_main_config(app: Dash) -> Dash:
             ),
             dbc.Row(
                 [
+                    dbc.InputGroupText("Continue previous Run"),
+                    dcc.RadioItems(
+                        id="continue_previous_run_input",
+                        options=[
+                            {"label": "True", "value": True},
+                            {"label": "False", "value": False},
+                        ],
+                        value=False,
+                    ),
+                ],
+                style={"margin": "10px", "width": "100%", "margin-top": "20px"},
+            ),
+            dbc.Row(
+                [
+                    dbc.InputGroupText("Input Type"),
+                    dcc.RadioItems(
+                        id="input_type_input",
+                        options=[
+                            {"label": "xyz", "value": "xyz"},
+                        ],
+                        value="xyz",
+                    ),
+                ],
+                style={"margin": "10px", "width": "100%", "margin-top": "20px"},
+            ),
+            dbc.Row(
+                [
                     dbc.InputGroupText("Common Input Files: seperate by ,"),
                     dbc.Input(
                         id="common_input_files_input",
@@ -77,6 +104,18 @@ def add_main_config(app: Dash) -> Dash:
                         id="max_run_time_input",
                         placeholder="Max Run Time",
                         value="30:00:00",
+                        type="text",
+                    ),
+                ],
+                style=default_style,
+            ),
+            dbc.Row(
+                [
+                    dbc.InputGroupText("Orca Version"),
+                    dbc.Input(
+                        id="orca_version_input",
+                        placeholder="Max Run Time",
+                        value="5.0.2",
                         type="text",
                     ),
                 ],
@@ -170,7 +209,10 @@ def add_main_config(app: Dash) -> Dash:
         n_clicks=0,
         style={"margin": "10px", "width": "30%"},
     )
-    button_row = dbc.Row([create_config_file_button, export_config_file_button])
+    download_object = dcc.Download(id="download_config_file")
+    button_row = dbc.Row(
+        [create_config_file_button, export_config_file_button, download_object]
+    )
 
     empty_div = html.Div(id="empty_div", children=[])
 
@@ -486,13 +528,18 @@ def create_config_file(
 
     for i, layer_name in enumerate(layer_names):
         settings_dict["loop_config"][layer_name] = {}
+        settings_dict["loop_config"][layer_name]["options"] = {}
         for key, value in layer_config_inputs.items():
-            if key != "additional_settings_block" and key != "layer_name":
+
+            if key in ["type", "step_id", "additional_input_files"]:
                 settings_dict["loop_config"][layer_name][key] = value[i]
+
             elif key == "additional_settings_block":
-                settings_dict["loop_config"][layer_name]["args"] = {
+                settings_dict["loop_config"][layer_name]["options"]["args"] = {
                     value["block"][i]: value["value"][i]
                 }
+            elif key != "additional_settings_block" and key != "layer_name":
+                settings_dict["loop_config"][layer_name]["options"][key] = value[i]
 
     config_check_output = "All seems in order with the config shown below."
     try:
@@ -517,20 +564,10 @@ def create_layer_cyto_graph(settings_dict):
                 "data": {
                     "id": layer_name,
                     "label": layer_name,
-                    "type": layer_settings["layer_type"],
+                    "type": layer_settings["type"],
                     "step_id": layer_settings["step_id"],
-                    "method": layer_settings["method"],
-                    "basis_set": layer_settings["basis_set"],
-                    "additional_calculation_options": layer_settings[
-                        "additional_calculation_options"
-                    ],
-                    "ram_per_core": layer_settings["ram_per_core"],
-                    "n_cores_per_calculation": layer_settings[
-                        "n_cores_per_calculation"
-                    ],
-                    "n_calculation_at_once": layer_settings["n_calculation_at_once"],
-                    "disk_storage": layer_settings["disk_storage"],
-                    "max_run_time": layer_settings["max_run_time"],
+                    "additional_input_files": layer_settings["additional_input_files"],
+                    "options": layer_settings["options"],
                 }
             }
         )
@@ -636,6 +673,10 @@ def add_callbacks(app: Dash) -> Dash:
     def displayTapNodeData(data):
         return json.dumps(data, indent=2)
 
+    def export_json(n_clicks, settings_dict):
+        with open("config.json", "w") as f:
+            json.dump(settings_dict, f)
+
     app.callback(
         Output("input_path_input", "valid"),
         Output("input_path_input", "invalid"),
@@ -662,6 +703,7 @@ def add_callbacks(app: Dash) -> Dash:
     )(add_additional_settings_block)
 
     # callback to create config file
+    # the order and structure of this dict will be the same as the config file
     app.callback(
         Output("empty_div", "children"),
         Output("json_view", "data"),
@@ -671,10 +713,13 @@ def add_callbacks(app: Dash) -> Dash:
             "main_config_inputs": {
                 "output_dir": State("output_path_input", "value"),
                 "input_file_path": State("input_path_input", "value"),
+                "input_type": State("input_type_input", "value"),
+                "continue_previous_run": State("continue_previous_run_input", "value"),
                 "parallel_layer_run": State("parallel_layer_run_input", "value"),
                 "common_input_files": State("common_input_files_input", "value"),
-                "max_run_time": State("max_run_time_input", "value"),
+                "orca_version": State("orca_version_input", "value"),
                 "max_n_jobs": State("max_n_jobs_input", "value"),
+                "max_run_time": State("max_run_time_input", "value"),
                 "max_ram_per_core": State("max_ram_per_core_input", "value"),
                 "max_nodes": State("max_nodes_input", "value"),
                 "wait_for_results_time": State("wait_for_results_time_input", "value"),
@@ -689,16 +734,14 @@ def add_callbacks(app: Dash) -> Dash:
                 "layer_name": State(
                     {"type": "layer_name_input", "index": ALL}, "value"
                 ),
-                "layer_type": State(
-                    {"type": "layer_type_input", "index": ALL}, "value"
-                ),
+                "type": State({"type": "layer_type_input", "index": ALL}, "value"),
                 "step_id": State({"type": "step_id_input", "index": ALL}, "value"),
                 "additional_input_files": State(
                     {"type": "additional_input_files_input", "index": ALL}, "value"
                 ),
                 "method": State({"type": "method_input", "index": ALL}, "value"),
                 "basis_set": State({"type": "basis_set_input", "index": ALL}, "value"),
-                "additional_calculation_options": State(
+                "additional_settings": State(
                     {"type": "additional_calculation_options_input", "index": ALL},
                     "value",
                 ),
@@ -714,7 +757,7 @@ def add_callbacks(app: Dash) -> Dash:
                 "disk_storage": State(
                     {"type": "disk_storage_input", "index": ALL}, "value"
                 ),
-                "max_run_time": State(
+                "walltime": State(
                     {"type": "max_run_time_input", "index": ALL}, "value"
                 ),
                 "additional_settings_block": {
@@ -752,4 +795,10 @@ def add_callbacks(app: Dash) -> Dash:
         prevent_initial_call=True,
     )(displayTapNodeData)
 
+    app.callback(
+        Output("download_config_file", "data"),
+        Input("export_config_file_button", "n_clicks"),
+        State("json_view", "data"),
+        prevent_initial_call=True,
+    )(export_json)
     return app
