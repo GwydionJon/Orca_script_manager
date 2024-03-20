@@ -4,6 +4,7 @@ from datetime import datetime
 import subprocess
 import shutil
 import re
+from typing import Union
 from script_maker2000.template import TemplateModule
 
 
@@ -57,7 +58,7 @@ class OrcaModule(TemplateModule):
         input_dir_dict = {input_dir.stem: input_dir for input_dir in input_dirs}
         return input_dir_dict
 
-    def prepare_slurm_script(self, orca_file_dict) -> str | Path:
+    def prepare_slurm_script(self, orca_file_dict) -> Union(str, Path):
         """
 
         Variables to fill:
@@ -99,7 +100,7 @@ class OrcaModule(TemplateModule):
 
         return slurm_dict
 
-    def create_slurm_scripts(self, slurm_config=None) -> str | Path:
+    def create_slurm_scripts(self, slurm_config=None) -> Union(str, Path):
         """Create the slurm script that is used to submit this calculation run to the server.
         This should use the slurm class provided in this module.
 
@@ -266,7 +267,7 @@ class OrcaModule(TemplateModule):
         return process
 
     @classmethod
-    def check_job_status(cls, job_out_dir: str | Path) -> int:
+    def check_job_status(cls, job_out_dir: Union(str, Path)) -> int:
         """provide some method to verify if a single calculation was succesful.
         This should be handled indepentendly from the existence of this class object.
 
