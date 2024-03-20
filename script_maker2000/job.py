@@ -143,6 +143,7 @@ class Job:
         - returned
         - failed
         - finished
+        - missing_output
         Args:
             key (str): config key
         """
@@ -164,7 +165,13 @@ class Job:
 
             if self.status_per_key[key] == "submitted":
                 if self._check_slurm_completed(key):
+
+                    if not list(self.current_dirs["output"].glob("*xyz")):
+                        self.current_status = "failed"
+                        return "missing_output"
+
                     return "returned"
+
                 else:
                     return "submitted"
 
@@ -202,6 +209,9 @@ class Job:
             / self.failed_per_key[key].name,
             "unknown_error": self.failed_per_key[key].parents[0]
             / "unknown_error"
+            / self.failed_per_key[key].name,
+            "missing_output": self.failed_per_key[key].parents[0]
+            / "missing_output"
             / self.failed_per_key[key].name,
         }
 
