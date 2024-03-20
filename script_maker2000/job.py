@@ -252,13 +252,13 @@ class Job:
 
         current_key = self.current_key
         self.status_per_key[current_key] = self.current_status
-        self.finished_keys.append(current_key)
         if current_key != self.all_keys[-1]:
             next_key = self.all_keys[self.all_keys.index(current_key) + 1]
 
             if self.current_status == "finished":
 
                 self.start_new_key(next_key, self.current_step + 1)
+                self.finished_keys.append(current_key)
 
                 for input_file_type in self.input_file_types:
 
@@ -278,6 +278,7 @@ class Job:
                 return "success"
 
             elif self.current_status == "failed":
+                self.finished_keys.append(current_key)
 
                 self.wrap_up_failed()
 
@@ -288,6 +289,7 @@ class Job:
 
         else:
             if self.current_status == "finished":
+                self.finished_keys.append(current_key)
 
                 self.wrap_up()
                 return "finalized"

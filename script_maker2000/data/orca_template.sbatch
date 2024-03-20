@@ -196,6 +196,8 @@ rm -rvf "${TMP_WORK_DIR}/${INPUTFILE}"
 echo " "
 echo "### Copying back tgz-archive of results to SLURM_OUTPUT_DIR ..."
 echo " "
+sleep 10 # Sleep some time so potential stale nfs handles can disappear
+
 mkdir -vp "${SLURM_OUTPUT_DIR}" # if submit dir has been deleted or moved away
 echo "Creating result tgz-file '${JOBNAME}.tgz' ..."
 tar -zcvf "${JOBNAME}.tgz" -C "${TMP_WORK_DIR}" . # compress entire content of TMP_WORK_DIR
