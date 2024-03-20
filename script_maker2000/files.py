@@ -151,6 +151,88 @@ def check_config(main_config, skip_file_check=False):
     if min(step_list) != 0:
         raise ValueError("The first step number must be 0.")
 
+    # check if all keys are present
+
+    _check_config_keys(main_config)
+
+
+def _check_config_keys(main_config):
+    main_keys = [
+        "main_config",
+        "loop_config",
+        "structure_check_config",
+        "analysis_config",
+    ]
+    if not set(main_keys).issubset(main_config.keys()):
+        raise KeyError(
+            "Main categories are missing. Please provide all the following keys:"
+            + f" {set(main_keys) - set(main_config.keys())}"
+        )
+
+    # main_config keys
+    main_config_keys = [
+        "continue_previous_run",
+        "max_n_jobs",
+        "max_ram_per_core",
+        "max_nodes",
+        "output_dir",
+        "max_run_time",
+        "input_file_path",
+        "input_type",
+        "parallel_layer_run",
+        "orca_version",
+        "wait_for_results_time",
+        "common_input_files",
+    ]
+    structure_check_config_keys = ["run_checks"]
+    analysis_config_keys = ["run_benchmark"]
+    loop_config_keys = ["type", "step_id", "additional_input_files", "options"]
+    options_keys = [
+        "method",
+        "basis_set",
+        "additional_settings",
+        "ram_per_core",
+        "n_cores_per_calculation",
+        "n_calculation_at_once",
+        "disk_storage",
+        "walltime",
+    ]
+    # check if all keys are present
+    if not set(main_config_keys).issubset(main_config["main_config"].keys()):
+        raise KeyError(
+            "Main config keys are missing. Please provide all the following keys: "
+            + f"{set(main_config_keys) - set(main_config['main_config'].keys())}"
+        )
+
+    if not set(structure_check_config_keys).issubset(
+        main_config["structure_check_config"].keys()
+    ):
+        raise KeyError(
+            "Structure check config keys are missing. Please provide all the following keys:"
+            + f" {set(structure_check_config_keys) - set(main_config['structure_check_config'].keys())}"
+        )
+    if not set(analysis_config_keys).issubset(main_config["analysis_config"].keys()):
+        raise KeyError(
+            "Analysis config keys are missing. Please provide all the following keys:"
+            + f" {set(analysis_config_keys) - set(main_config['analysis_config'].keys())}"
+        )
+
+    for loop_config in main_config["loop_config"]:
+        if not set(loop_config_keys).issubset(
+            main_config["loop_config"][loop_config].keys()
+        ):
+            raise KeyError(
+                "Loop config keys are missing. Please provide all the following keys:"
+                + f" {set(loop_config_keys) - set(main_config['loop_config'][loop_config].keys())}"
+            )
+        if not set(options_keys).issubset(
+            main_config["loop_config"][loop_config]["options"].keys()
+        ):
+            raise KeyError(
+                "Options keys are missing. Please provide all the following keys:"
+                + f" {set(options_keys) - set(main_config['loop_config'][loop_config]['options'].keys())}"
+            )
+
 
 def read_config(config_file, perform_validation=True, override_continue_job=False):
     """
