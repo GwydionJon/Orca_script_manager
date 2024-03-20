@@ -357,7 +357,7 @@ def add_single_layer_config(i: int):
     options_dict = {
         "additional_input_files": "",
         "method": "HF",
-        "basis_set": "DEF2-SVP",
+        "basisset": "DEF2-SVP",
         "additional_calculation_options": "",
         "ram_per_core": 20,
         "n_cores_per_calculation": 12,
@@ -740,7 +740,7 @@ def add_callbacks(app: Dash) -> Dash:
                     {"type": "additional_input_files_input", "index": ALL}, "value"
                 ),
                 "method": State({"type": "method_input", "index": ALL}, "value"),
-                "basis_set": State({"type": "basis_set_input", "index": ALL}, "value"),
+                "basisset": State({"type": "basisset_input", "index": ALL}, "value"),
                 "additional_settings": State(
                     {"type": "additional_calculation_options_input", "index": ALL},
                     "value",

@@ -220,8 +220,8 @@ class BatchManager:
         Returns:
             _type_: _description_
         """
-        manager_runs = self.start_work_manager_loops()
-        self.log.info(f"Background tasks first: {manager_runs}")
+        manager_tasks = self.start_work_manager_loops()
+        self.log.info(f"Background tasks first: {manager_tasks}")
 
         i = 1
         while True:
@@ -229,7 +229,7 @@ class BatchManager:
             self.save_current_jobs()
             i += 1
 
-            if all([task.done() for task in manager_runs]):
+            if all([task.done() for task in manager_tasks]):
                 self.log.info(f"All tasks done after {i} loops")
                 break
 
@@ -239,7 +239,7 @@ class BatchManager:
 
             await asyncio.sleep(self.wait_time)
 
-        return manager_runs
+        return manager_tasks
 
     def collect_result_overview(self):
         status_dict = defaultdict(lambda: 0)
@@ -262,7 +262,35 @@ class BatchManager:
         task_results = asyncio.run(self.batch_processing_loop())
         self.collect_result_overview()
 
-        return task_results
+        # check tasks for errors:
+        exit_code = 0
+        all_errors = []
+        for task in task_results:
+            try:
+                self.log.info(task.result())
+            except FileNotFoundError as e:
+                if e:
+                    exit_code = 1
+                    all_errors.append(e)
+            except asyncio.CancelledError as e:
+                if e:
+                    exit_code = 1
+                    all_errors.append(e)
+            except Exception as e:
+                if e:
+                    exit_code = 1
+                    all_errors.append(e)
+
+        if exit_code == 1:
+            self.log.error(
+                "There was an error in the batch processing loop."
+                + f"Errors: {all_errors}"
+            )
+            raise Exception(
+                "There was an error in the batch processing loop."
+                + f"Errors: {all_errors}"
+            )
+        return exit_code, task_results
 
     #     for work_manager in self.work_managers[self.min_step_id]:
     #             work_manager.log.info(

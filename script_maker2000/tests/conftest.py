@@ -68,29 +68,26 @@ def test_setup_work_dir(clean_tmp_dir):
 
     # add new loop step without changing output dir
     new_config3 = copy.deepcopy(main_dict)
-    new_config3["loop_config"]["test_config"] = {"type": "test", "step_id": 2}
+    new_config3["loop_config"]["opt_config"]["type"] = "test"
+    new_config3["loop_config"]["opt_config"]["step_id"] = 0
     with open(tmp_dir / "example_config4.json", "w") as json_file:
         json.dump(new_config3, json_file)
 
     # add new loop step and change output dir
     new_config4 = copy.deepcopy(main_dict)
     new_config4["main_config"]["output_dir"] = "new_output"
-    new_config4["loop_config"]["test_config"] = {"type": "test", "step_id": 2}
+    new_config4["loop_config"]["sp_config"]["type"] = "test"
+    new_config4["loop_config"]["sp_config"]["step_id"] = 1
+
     with open(tmp_dir / "example_config5.json", "w") as json_file:
         json.dump(new_config4, json_file)
 
     new_config5 = copy.deepcopy(main_dict)
     new_config5["main_config"]["output_dir"] = "new_output2"
-    new_config5["loop_config"]["test_config"] = {"type": "test", "step_id": 1}
+    new_config5["loop_config"]["sp2_config"] = {}
+    new_config5["loop_config"]["sp2_config"]["step_id"] = 1
     with open(tmp_dir / "example_config6.json", "w") as json_file:
         json.dump(new_config5, json_file)
-
-    # add new loop step and change output dir
-    new_config6 = copy.deepcopy(main_dict)
-    new_config6["main_config"]["output_dir"] = "new_output3"
-    new_config6["loop_config"]["test_config"] = {"type": "test", "step_id": 5}
-    with open(tmp_dir / "example_config7.json", "w") as json_file:
-        json.dump(new_config6, json_file)
 
     return tmp_dir
 

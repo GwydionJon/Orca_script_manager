@@ -121,21 +121,34 @@ class WorkManager:
         # get job status from work module
         return_status_dict = defaultdict(lambda: 0)
 
+        non_existing_output = []
         for job in finished_jobs:
-            try:
+
+            if job.current_dirs["output"].exists():
                 work_module_status = self.workModule.check_job_status(
                     job.current_dirs["output"]
                 )
-            except Exception:
 
-                work_module_status = "unknown_error"
-                raise Exception(
-                    f"Error while checking job status for {job} in dir {job.current_dirs['output']}"
-                )
+            else:
+                non_existing_output.append(job)
+
+                continue
 
             return_status_dict[work_module_status] += 1
 
             job.manage_return(work_module_status)
+
+        for job in non_existing_output:
+            finished_jobs.remove(job)
+
+        if non_existing_output:
+            self.log.warning(
+                f"Caught {len(non_existing_output)} non existing output dirs after slurm was finished."
+                + f"\n\t{non_existing_output}"
+            )
+            raise FileNotFoundError(
+                f"Caught {len(non_existing_output)} non existing output dirs after slurm was finished."
+            )
 
         output_info = "\n\t".join(
             [f"{key}: {value}" for key, value in return_status_dict.items()]
@@ -319,18 +332,11 @@ class WorkManager:
 
             # check current status of all jobs
             current_job_dict = self.check_job_status()
-            print("")
-            print("")
-
-            print(current_job_dict["found"])
 
             # prepare jobs
             current_job_dict["not_started"].extend(
                 self.prepare_jobs(current_job_dict["found"])
             )
-            print("")
-
-            print(current_job_dict["found"])
 
             # submit jobs
             current_job_dict["submitted"].extend(
