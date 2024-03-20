@@ -103,6 +103,14 @@ def move_files(input_path, output_path, copy=True):
 
 
 def check_config(main_config, skip_file_check=False):
+    """This function checks the main config for the necessary keys and values."""
+
+    if isinstance(main_config, str):
+        with open(main_config, "r", encoding="utf-8") as f:
+            main_config = json.load(f)
+        main_config = OrderedDict(main_config)
+
+    _check_config_keys(main_config)
 
     if skip_file_check is False:
         if main_config["main_config"]["input_file_path"] is None:
@@ -153,8 +161,6 @@ def check_config(main_config, skip_file_check=False):
 
     # check if all keys are present
 
-    _check_config_keys(main_config)
-
 
 def _check_config_keys(main_config):
     main_keys = [
@@ -189,7 +195,7 @@ def _check_config_keys(main_config):
     loop_config_keys = ["type", "step_id", "additional_input_files", "options"]
     options_keys = [
         "method",
-        "basis_set",
+        "basisset",
         "additional_settings",
         "ram_per_core",
         "n_cores_per_calculation",
