@@ -67,8 +67,17 @@ class BatchManager:
 
         self.log.setLevel("INFO")
 
-    # only for initilization
     def read_config(self, main_config_path, override_continue_job):
+        """
+        Reads the main configuration file.
+
+        Args:
+            main_config_path (str): The path to the main configuration file.
+            override_continue_job (bool): Whether to override the continue_previous_run flag in the main configuration.
+
+        Returns:
+            dict: The parsed main configuration.
+        """
         return read_config(
             main_config_path, override_continue_job=override_continue_job
         )
@@ -82,9 +91,8 @@ class BatchManager:
         the file names.
 
         Returns:
-            working_dir (str): The path to the working directory.
-            new_input_path (Path): The path to the new input files.
-            all_job_ids (list): A list of job IDs extracted from the file names.
+            tuple: A tuple containing the working directory path, the new input path,
+            the input job IDs, the new CSV file path, and a list of all input files.
         """
         working_dir, new_input_path, new_csv_file = create_working_dir_structure(
             self.main_config
@@ -95,6 +103,15 @@ class BatchManager:
         return working_dir, new_input_path, input_job_ids, new_csv_file, all_input_files
 
     def _jobs_from_csv(self, input_df):
+        """
+        Creates job objects from the input CSV file.
+
+        Args:
+            input_df (DataFrame): The input DataFrame.
+
+        Returns:
+            dict: A dictionary of job objects, where the keys are the unique job IDs.
+        """
         input_job_ids = self.input_job_ids
 
         # get all stages and their config keys from the main config
@@ -121,6 +138,15 @@ class BatchManager:
         return job_dict
 
     def _jobs_from_backup_json(self, json_file_path):
+        """
+        Creates job objects from a backup JSON file.
+
+        Args:
+            json_file_path (str): The path to the backup JSON file.
+
+        Returns:
+            dict: A dictionary of job objects, where the keys are the unique job IDs.
+        """
         # prepare all job ids
         job_dict = {}
         with open(json_file_path, "r") as json_file:
@@ -134,7 +160,12 @@ class BatchManager:
         return job_dict
 
     def setup_work_modules_manager(self):
+        """
+        Sets up the work managers based on the main configuration.
 
+        Returns:
+            dict: A dictionary of work managers, where the keys are the step IDs.
+        """
         work_managers = defaultdict(list)
 
         for key, value in self.main_config["loop_config"].items():
@@ -153,7 +184,9 @@ class BatchManager:
         return work_managers
 
     def copy_input_files_to_first_work_manager(self):
-
+        """
+        Copies input files to the input directory of the first work manager.
+        """
         # find lowest valid step id
         id_list = []
         for work_manager_list in self.work_managers.values():
@@ -176,8 +209,9 @@ class BatchManager:
                         job.prepare_initial_job(work_key, self.min_step_id, file)
 
     def advance_jobs(self):
-        # advance all jobs to the next step
-
+        """
+        Advances all jobs to the next step.
+        """
         advancement_dict = defaultdict(lambda: 0)
         for job in self.job_dict.values():
             advancement_output = job.advance_to_next_key()
@@ -190,7 +224,12 @@ class BatchManager:
         self.log.info(log_message)
 
     def start_work_manager_loops(self):
-        # start work manager loops with threading
+        """
+        Starts the work manager loops with threading.
+
+        Returns:
+            set: A set of manager tasks.
+        """
         manager_runs = set()
         times = []
         for work_managers_list in self.work_managers.values():
@@ -206,7 +245,9 @@ class BatchManager:
         return manager_runs
 
     def save_current_jobs(self):
-
+        """
+        Saves the current jobs to a backup JSON file.
+        """
         job_backup = {}
         for job in self.job_dict.values():
             job_backup[job.unique_job_id] = job.export_as_dict()
@@ -215,13 +256,14 @@ class BatchManager:
             json.dump(job_backup, json_file)
 
     async def batch_processing_loop(self):
-        """This sets up the main batch processing loop and runs it until all tasks are done.
+        """
+        Sets up the main batch processing loop and runs it until all tasks are done.
 
         Returns:
-            _type_: _description_
+            set: A set of manager tasks.
         """
-        manager_runs = self.start_work_manager_loops()
-        self.log.info(f"Background tasks first: {manager_runs}")
+        manager_tasks = self.start_work_manager_loops()
+        self.log.info(f"Background tasks first: {manager_tasks}")
 
         i = 1
         while True:
@@ -229,7 +271,7 @@ class BatchManager:
             self.save_current_jobs()
             i += 1
 
-            if all([task.done() for task in manager_runs]):
+            if all([task.done() for task in manager_tasks]):
                 self.log.info(f"All tasks done after {i} loops")
                 break
 
@@ -239,9 +281,12 @@ class BatchManager:
 
             await asyncio.sleep(self.wait_time)
 
-        return manager_runs
+        return manager_tasks
 
     def collect_result_overview(self):
+        """
+        Collects the result overview of the jobs.
+        """
         status_dict = defaultdict(lambda: 0)
         for job in self.job_dict.values():
             status_dict[job.current_status] += 1
@@ -252,221 +297,40 @@ class BatchManager:
         self.log.info(log_message)
 
     def run_batch_processing(self):
-        """This function will start the batch processing loop and return the results.
-            It will block until all tasks are done.
-            This is the main working loop.
-
-        Returns:
-            _type_: _description_
+        """
+        Starts the batch processing loop and returns the results.
+        It will block until all tasks are done.
+        This is the main working loop.
         """
         task_results = asyncio.run(self.batch_processing_loop())
         self.collect_result_overview()
 
-        return task_results
+        # check tasks for errors:
+        exit_code = 0
+        all_errors = []
+        for task in task_results:
+            try:
+                self.log.info(task.result())
+            except FileNotFoundError as e:
+                if e:
+                    exit_code = 1
+                    all_errors.append(e)
+            except asyncio.CancelledError as e:
+                if e:
+                    exit_code = 1
+                    all_errors.append(e)
+            except Exception as e:
+                if e:
+                    exit_code = 1
+                    all_errors.append(e)
 
-    #     for work_manager in self.work_managers[self.min_step_id]:
-    #             work_manager.log.info(
-    #                 f"Copying input files to {work_manager.config_key} input dir."
-    #             )
-
-    #             shutil.copytree(
-    #                 self.new_input_path, work_manager.input_dir, dirs_exist_ok=True
-    #             )
-    #                 #for file in list(work_manager.input_dir.glob("*")):
-    #                 #    new_file = str(file).replace("START_", "START___")
-    #                 #    file.rename(new_file)
-
-    # # end init
-
-    # TODO tell the work managers which jobs got cancelled so they can remove them from the list
-    # otherwise they will never finish
-
-    # maybe set them to failed and remove from the input list.
-    # change total jobs number or come up with a different way to check if all jobs are done
-
-    # def manage_failed_jobs(self):
-    #     """
-    #     This method manages the failed jobs by updating the status of the failed jobs in the input dataframe.
-    #     It also cancels the jobs in the following work managers and removes the failed jobs from their lists.
-
-    #     Returns:
-    #         None
-    #     """
-    #     for step_id, work_manager_list in self.work_managers.items():
-    #         for work_manager in work_manager_list:
-    #             work_key = work_manager.config_key
-    #             for status_key, job_list in work_manager.all_jobs_dict.items():
-    #                 if "_error" in status_key:
-    #                     job_ids = [error.stem.split("___", 1)[1] for error in job_list]
-
-    #                     if job_ids:
-    #                         # Update the status of the failed jobs in the input dataframe
-    #                         self.input_df.loc[job_ids, work_key] = status_key
-
-    #                         # Cancel the jobs in the following work managers and remove the failed jobs
-    #                           from their lists
-    #                         for (
-    #                             other_step_id,
-    #                             other_work_manager_list,
-    #                         ) in self.work_managers.items():
-    #                             if other_step_id <= step_id:
-    #                                 continue
-    #                             for following_work_manager in other_work_manager_list:
-    #                                 for id_ in job_ids:
-    #                                     if (
-    #                                         id_
-    #                                         in following_work_manager.all_jobs_dict[
-    #                                             "not_yet_found"
-    #                                         ]
-    #                                     ):
-    #                                         following_work_manager.all_jobs_dict[
-    #                                             "not_yet_found"
-    #                                         ].remove(id_)
-
-    #     # Save the updated input dataframe to the new csv file
-    #     self.input_df.to_csv(self.new_csv_file)
-
-    # def manage_job_logging(self):
-
-    #     # failed jobs are handled in manage_failed_jobs
-    #     # then manage all other jobs
-    #     for work_manager_list in self.work_managers.values():
-    #         for work_manager in work_manager_list:
-    #             work_key = work_manager.config_key
-    #             for status_key, job_list in work_manager.all_jobs_dict.items():
-    #                 if "_error" not in status_key and status_key not in [
-    #                     "not_yet_found",
-    #                     "submitted_ids_files",
-    #                 ]:
-    #                     job_ids = [error.stem.split("___", 1)[1] for error in job_list]
-    #                     if job_ids:
-    #                         self.input_df.loc[job_ids, work_key] = status_key
-
-    #     self.input_df.to_csv(self.new_csv_file)
-
-    # def _find_target_files(self, work_manager_finished_dir, key, work_step_id):
-    #     # setup target files
-    #     target_file_types = [
-    #         self.main_config["main_config"]["common_input_files"],
-    #     ]
-    #     if self.main_config["loop_config"][key]["additional_input_files"]:
-    #         target_file_types.append(
-    #             self.main_config["loop_config"][key]["additional_input_files"]
-    #         )
-    #     # collect all files in finished dir
-    #     potential_target_files = []
-    #     for file_type in target_file_types:
-    #         potential_target_files += list(
-    #             work_manager_finished_dir.glob(f"*/*{file_type}")
-    #         )
-
-    #     if not potential_target_files:
-    #         return {}
-
-    #     next_work_managers_list = self.work_managers[work_step_id + 1].copy()
-    #     next_work_manager_dict = {}
-    #     for next_work_manager in next_work_managers_list:
-    #         # check which jobs from finished dir have not yet been submitted to the next worker
-    #         target_files = []
-    #         for potential_target_file in potential_target_files:
-    #             job_id = potential_target_file.stem.split("___", 1)[1]
-    #             if job_id in next_work_manager.all_jobs_dict["not_yet_found"]:
-    #                 target_files.append(potential_target_file)
-    #             next_work_manager_dict[next_work_manager] = target_files
-    #     return next_work_manager_dict
-
-    # def move_files(self):
-
-    # for work_step_id, work_manager_list in self.work_managers.items():
-    #     for work_manager in work_manager_list:
-
-    #         key = work_manager.config_key
-    #         work_manager_finished_dir = work_manager.finished_dir / "raw_results"
-
-    #         # the last steps should copy their output directly in the finished dir
-    #         if work_step_id == self.max_step_id:
-    #             # move files from last work manager to finished folder
-    #             target_files = list(work_manager_finished_dir.glob("*"))
-    #             target_dir = self.working_dir / "finished" / "raw_results"
-    #             for file in target_files:
-    #                 if file.is_dir():
-    #                     shutil.copytree(file, target_dir / file.name)
-    #                 elif file.is_file():
-    #                     shutil.copy(file, target_dir / file.name)
-
-    #         else:
-    #             # move files from current work manager to next work manager
-    #             next_work_manager_dict = self._find_target_files(
-    #                 work_manager_finished_dir, key, work_step_id
-    #             )
-    #             for (
-    #                 next_work_manager,
-    #                 target_files,
-    #             ) in next_work_manager_dict.items():
-    #                 target_name = next_work_manager.config_key
-    #                 work_manager.log.info(
-    #                     f"Moving {len(target_files)} files to {target_name} input"
-    #                 )
-
-    #                 target_dir = next_work_manager.input_dir
-
-    #                 for file in target_files:
-    #                     if file.is_dir():
-    #                         shutil.copytree(file, target_dir / file.name)
-    #                     elif file.is_file():
-    #                         shutil.copy(file, target_dir / file.name)
-
-    # def start_work_manager_loops(self):
-    #     # start work manager loops with threading
-    #     manager_runs = set()
-    #     times = []
-    #     for work_managers_list in self.work_managers.values():
-    #         for work_manager in work_managers_list:
-    #             task = asyncio.create_task(
-    #                 work_manager.loop(), name=work_manager.config_key
-    #             )
-    #             times.append(time.time())
-    #             manager_runs.add(task)
-
-    #     self.log.info(f"Time start all loops: {times[1]-times[0]} seconds.")
-
-    #     return manager_runs
-
-    # async def batch_processing_loop(self):
-    #     """This sets up the main batch processing loop and runs it until all tasks are done.
-
-    #     Returns:
-    #         _type_: _description_
-    #     """
-    #     manager_runs = self.start_work_manager_loops()
-    #     self.log.info(f"Background tasks first: {manager_runs}")
-
-    #     i = 1
-    #     while True:
-    #         self.move_files()
-    #         self.manage_failed_jobs()
-    #         self.manage_job_logging()
-
-    #         i += 1
-
-    #         if all([task.done() for task in manager_runs]):
-    #             self.log.info(f"All tasks done after {i} loops")
-    #             break
-
-    #         if i > self.max_loop and self.max_loop > 0:
-    #             self.log.info("Breaking main loop after 10.")
-    #             break
-
-    #         await asyncio.sleep(self.wait_time)
-
-    #     return manager_runs
-
-    # def run_batch_processing(self):
-    #     """This function will start the batch processing loop and return the results.
-    #         It will block until all tasks are done.
-    #         This is the main working loop.
-
-    #     Returns:
-    #         _type_: _description_
-    #     """
-    #     return asyncio.run(self.batch_processing_loop())
+        if exit_code == 1:
+            self.log.error(
+                "There was an error in the batch processing loop."
+                + f"Errors: {all_errors}"
+            )
+            raise Exception(
+                "There was an error in the batch processing loop."
+                + f"Errors: {all_errors}"
+            )
+        return exit_code, task_results

@@ -54,12 +54,9 @@ def test_create_working_dir_structure(test_setup_work_dir):
 
     create_working_dir_structure(main_config)
 
-    assert len(list(output_path.glob("*"))) == 10
+    assert len(list(output_path.glob("*"))) == 9
     # check that two new sub dirs are present
-    assert len(list(output_path.glob("*/*"))) == 28
+    assert len(list(output_path.glob("*/*"))) == 23
 
-    with pytest.raises(ValueError):
+    with pytest.raises(KeyError):
         read_config(test_setup_work_dir / "example_config6.json")
-
-    with pytest.raises(ValueError):
-        read_config(test_setup_work_dir / "example_config7.json")

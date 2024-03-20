@@ -1,4 +1,5 @@
 import logging
+from script_maker2000.batch_manager import BatchManager  # noqa
 
 
 script_maker_log = logging.getLogger("Script_maker_log")

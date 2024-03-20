@@ -2,7 +2,7 @@
 # for another module to be properly useful in the scope of this program.
 from pathlib import Path
 import logging
-
+from typing import Union
 from script_maker2000.files import read_config
 
 
@@ -60,7 +60,7 @@ class TemplateModule:
         internal_config = main_config["loop_config"][config_key]
         return internal_config
 
-    def create_slurm_scripts(self, slurm_config=None) -> str | Path:
+    def create_slurm_scripts(self, slurm_config=None) -> Union[str, Path]:
         """Create the slurm script that is used to submit this calculation run to the server.
         This should use the slurm class provided in this module.
         """

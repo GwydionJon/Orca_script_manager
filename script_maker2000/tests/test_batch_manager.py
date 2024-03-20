@@ -180,7 +180,8 @@ def test_batch_loop_no_files(clean_tmp_dir, monkeypatch):
             monkeypatch.setattr(work_manager, "wait_time", 10)
             monkeypatch.setattr(work_manager, "max_loop", 10)
 
-    task_results = batch_manager.run_batch_processing()
+    exit_code, task_results = batch_manager.run_batch_processing()
+    assert exit_code == 1
     for task_result in task_results:
         assert task_result.done() is True
         assert task_result.result() == "Breaking loop after 2."
@@ -261,7 +262,8 @@ def test_batch_loop_with_files(clean_tmp_dir, monkeypatch):
                 monkeypatch.setattr(work_manager, "wait_time", 10)
                 monkeypatch.setattr(work_manager, "max_loop", -1)
 
-    task_results = batch_manager.run_batch_processing()
+    exit_code, task_results = batch_manager.run_batch_processing()
+    assert exit_code == 0
     for task_result in task_results:
         assert task_result.done() is True
         assert "All jobs done after" in task_result.result()
@@ -354,7 +356,9 @@ def test_parallel_steps(multilayer_tmp_dir, monkeypatch):
                 monkeypatch.setattr(work_manager, "wait_time", 10)
                 monkeypatch.setattr(work_manager, "max_loop", -1)
 
-    task_results = batch_manager.run_batch_processing()
+    exit_code, task_results = batch_manager.run_batch_processing()
+    assert exit_code == 0
+
     for task_result in task_results:
         assert task_result.done() is True
         assert "All jobs done after" in task_result.result()
@@ -449,7 +453,8 @@ def test_continue_run(pre_started_dir, monkeypatch):
                 monkeypatch.setattr(work_manager, "wait_time", 10)
                 monkeypatch.setattr(work_manager, "max_loop", -1)
 
-    task_results = batch_manager.run_batch_processing()
+    exit_code, task_results = batch_manager.run_batch_processing()
+    assert exit_code == 0
     for task_result in task_results:
         assert task_result.done() is True
         assert "All jobs done after" in task_result.result()
