@@ -136,11 +136,25 @@ class BatchManager:
                 jobs.append(job)
         # search for jobs that have the same steps.
         #
-        for job1 in jobs:
-            for job2 in jobs:
-                if any(key in job2.all_keys for key in job1.all_keys):
-                    job1.overlapping_jobs.append(job2)
-                    job2.overlapping_jobs.append(job1)
+
+        if self.main_config["main_config"]["parallel_layer_run"]:
+            for job1 in jobs:
+                for job2 in jobs:
+
+                    # test if jobs are elligible for overlap
+                    if job1 == job2:
+                        continue
+                    if job1.mol_id != job2.mol_id:
+                        continue
+
+                    # test if they have overlapping pathways
+                    for i in range(len(job1.all_keys)):
+                        if job1.all_keys[:i] == job2.all_keys[:i] and job1.all_keys[:i]:
+
+                            if job2 not in job1.overlapping_jobs:
+                                job1.overlapping_jobs.append(job2)
+                            if job1 not in job2.overlapping_jobs:
+                                job2.overlapping_jobs.append(job1)
 
         job_dict = {job.unique_job_id: job for job in jobs}
         return job_dict

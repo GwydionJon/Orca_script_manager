@@ -266,7 +266,6 @@ class Job:
         else:
             self.current_status = "failed"
             self.failed_reason = return_str
-            print(self, self.failed_reason)
 
             if not self.current_dirs[self.failed_reason].exists():
                 shutil.copytree(

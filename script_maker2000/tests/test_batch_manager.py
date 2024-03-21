@@ -290,6 +290,9 @@ def test_parallel_steps(multilayer_tmp_dir, monkeypatch):
     main_config_path = multilayer_tmp_dir / "example_config.json"
     batch_manager = BatchManager(main_config_path)
 
+    for job in batch_manager.job_dict.values():
+        assert len(job._overlapping_jobs) == 1
+
     if shutil.which("sbatch") is None:
         # test locally
         monkeypatch.setattr("shutil.which", lambda x: True)
