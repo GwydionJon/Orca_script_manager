@@ -134,6 +134,28 @@ class BatchManager:
 
                 job = Job(job_id, combination, self.working_dir, charge, multiplicity)
                 jobs.append(job)
+        # search for jobs that have the same steps.
+        #
+
+        if self.main_config["main_config"]["parallel_layer_run"]:
+            for job1 in jobs:
+                for job2 in jobs:
+
+                    # test if jobs are elligible for overlap
+                    if job1 == job2:
+                        continue
+                    if job1.mol_id != job2.mol_id:
+                        continue
+
+                    # test if they have overlapping pathways
+                    for i in range(len(job1.all_keys)):
+                        if job1.all_keys[:i] == job2.all_keys[:i] and job1.all_keys[:i]:
+
+                            if job2 not in job1.overlapping_jobs:
+                                job1.overlapping_jobs.append(job2)
+                            if job1 not in job2.overlapping_jobs:
+                                job2.overlapping_jobs.append(job1)
+
         job_dict = {job.unique_job_id: job for job in jobs}
         return job_dict
 
@@ -329,7 +351,7 @@ class BatchManager:
                 "There was an error in the batch processing loop."
                 + f"Errors: {all_errors}"
             )
-            raise Exception(
+            raise RuntimeError(
                 "There was an error in the batch processing loop."
                 + f"Errors: {all_errors}"
             )

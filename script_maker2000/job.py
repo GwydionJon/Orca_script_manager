@@ -67,6 +67,8 @@ class Job:
         )
         self.raw_failed_dir = working_dir / "failed" / self.unique_job_id
 
+        self._overlapping_jobs = []
+
     def __repr__(self):
         return (
             "JOB: "
@@ -103,8 +105,31 @@ class Job:
 
     @current_status.setter
     def current_status(self, value):
+
+        if value == "submitted":
+            for overlapping_job in self.overlapping_jobs:
+                if (
+                    overlapping_job.current_key == self.current_key
+                    and overlapping_job.current_status != "submitted"
+                ):
+                    overlapping_job._current_status = "submitted"  # noqa
+                    overlapping_job.status_per_key[self.current_key] = "submitted"
+                    overlapping_job.slurm_id_per_key[self.current_key] = (
+                        self.slurm_id_per_key[self.current_key]
+                    )
+                else:
+                    overlapping_job.status_per_key[self.current_key] = "submitted"
+
         self._current_status = value
         self.status_per_key[self.current_key] = value
+
+    @property
+    def overlapping_jobs(self):
+        return self._overlapping_jobs
+
+    @overlapping_jobs.setter
+    def overlapping_jobs(self, value):
+        self._overlapping_jobs = value
 
     def _check_slurm_completed(self, key):
         process = subprocess.run(
@@ -143,6 +168,7 @@ class Job:
         - returned
         - failed
         - finished
+        - missing_output
         Args:
             key (str): config key
         """
@@ -164,7 +190,14 @@ class Job:
 
             if self.status_per_key[key] == "submitted":
                 if self._check_slurm_completed(key):
+
+                    if not list(self.current_dirs["output"].glob("*xyz")):
+                        self.current_status = "failed"
+                        self.failed_reason = "missing_output"
+                        return "failed"
+
                     return "returned"
+
                 else:
                     return "submitted"
 
@@ -187,8 +220,11 @@ class Job:
             "__".join(self.all_keys[: step + 1]) + "___" + self.mol_id
         )
 
-        self.current_status = "found"
-        self.status_per_key[key] = "found"
+        checked_status = self.check_status_for_key(key)
+        if checked_status != "submitted":
+
+            self.current_status = "found"
+            self.status_per_key[key] = "found"
 
         self.current_dirs = {
             "input": self.input_dir_per_key[key],
@@ -202,6 +238,9 @@ class Job:
             / self.failed_per_key[key].name,
             "unknown_error": self.failed_per_key[key].parents[0]
             / "unknown_error"
+            / self.failed_per_key[key].name,
+            "missing_output": self.failed_per_key[key].parents[0]
+            / "missing_output"
             / self.failed_per_key[key].name,
         }
 
@@ -232,6 +271,14 @@ class Job:
                 shutil.copytree(
                     self.current_dirs["output"], self.current_dirs[self.failed_reason]
                 )
+                if self.failed_reason == "missing_output":
+                    missing_dir_path = self.current_dirs[self.failed_reason]
+                    missing_dir_path.mkdir(parents=True, exist_ok=True)
+                    missing_file = missing_dir_path / "missing_output.txt"
+                    with open(missing_file, "w") as f:
+                        f.write(
+                            f"No output files found in the output directory for job: {self}."
+                        )
 
         # # clean up input and output by archiving
         # for dir in [self.current_dirs["input"], self.current_dirs["output"]]:
@@ -252,13 +299,13 @@ class Job:
 
         current_key = self.current_key
         self.status_per_key[current_key] = self.current_status
-        self.finished_keys.append(current_key)
         if current_key != self.all_keys[-1]:
             next_key = self.all_keys[self.all_keys.index(current_key) + 1]
 
             if self.current_status == "finished":
 
                 self.start_new_key(next_key, self.current_step + 1)
+                self.finished_keys.append(current_key)
 
                 for input_file_type in self.input_file_types:
 
@@ -278,6 +325,7 @@ class Job:
                 return "success"
 
             elif self.current_status == "failed":
+                self.finished_keys.append(current_key)
 
                 self.wrap_up_failed()
 
@@ -288,6 +336,7 @@ class Job:
 
         else:
             if self.current_status == "finished":
+                self.finished_keys.append(current_key)
 
                 self.wrap_up()
                 return "finalized"

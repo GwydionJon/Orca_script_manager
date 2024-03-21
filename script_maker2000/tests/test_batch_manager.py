@@ -143,7 +143,7 @@ def test_batch_manager_threads(
     )
 
 
-@pytest.mark.skipif(shutil.which("sbatch") is None, reason="No slurm available.")
+# @pytest.mark.skipif(shutil.which("sbatch") is None, reason="No slurm available.")
 def test_batch_loop_no_files(clean_tmp_dir, monkeypatch):
 
     def mock_run_job(args, **kw):
@@ -172,6 +172,9 @@ def test_batch_loop_no_files(clean_tmp_dir, monkeypatch):
                 monkeypatch.setattr(work_manager, "wait_time", 0.3)
                 monkeypatch.setattr(work_manager, "max_loop", 5)
 
+        with pytest.raises(RuntimeError):
+            exit_code, task_results = batch_manager.run_batch_processing()
+
     else:
         monkeypatch.setattr(batch_manager, "wait_time", 10)
         monkeypatch.setattr(batch_manager, "max_loop", 10)
@@ -180,11 +183,12 @@ def test_batch_loop_no_files(clean_tmp_dir, monkeypatch):
             monkeypatch.setattr(work_manager, "wait_time", 10)
             monkeypatch.setattr(work_manager, "max_loop", 10)
 
-    exit_code, task_results = batch_manager.run_batch_processing()
-    assert exit_code == 1
-    for task_result in task_results:
-        assert task_result.done() is True
-        assert task_result.result() == "Breaking loop after 2."
+        exit_code, task_results = batch_manager.run_batch_processing()
+
+        assert exit_code == 0
+        for task_result in task_results:
+            assert task_result.done() is True
+            assert "done" in task_result.result()
 
 
 def test_batch_loop_with_files(clean_tmp_dir, monkeypatch):
@@ -285,6 +289,9 @@ def test_parallel_steps(multilayer_tmp_dir, monkeypatch):
 
     main_config_path = multilayer_tmp_dir / "example_config.json"
     batch_manager = BatchManager(main_config_path)
+
+    for job in batch_manager.job_dict.values():
+        assert len(job._overlapping_jobs) == 1
 
     if shutil.which("sbatch") is None:
         # test locally

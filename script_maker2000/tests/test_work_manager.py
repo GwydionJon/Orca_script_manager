@@ -41,7 +41,6 @@ def test_workmanager(clean_tmp_dir, job_dict, monkeypatch):
     work_manager = WorkManager(orca_test, job_dict)
     # no files present for sp_config yet
     current_job_dict = work_manager.check_job_status()
-    print(current_job_dict)
     assert len(current_job_dict["not_found"]) == 11
 
     orca_test = OrcaModule(config_path, "opt_config")
@@ -81,14 +80,14 @@ def test_workmanager(clean_tmp_dir, job_dict, monkeypatch):
     )
     # haven't refreshed the job status yet
     current_job_dict = work_manager.check_job_status()
-    assert len(current_job_dict["returned"]) == 11
+    assert len(current_job_dict["returned"]) == 7
+    assert len(current_job_dict["failed"]) == 4
 
     # check on returned jobs
     # manage finished jobs
     work_manager.manage_returned_jobs(current_job_dict["returned"])
 
     current_job_dict = work_manager.check_job_status()
-    print(current_job_dict.keys())
 
     assert len(current_job_dict["finished"]) == 4
     assert len(current_job_dict["failed"]) == 7
