@@ -134,6 +134,14 @@ class BatchManager:
 
                 job = Job(job_id, combination, self.working_dir, charge, multiplicity)
                 jobs.append(job)
+        # search for jobs that have the same steps.
+        #
+        for job1 in jobs:
+            for job2 in jobs:
+                if any(key in job2.all_keys for key in job1.all_keys):
+                    job1.overlapping_jobs.append(job2)
+                    job2.overlapping_jobs.append(job1)
+
         job_dict = {job.unique_job_id: job for job in jobs}
         return job_dict
 
@@ -329,7 +337,7 @@ class BatchManager:
                 "There was an error in the batch processing loop."
                 + f"Errors: {all_errors}"
             )
-            raise Exception(
+            raise RuntimeError(
                 "There was an error in the batch processing loop."
                 + f"Errors: {all_errors}"
             )

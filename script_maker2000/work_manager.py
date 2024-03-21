@@ -110,7 +110,7 @@ class WorkManager:
 
         finished_jobs = []
         for job in submitted_jobs:
-            if job.check_status_for_key(self.config_key) == "returned":
+            if job.check_status_for_key(self.config_key) in ["returned", "failed"]:
                 finished_jobs.append(job)
         self.log.info(f"Collected {len(finished_jobs)} returned jobs.")
 

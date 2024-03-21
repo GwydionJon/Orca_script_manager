@@ -67,6 +67,8 @@ class Job:
         )
         self.raw_failed_dir = working_dir / "failed" / self.unique_job_id
 
+        self._overlapping_jobs = []
+
     def __repr__(self):
         return (
             "JOB: "
@@ -103,8 +105,31 @@ class Job:
 
     @current_status.setter
     def current_status(self, value):
+
+        if value == "submitted":
+            for overlapping_job in self.overlapping_jobs:
+                if (
+                    overlapping_job.current_key == self.current_key
+                    and overlapping_job.current_status != "submitted"
+                ):
+                    overlapping_job._current_status = "submitted"  # noqa
+                    overlapping_job.status_per_key[self.current_key] = "submitted"
+                    overlapping_job.slurm_id_per_key[self.current_key] = (
+                        self.slurm_id_per_key[self.current_key]
+                    )
+                else:
+                    overlapping_job.status_per_key[self.current_key] = "submitted"
+
         self._current_status = value
         self.status_per_key[self.current_key] = value
+
+    @property
+    def overlapping_jobs(self):
+        return self._overlapping_jobs
+
+    @overlapping_jobs.setter
+    def overlapping_jobs(self, value):
+        self._overlapping_jobs = value
 
     def _check_slurm_completed(self, key):
         process = subprocess.run(
@@ -168,7 +193,8 @@ class Job:
 
                     if not list(self.current_dirs["output"].glob("*xyz")):
                         self.current_status = "failed"
-                        return "missing_output"
+                        self.failed_reason = "missing_output"
+                        return "failed"
 
                     return "returned"
 
@@ -194,8 +220,11 @@ class Job:
             "__".join(self.all_keys[: step + 1]) + "___" + self.mol_id
         )
 
-        self.current_status = "found"
-        self.status_per_key[key] = "found"
+        checked_status = self.check_status_for_key(key)
+        if checked_status != "submitted":
+
+            self.current_status = "found"
+            self.status_per_key[key] = "found"
 
         self.current_dirs = {
             "input": self.input_dir_per_key[key],
@@ -237,11 +266,20 @@ class Job:
         else:
             self.current_status = "failed"
             self.failed_reason = return_str
+            print(self, self.failed_reason)
 
             if not self.current_dirs[self.failed_reason].exists():
                 shutil.copytree(
                     self.current_dirs["output"], self.current_dirs[self.failed_reason]
                 )
+                if self.failed_reason == "missing_output":
+                    missing_dir_path = self.current_dirs[self.failed_reason]
+                    missing_dir_path.mkdir(parents=True, exist_ok=True)
+                    missing_file = missing_dir_path / "missing_output.txt"
+                    with open(missing_file, "w") as f:
+                        f.write(
+                            f"No output files found in the output directory for job: {self}."
+                        )
 
         # # clean up input and output by archiving
         # for dir in [self.current_dirs["input"], self.current_dirs["output"]]:
