@@ -62,10 +62,8 @@ class Job:
         self._init_all_dicts(working_dir, all_keys)
 
         # prepare final_output dirs
-        self.raw_success_dir = (
-            working_dir / "finished" / "raw_results" / self.unique_job_id
-        )
-        self.raw_failed_dir = working_dir / "failed" / self.unique_job_id
+        self.raw_success_dir = working_dir / "finished" / "raw_results" / self.mol_id
+        self.raw_failed_dir = self.raw_success_dir / "failed"
 
         self._overlapping_jobs = []
 
@@ -271,14 +269,6 @@ class Job:
                 shutil.copytree(
                     self.current_dirs["output"], self.current_dirs[self.failed_reason]
                 )
-                if self.failed_reason == "missing_output":
-                    missing_dir_path = self.current_dirs[self.failed_reason]
-                    missing_dir_path.mkdir(parents=True, exist_ok=True)
-                    missing_file = missing_dir_path / "missing_output.txt"
-                    with open(missing_file, "w") as f:
-                        f.write(
-                            f"No output files found in the output directory for job: {self}."
-                        )
 
         # # clean up input and output by archiving
         # for dir in [self.current_dirs["input"], self.current_dirs["output"]]:
@@ -368,20 +358,52 @@ class Job:
         Returns:
             str: The reason for the job failure.
         """
-        if self.final_dir is not None:
-            self.current_dirs[self.failed_reason]
-            self.final_dir = self.raw_failed_dir
-            # self.final_dir.mkdir(parents=True, exist_ok=True)
-            if not (self.final_dir / self.unique_job_id).exists():
-                shutil.copytree(
-                    self.current_dirs[self.failed_reason],
-                    self.final_dir / self.unique_job_id,
-                )
 
-            self.status_per_key[self.current_key] = "failed"
-            # set failed for all remaining keys
-            for key in self.all_keys[self.all_keys.index(self.current_key) + 1 :]:
-                self.status_per_key[key] = "failed"
+        # self.current_dirs[self.failed_reason]
+        self.final_dir = self.raw_failed_dir
+        # self.final_dir.mkdir(parents=True, exist_ok=True)
+        # copy previous finished directories to the final directory
+        for key in self.finished_keys:  # pylint: disable=C0206
+            key_id = (
+                "__".join(self.all_keys[: self.all_keys.index(key) + 1])
+                + "___"
+                + self.mol_id
+            )
+
+            if key in self.status_per_key:
+                if self.status_per_key[key] == "finished":
+                    src_dir = self.finished_per_key[key]
+                    target_dir = self.final_dir / key_id
+                elif self.status_per_key[key] == "failed":
+                    src_dir = (
+                        self.failed_per_key[key].parents[0]
+                        / self.failed_reason
+                        / key_id
+                    )
+                    target_dir = self.final_dir / self.failed_reason / key_id
+                    target_dir.mkdir(parents=True, exist_ok=True)
+                    if self.failed_reason == "missing_output":
+                        src_dir.mkdir(parents=True, exist_ok=True)
+                        missing_file = src_dir / "missing_output.txt"
+                        with open(missing_file, "w") as f:
+                            f.write(
+                                f"No output files found in the output directory for job: {self}."
+                            )
+
+            else:
+                src_dir = self.failed_per_key[key].parents[0] / self.failed_reason
+                target_dir = self.final_dir / self.failed_reason / key_id
+
+            shutil.copytree(src_dir, target_dir, dirs_exist_ok=True)
+
+        # key_id = "__".join(self.all_keys[:]) + "___" + self.mol_id
+
+        # shutil.copytree(self.current_dirs[self.failed_reason], self.final_dir / key_id/"failed", dirs_exist_ok=True)
+
+        self.status_per_key[self.current_key] = "failed"
+        # set failed for all remaining keys
+        for key in self.all_keys[self.all_keys.index(self.current_key) + 1 :]:
+            self.status_per_key[key] = "failed_prior"
 
         self._clean_up()
 
@@ -397,12 +419,20 @@ class Job:
         str: The status of the job.
         """
 
-        current_dir = self.current_dirs["finished"]
         self.final_dir = self.raw_success_dir
         self.current_status = "finalized"
 
         # Copy all finished files to the final success directory
-        shutil.copytree(current_dir, self.final_dir / self.unique_job_id)
+
+        for key, finished_dir in self.finished_per_key.items():
+
+            key_id = (
+                "__".join(self.all_keys[: self.all_keys.index(key) + 1])
+                + "___"
+                + self.mol_id
+            )
+            shutil.copytree(finished_dir, self.final_dir / key_id, dirs_exist_ok=True)
+
         self._clean_up()
 
     def prepare_initial_job(self, key, step, input_file):
@@ -449,22 +479,6 @@ class Job:
         export_dict["final_dir"] = str(self.final_dir)
         export_dict["failed_reason"] = self.failed_reason
 
-        # export_dict["current_dirs"] = {
-        #     str(key): str(value) for key, value in self.current_dirs.items()
-        # }
-
-        # export_dict["input_dir_per_key"] = {
-        #     str(key): str(value) for key, value in self.input_dir_per_key.items()
-        # }
-        # export_dict["output_dir_per_key"] = {
-        #     str(key): str(value) for key, value in self.output_dir_per_key.items()
-        # }
-        # export_dict["failed_per_key"] = {
-        #     str(key): str(value) for key, value in self.failed_per_key.items()
-        # }
-        # export_dict["finished_per_key"] = {
-        #     str(key): str(value) for key, value in self.finished_per_key.items()
-        # }
         export_dict["slurm_id_per_key"] = {
             str(key): str(value) for key, value in self.slurm_id_per_key.items()
         }
@@ -506,21 +520,6 @@ class Job:
         new_job.final_dir = Path(input_dict["final_dir"])
         new_job.failed_reason = input_dict["failed_reason"]
 
-        # new_job.input_dir_per_key = {
-        #     str(key): Path(value)
-        #     for key, value in input_dict["input_dir_per_key"].items()
-        # }
-        # new_job.output_dir_per_key = {
-        #     str(key): Path(value)
-        #     for key, value in input_dict["output_dir_per_key"].items()
-        # }
-        # new_job.failed_per_key = {
-        #     str(key): Path(value) for key, value in input_dict["failed_per_key"].items()
-        # }
-        # new_job.finished_per_key = {
-        #     str(key): Path(value)
-        #     for key, value in input_dict["finished_per_key"].items()
-        # }
         new_job.slurm_id_per_key = input_dict["slurm_id_per_key"]
         new_job.status_per_key = input_dict["status_per_key"]
         new_job.finished_keys = input_dict["finished_keys"]
