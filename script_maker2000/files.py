@@ -49,7 +49,6 @@ def create_working_dir_structure(
 
     (output_dir / "finished" / "raw_results").mkdir(parents=True)
     (output_dir / "finished" / "results").mkdir(parents=True)
-    (output_dir / "failed").mkdir(parents=True)
 
     # move input files and main_settings in output folder
     # save config into working dir

@@ -59,7 +59,12 @@ def test_batch_manager(clean_tmp_dir, monkeypatch):
     monkeypatch.setattr(second_worker, "wait_time", 0.2)
     monkeypatch.setattr(second_worker, "max_loop", 5)
 
-    assert len(list(second_worker.input_dir.glob("*"))) == 4
+    all_results = list(batch_manager.working_dir.glob("finished/raw_results/*"))
+    failed = list(batch_manager.working_dir.glob("finished/raw_results/*/failed*"))
+
+    # only the failed jobs should be in the raw results dir
+    assert len(all_results) == 7
+    assert len(failed) == 7
 
 
 @pytest.mark.skip(reason="Test doesn't work in Github Actions.")
@@ -175,6 +180,16 @@ def test_batch_loop_no_files(clean_tmp_dir, monkeypatch):
         with pytest.raises(RuntimeError):
             exit_code, task_results = batch_manager.run_batch_processing()
 
+        assert (
+            len(
+                list(
+                    (clean_tmp_dir / "output" / "finished" / "raw_results").glob(
+                        "**/missing*txt"
+                    )
+                )
+            )
+            == 11
+        )
     else:
         monkeypatch.setattr(batch_manager, "wait_time", 10)
         monkeypatch.setattr(batch_manager, "max_loop", 10)
@@ -232,18 +247,18 @@ def test_batch_loop_with_files(clean_tmp_dir, monkeypatch):
                 replacement = "opt_config___"
             elif "sp_config" in str(out_dir):
                 replacement = "opt_config__sp_config___"
-            for dir in out_dir.glob("*"):
-                new_dir = str(dir).replace("START_", replacement)
+            for dir_ in out_dir.glob("*"):
+                new_dir = str(dir_).replace("START_", replacement)
                 new_dir = Path(new_dir)
                 new_dir.mkdir()
-                for file in dir.glob("*"):
+                for file in dir_.glob("*"):
 
                     new_file = str(file.name).replace("START_", replacement)
                     if "slurm" in new_file:
                         new_file = "slurm_output.out"
 
                     file.rename(Path(new_dir) / new_file)
-                shutil.rmtree(dir)
+                shutil.rmtree(dir_)
 
         import time
 
@@ -272,7 +287,15 @@ def test_batch_loop_with_files(clean_tmp_dir, monkeypatch):
         assert task_result.done() is True
         assert "All jobs done after" in task_result.result()
 
-    assert len(list(batch_manager.working_dir.glob("finished/raw_results/*"))) == 4
+    all_results = list(batch_manager.working_dir.glob("finished/raw_results/*"))
+    failed = list(batch_manager.working_dir.glob("finished/raw_results/*/failed*"))
+    not_failed = list(
+        batch_manager.working_dir.glob("finished/raw_results/*/[!failed]*")
+    )
+
+    assert len(all_results) == 11
+    assert len(failed) == 7
+    assert len(not_failed) == 8
 
 
 def test_parallel_steps(multilayer_tmp_dir, monkeypatch):
@@ -291,7 +314,7 @@ def test_parallel_steps(multilayer_tmp_dir, monkeypatch):
     batch_manager = BatchManager(main_config_path)
 
     for job in batch_manager.job_dict.values():
-        assert len(job._overlapping_jobs) == 1
+        assert len(job.overlapping_jobs) == 1
 
     if shutil.which("sbatch") is None:
         # test locally
@@ -370,16 +393,17 @@ def test_parallel_steps(multilayer_tmp_dir, monkeypatch):
         assert task_result.done() is True
         assert "All jobs done after" in task_result.result()
 
-    assert len(list(batch_manager.working_dir.glob("finished/raw_results/*"))) == 16
-    assert (
-        len(list(batch_manager.working_dir.glob("finished/raw_results/*sp_config1*")))
-        == 8
+    assert len(list(batch_manager.working_dir.glob("finished/raw_results/*"))) == 11
+
+    all_results = list(batch_manager.working_dir.glob("finished/raw_results/*"))
+    failed = list(batch_manager.working_dir.glob("finished/raw_results/*/failed*"))
+    not_failed = list(
+        batch_manager.working_dir.glob("finished/raw_results/*/[!failed]*")
     )
-    assert (
-        len(list(batch_manager.working_dir.glob("finished/raw_results/*sp_config2*")))
-        == 8
-    )
-    assert len(list(batch_manager.working_dir.glob("finished/raw_results/*opt*"))) == 16
+
+    assert len(all_results) == 11
+    assert len(failed) == 7
+    assert len(not_failed) == 24
 
 
 def copy_output(target_dirs, succesful_output_dirs):
@@ -397,7 +421,6 @@ def copy_output(target_dirs, succesful_output_dirs):
                 new_dir_name = target_dir / str(output_dir.name).replace(
                     "START_", f"opt_config{i+1}__sp_config{j}___"
                 )
-                print(new_dir_name)
                 new_dir_path.rename(new_dir_name)
                 for file in new_dir_name.glob("*"):
                     new_file = str(file.name).replace(
@@ -428,15 +451,6 @@ def test_continue_run(pre_started_dir, monkeypatch):
     batch_manager = BatchManager(main_config_path, override_continue_job=True)
 
     assert len(list(batch_manager.working_dir.glob("finished/raw_results/*"))) == 0
-    assert (
-        len(list(batch_manager.working_dir.glob("finished/raw_results/*sp_config1*")))
-        == 0
-    )
-    assert (
-        len(list(batch_manager.working_dir.glob("finished/raw_results/*sp_config2*")))
-        == 0
-    )
-    assert len(list(batch_manager.working_dir.glob("finished/raw_results/*opt*"))) == 0
 
     if shutil.which("sbatch") is None:
         # test locally
@@ -466,13 +480,12 @@ def test_continue_run(pre_started_dir, monkeypatch):
         assert task_result.done() is True
         assert "All jobs done after" in task_result.result()
 
-    assert len(list(batch_manager.working_dir.glob("finished/raw_results/*"))) == 16
-    assert (
-        len(list(batch_manager.working_dir.glob("finished/raw_results/*sp_config1*")))
-        == 8
+    all_results = list(batch_manager.working_dir.glob("finished/raw_results/*"))
+    failed = list(batch_manager.working_dir.glob("finished/raw_results/*/failed*"))
+    not_failed = list(
+        batch_manager.working_dir.glob("finished/raw_results/*/[!failed]*")
     )
-    assert (
-        len(list(batch_manager.working_dir.glob("finished/raw_results/*sp_config2*")))
-        == 8
-    )
-    assert len(list(batch_manager.working_dir.glob("finished/raw_results/*opt*"))) == 16
+
+    assert len(all_results) == 11
+    assert len(failed) == 7
+    assert len(not_failed) == 24

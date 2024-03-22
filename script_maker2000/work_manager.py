@@ -189,7 +189,7 @@ class WorkManager:
                 + log_dict
                 + f"\n\t {total_jobs_remaining} remaining."
             )
-            self.log.info(current_job_dict)
+            self.log.debug(current_job_dict)
             return total_jobs_remaining == 0
 
         n_loops = 0
