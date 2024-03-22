@@ -1,8 +1,13 @@
-from script_maker2000.files import read_config, create_working_dir_structure
+from script_maker2000.files import (
+    read_config,
+    create_working_dir_structure,
+    collect_input_files,
+)
 
 import logging
 import pathlib
 import pytest
+import tarfile
 
 script_maker_log = logging.getLogger("Script_maker_log")
 script_maker_error = logging.getLogger("Script_maker_error")
@@ -36,7 +41,7 @@ def test_create_working_dir_structure(test_setup_work_dir):
 
     assert len(list(output_path.glob("*"))) == 8
     # check that sub dirs are present
-    assert len(list(output_path.glob("*/*"))) == 24
+    assert len(list(output_path.glob("*/*"))) == 23
 
     # reset input filenames
     for file in pathlib.Path(test_setup_work_dir / "example_xyz").glob("*.xyz"):
@@ -56,7 +61,20 @@ def test_create_working_dir_structure(test_setup_work_dir):
 
     assert len(list(output_path.glob("*"))) == 8
     # check that two new sub dirs are present
-    assert len(list(output_path.glob("*/*"))) == 23
+    assert len(list(output_path.glob("*/*"))) == 22
 
     with pytest.raises(KeyError):
         read_config(test_setup_work_dir / "example_config6.json")
+
+
+def test_collect_input_files(clean_tmp_dir):
+
+    tar_path = collect_input_files(
+        clean_tmp_dir / "example_config.json", clean_tmp_dir / "example_prep"
+    )
+    extract_path = clean_tmp_dir / "example_prep" / "extracted_test"
+    with tarfile.open(tar_path, "r:gz") as tar:
+        tar.extractall(path=extract_path, filter="fully_trusted")
+
+    assert len(list(extract_path.glob("*"))) == 3
+    assert len(list(extract_path.glob("*/*"))) == 11
