@@ -66,7 +66,7 @@ def start_tar(tar, extract_path, remove_extracted):
 
     extract_path = Path(extract_path)
     extract_path = extract_path.resolve()
-    extract_path.mkdir()
+    extract_path.mkdir(exist_ok=True, parents=True)
 
     click.echo(f"Starting the batch processing with the tarball at {tar}.")
     with tarfile.open(tar, "r:gz") as tar:
