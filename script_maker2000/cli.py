@@ -80,10 +80,12 @@ def start_tar(tar, extract_path, remove_extracted):
     with open(config_path, "r") as f:
         config = json.load(f)
 
-    current_output_path = Path(config["main_config"]["output_path"])
-    config["main_config"]["output_path"] = (
-        extract_path.parents[0] / current_output_path.stem
+    current_output_path = config["main_config"]["output_dir"]
+    config["main_config"]["output_dir"] = str(
+        extract_path.parents[0] / current_output_path
     )
+    with open(config_path, "w") as f:
+        json.dump(config, f)
 
     click.echo(f"Config file found at {config_path}")
     # search for new xyz files and update the csv file
