@@ -51,19 +51,28 @@ def start_config(config):
     default="input_files",
     help="Path where the tar ball is extracted and the sub_dirs for the calculation are generated.",
 )
-def start_tar(tar, extract_path):
+@click.option(
+    "--remove_extracted",
+    "-r",
+    default=True,
+    help="If the extracted files should be removed initilization of the calculation.",
+)
+def start_tar(tar, extract_path, remove_extracted):
     """Start the batch processing with the given tarball."""
 
     extract_path = Path(extract_path)
     extract_path = extract_path.resolve()
-
+    click.echo(f"Starting the batch processing with the tarball at {tar}.")
     with tarfile.open(tar, "r:gz") as tar:
         tar.extractall(path=extract_path, filter="fully_trusted")
 
+    click.echo(f"Tarball extracted at {extract_path}")
     config_path = list(Path(extract_path).glob("*.json"))[0]
-
+    click.echo(f"Config file found at {config_path}")
     # search for new xyz files and update the csv file
     csv_file = list(Path(extract_path).glob("*.csv"))[0]
+    click.echo(f"CSV file found at {csv_file}")
+
     df_mol = pd.read_csv(csv_file)
 
     for xyz_id in df_mol["key"]:
@@ -71,9 +80,19 @@ def start_tar(tar, extract_path):
         xyz_path = list(extract_path.glob(f"**/*{xyz_id}.xyz"))[0]
         if xyz_path.exists():
             df_mol.loc[df_mol["key"] == xyz_id, "path"] = str(xyz_path)
+
     df_mol.to_csv(csv_file, index=False)
 
+    click.echo("Updated the path to the xyz files in the csv file.")
+    click.echo(f"Found {len(df_mol)} molecules to calculate.")
+
     batch_manager = BatchManager(config_path)
+
+    if remove_extracted:
+        click.echo("Removing the extracted files.")
+        extract_path.rmdir()
+
+    click.echo("Starting the batch processing:")
     batch_manager.run_batch_processing()
 
 

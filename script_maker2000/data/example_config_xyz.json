@@ -11,7 +11,7 @@
         "input_type": "xyz",
         "parallel_layer_run": false,
         "orca_version": "5.0.2",
-        "wait_for_results_time": 300,
+        "wait_for_results_time": 5,
         "common_input_files": "xyz"
     },
     "structure_check_config": {
