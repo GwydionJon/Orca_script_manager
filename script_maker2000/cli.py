@@ -3,6 +3,7 @@ from pathlib import Path
 import tarfile
 import shutil
 import pandas as pd
+import json
 from script_maker2000.config_maker import app, add_main_config
 from script_maker2000.files import check_config, collect_input_files
 from script_maker2000 import BatchManager
@@ -57,7 +58,7 @@ def start_config(config):
     is_flag=True,
     flag_value=True,
     type=click.BOOL,
-    default=True,
+    default=False,
     help="If the extracted files should be removed initilization of the calculation.",
 )
 def start_tar(tar, extract_path, remove_extracted):
@@ -65,12 +66,25 @@ def start_tar(tar, extract_path, remove_extracted):
 
     extract_path = Path(extract_path)
     extract_path = extract_path.resolve()
+    extract_path.mkdir()
+
     click.echo(f"Starting the batch processing with the tarball at {tar}.")
     with tarfile.open(tar, "r:gz") as tar:
-        tar.extractall(path=extract_path, filter="fully_trusted")
+        tar.extractall(path=extract_path, filter="data")
 
     click.echo(f"Tarball extracted at {extract_path}")
     config_path = list(Path(extract_path).glob("*.json"))[0]
+
+    # load config file and replace output path
+
+    with open(config_path, "r") as f:
+        config = json.load(f)
+
+    current_output_path = Path(config["main_config"]["output_path"])
+    config["main_config"]["output_path"] = (
+        extract_path.parents[0] / current_output_path.stem
+    )
+
     click.echo(f"Config file found at {config_path}")
     # search for new xyz files and update the csv file
     csv_file = list(Path(extract_path).glob("*.csv"))[0]

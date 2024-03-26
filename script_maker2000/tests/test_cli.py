@@ -158,6 +158,18 @@ def test_collect_files(clean_tmp_dir):
     assert "No such file or directory" in str(result.exception)
     assert result.exit_code == 1
 
+    new_tar_dir = clean_tmp_dir / "new_tar"
+    new_tar_dir.mkdir()
+    new_tar_path = new_tar_dir / "new_tar.tar.gz"
+    shutil.copy(tar_path, new_tar_path)
+
+    with tarfile.open(new_tar_path, "r:gz") as tar:
+        tar.extractall(path=new_tar_dir, filter="fully_trusted")
+
+    expected_files = ["extracted_xyz", "example_config.json", "example_molecules.csv"]
+    for file in expected_files:
+        assert (new_tar_dir / file).exists()
+
 
 @pytest.mark.skipif(
     shutil.which("sbatch") is not None,
