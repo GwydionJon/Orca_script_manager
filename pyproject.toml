@@ -13,7 +13,7 @@ maintainers = [
     { name = "Gwydion Daskalakis", email = "daskalakis@stud.uni-heidelberg.de" },
     { name = "Manuel Schmitt", email = "Manuel.Schmitt@aci.uni-heidelberg.dee" },
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 license = { text = "GNU" }
 classifiers = [
     "Programming Language :: Python :: 3",
