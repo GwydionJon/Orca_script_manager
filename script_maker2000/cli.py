@@ -1,7 +1,7 @@
 import click
 from pathlib import Path
 import tarfile
-
+import shutil
 import pandas as pd
 from script_maker2000.config_maker import app, add_main_config
 from script_maker2000.files import check_config, collect_input_files
@@ -54,6 +54,9 @@ def start_config(config):
 @click.option(
     "--remove_extracted",
     "-r",
+    is_flag=True,
+    flag_value=True,
+    type=click.BOOL,
     default=True,
     help="If the extracted files should be removed initilization of the calculation.",
 )
@@ -90,7 +93,7 @@ def start_tar(tar, extract_path, remove_extracted):
 
     if remove_extracted:
         click.echo("Removing the extracted files.")
-        extract_path.rmdir()
+        shutil.rmtree(extract_path)
 
     click.echo("Starting the batch processing:")
     batch_manager.run_batch_processing()

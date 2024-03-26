@@ -220,9 +220,14 @@ def test_start_tar_remote(clean_tmp_dir, monkeypatch):
     assert result.exit_code == 0
 
     result = runner.invoke(
-        collect_input, ["--config", main_config_path, "-o", str(prep_path)]
+        collect_input,
+        ["--config", main_config_path, "-o", str(prep_path)],
+        catch_exceptions=True,
     )
     assert result.exit_code == 0
+    import traceback
+
+    print(traceback.print_tb(result.exc_info[2]))
 
     tar_path = prep_path / "test.tar.gz"
     result = runner.invoke(start_tar, ["--tar", tar_path, "-e", str(prep_path)])
