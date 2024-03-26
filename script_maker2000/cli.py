@@ -111,8 +111,16 @@ def start_tar(tar, extract_path, remove_extracted):
         click.echo("Removing the extracted files.")
         shutil.rmtree(extract_path)
 
+    click.echo(f"Output will be saved at {config['main_config']['output_dir']}")
+    click.echo("Log files will be saved at in their respective folders.")
     click.echo("Starting the batch processing:")
-    batch_manager.run_batch_processing()
+
+    exit_code, task_results = batch_manager.run_batch_processing()
+
+    click.echo(f"Batch processing finished with exit code {exit_code}")
+    click.echo("Task results:")
+    for task in task_results:
+        click.echo(task)
 
 
 @script_maker_cli.command()

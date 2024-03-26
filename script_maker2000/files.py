@@ -390,8 +390,8 @@ def collect_input_files(config_path, preparation_dir):
     main_config["main_config"]["input_file_path"] = str(input_csv.name)
     main_config["main_config"]["xyz_path"] = str(xyz_dir.name)
     main_config["main_config"]["output_dir"] = pathlib.Path(
-        main_config["main_config"]["output_dir"].stem
-    )
+        main_config["main_config"]["output_dir"]
+    ).stem
 
     preparation_dir = pathlib.Path(preparation_dir)
     preparation_dir.mkdir(parents=True, exist_ok=True)
