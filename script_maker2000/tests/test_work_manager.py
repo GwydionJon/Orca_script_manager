@@ -151,3 +151,76 @@ def test_workmanager_loop(clean_tmp_dir, job_dict, monkeypatch):
     assert len(list(work_manager.input_dir.glob("*"))) == 11
     assert len(list(work_manager.input_dir.glob("*"))) == 11
     assert len(list(work_manager.output_dir.glob("*"))) == 11
+
+
+def test_collect_job_data(clean_tmp_dir, monkeypatch):
+    # seff ID:
+    # output_seff = "Job ID: 12441062 "
+    # "Cluster: justus2 "
+    # User/Group: hd_uo452/hd_hd
+    # State: COMPLETED (exit code 0)
+    # Nodes: 1
+    # Cores per node: 12
+    # CPU Utilized: 00:00:28
+    # CPU Efficiency: 6.48% of 00:07:12 core-walltime
+    # Job Wall-clock time: 00:00:36
+    # Memory Utilized: 1.20 MB
+    # Memory Efficiency: 0.50% of 240.00 MB
+
+    # sacct -j 12441073 --format=jobid,jobname,exitcode,NCPUS,cputimeraw,elapsedraw,timelimitraw,consumedenergyraw,MaxDiskRead,MaxDiskWrite,MaxVMSize,reqmem,TRESUsageInTot -p
+    ouput_sacct = str(
+        "JobID|JobName|ExitCode|NCPUS|CPUTimeRAW|ElapsedRaw|TimelimitRaw|ConsumedEnergyRaw|MaxDiskRead|MaxDiskWrite|MaxVMSize|ReqMem|TRESUsageInTot|TRESUsageInMax|"
+    )
+    ouput_sacct += "12441073|sp_config_opt_config__sp_config___a002_b006|0:0|2|66|33|2|2094||||40M|||"
+    ouput_sacct += "12441073.batch|batch|0:0|2|66|33||2067|141.34M|145.87M|227220K||cpu=00:00:00,energy=2067,fs/disk=148210812,mem=1965K,pages=0,vmem=227220K|cpu=00:00:00,energy=2067,fs/disk=148210812,mem=1965K,pages=0,vmem=227220K|"
+    ouput_sacct += "12441073.extern|extern|0:0|2|66|33||2094|0.00M|0.00M|131828K||cpu=00:00:00,energy=2094,fs/disk=2332,mem=516K,pages=0,vmem=131828K|cpu=00:00:00,energy=2094,fs/disk=2332,mem=516K,pages=0,vmem=131828K|"
+
+    # print(ouput_sacct.split("|"))
+
+    ouput_sacct_split = ouput_sacct.split("|")
+    import re
+
+    header = re.split(r"(\d)", ouput_sacct, 1)[0]
+
+    header_names = header.split("|")[:-1]
+
+    print(header_names)
+    print("")
+    print("")
+
+    data = {}
+
+    for i, header_name in enumerate(header_names):
+
+        output_split = ouput_sacct_split[i :: len(header_names)][1:]
+
+        if i == 0:
+            output_split = output_split[:-1]
+
+        print(i, header_name)
+        print(output_split)
+        print("")
+        if header_name == "JobID":
+            data[header_name] = output_split
+        elif header_name in ["TRESUsageInTot", "TRESUsageInMax"]:
+            match = [re.search(r"mem=(\d+\w)", column) for column in output_split]
+            match = [m.group(1) if m else None for m in match]
+            data[header_name] = match
+
+        else:
+            data[header_name] = output_split
+
+    print(data)
+    for key, value in data.items():
+        print(key, len(value))
+
+    import pandas as pd
+
+    df = pd.DataFrame(data)
+    df.fillna(df.loc[0], inplace=True)
+
+    print(df[["JobID", "ReqMem"]])
+    print(df[["JobID", "ReqMem"]].loc[1].values)
+
+    df.to_csv("test.csv")
+    1 / 0
