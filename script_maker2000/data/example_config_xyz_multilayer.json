@@ -7,10 +7,12 @@
         "output_dir": "output",
         "max_run_time": "60:00:00",
         "input_file_path": "example_xyz/example_molecules.csv",
+        "xyz_path": "example_xyz",
+
         "input_type": "xyz",
         "parallel_layer_run": true,
         "orca_version": "5.0.2",
-        "wait_for_results_time": 300,
+        "wait_for_results_time": 5,
         "common_input_files": "xyz"
     },
     "structure_check_config": {

@@ -38,8 +38,18 @@ def add_main_config(app: Dash) -> Dash:
                     dbc.InputGroupText("Input Path"),
                     dbc.Input(
                         id="input_path_input",
-                        placeholder="Input file path can be absolut or relativ."
-                        + " This field will be left out when checking the config file.",
+                        placeholder="Input file path can be absolut or relativ.",
+                        type="text",
+                    ),
+                ],
+                style=default_style,
+            ),
+            dbc.Row(
+                [
+                    dbc.InputGroupText("XYZ Dir Path"),
+                    dbc.Input(
+                        id="xyz_dir_path_input",
+                        placeholder="XYZ dir path can be absolut or relativ.",
                         type="text",
                     ),
                 ],
@@ -514,7 +524,16 @@ def create_config_file(
             settings_dict["main_config"][key] = [
                 v.strip() for v in value.split(",") if v.strip() != ""
             ]
-
+        if key == "xyz_path":
+            if value is None:
+                settings_dict["main_config"][key] = "empty"
+            else:
+                settings_dict["main_config"][key] = str(Path(value).resolve())
+        if key == "input_file_path":
+            if value is None:
+                settings_dict["main_config"][key] = "empty"
+            else:
+                settings_dict["main_config"][key] = str(Path(value).resolve())
         else:
             settings_dict["main_config"][key] = value
 
@@ -543,7 +562,7 @@ def create_config_file(
 
     config_check_output = "All seems in order with the config shown below."
     try:
-        check_config(settings_dict, skip_file_check=True)
+        check_config(settings_dict, skip_file_check=False)
     except Exception as e:
         config_check_output = f"Config check failed with error: {e}"
 
@@ -714,6 +733,7 @@ def add_callbacks(app: Dash) -> Dash:
                 "output_dir": State("output_path_input", "value"),
                 "input_file_path": State("input_path_input", "value"),
                 "input_type": State("input_type_input", "value"),
+                "xyz_path": State("xyz_dir_path_input", "value"),
                 "continue_previous_run": State("continue_previous_run_input", "value"),
                 "parallel_layer_run": State("parallel_layer_run_input", "value"),
                 "common_input_files": State("common_input_files_input", "value"),

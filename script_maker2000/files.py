@@ -4,6 +4,7 @@ import pathlib
 import shutil
 from collections import OrderedDict
 import pandas as pd
+import tarfile
 
 script_maker_log = logging.getLogger("Script_maker_log")
 script_maker_error = logging.getLogger("Script_maker_error")
@@ -55,50 +56,50 @@ def create_working_dir_structure(
     with open(output_dir / "example_config.json", "w", encoding="utf-8") as json_file:
         json.dump(main_config, json_file)
 
-    # copy input files
-
-    # check that all input files start with START_
-
-    # read input files from csv
-    input_df = pd.read_csv(input_path)
-
-    all_input_files = input_df["path"].values
-    for file in all_input_files:
-        if isinstance(file, str):
-            file = pathlib.Path(file)
-        if file.stem.startswith("START_") is False:
-            raise ValueError(
-                f"Input file {file} does not start with 'START_'."
-                + " Please make sure all input files start with 'START_'."
-            )
-        new_file_name = file.parent / file.name.replace("START_", "START___")
-        file.rename(new_file_name)
-
-    new_input_path = shutil.copytree(
-        input_path.parent, output_dir / "start_input_files"
-    )
-
     # save input csv in output folder
+
+    valid_files, input_df = prepare_xyz_files(input_path)
+    script_maker_log.info(valid_files)
+
+    new_input_path = output_dir / "start_input_files"
+    new_input_path.mkdir(parents=True, exist_ok=True)
+    for file in valid_files:
+        script_maker_log.info(file)
+        mol_id = file.stem.split("___")[1]
+        input_df.loc[input_df["key"] == mol_id, "path"] = file
+        shutil.copy(file, new_input_path / file.name)
+
     new_csv_file = output_dir / "input.csv"
-    input_df.to_csv(output_dir / "input.csv")
+    input_df.to_csv(new_csv_file)
+
+    # copy files to output folder
 
     return output_dir, new_input_path, new_csv_file
 
 
-def move_files(input_path, output_path, copy=True):
-    """simple wrapper for moving files and handling certain logic requiremens before doing so. TODO
+def prepare_xyz_files(input_csv):
 
-    Args:
-        input_path (str): input path
-        output_path (str): output path
-        copy (bool): copy (True) or move(False) the file
+    found_files, input_df = _check_input_csv(input_csv)
 
-    """
+    new_files = []
+    for file in found_files:
 
-    if copy:
-        return shutil.copy(input_path, output_path)
-    else:
-        return shutil.move(input_path, output_path)
+        if file.stem.startswith("START_") is False:
+            new_file_name = file.parent / "START___" + file.name
+
+        elif file.stem.startswith("START___") is True:
+            continue
+        elif file.stem.startswith("START_") is True:
+            new_file_name = file.parent / file.name.replace("START_", "START___")
+
+        else:
+            raise ValueError(
+                "File name does not match any expected pattern. "
+                + "Please rename the file according to the following pattern: START_molIdentifier.xyz"
+            )
+        new_files.append(file.rename(new_file_name))
+
+    return new_files, input_df
 
 
 def check_config(main_config, skip_file_check=False):
@@ -109,19 +110,8 @@ def check_config(main_config, skip_file_check=False):
             main_config = json.load(f)
         main_config = OrderedDict(main_config)
 
+    # check if all keys are present
     _check_config_keys(main_config)
-
-    if skip_file_check is False:
-        if main_config["main_config"]["input_file_path"] is None:
-            raise FileNotFoundError("No input file path provided.")
-
-        input_path = pathlib.Path(main_config["main_config"]["input_file_path"])
-
-        if not input_path.exists():
-            raise FileNotFoundError(
-                f"Can't find input files under {input_path}."
-                + " Please check your file name or provide the necessary files."
-            )
 
     output_dir = pathlib.Path(main_config["main_config"]["output_dir"])
     sub_dir_names = [pathlib.Path(key) for key in main_config["loop_config"]]
@@ -158,7 +148,17 @@ def check_config(main_config, skip_file_check=False):
     if min(step_list) != 0:
         raise ValueError("The first step number must be 0.")
 
-    # check if all keys are present
+    if skip_file_check is False:
+        if main_config["main_config"]["input_file_path"] is None:
+            raise FileNotFoundError("No input file path provided.")
+
+        input_path = pathlib.Path(main_config["main_config"]["input_file_path"])
+
+        if not input_path.exists():
+            raise FileNotFoundError(
+                f"Can't find input files under {input_path}."
+                + " Please check your file name or provide the necessary files."
+            )
 
 
 def _check_config_keys(main_config):
@@ -188,6 +188,7 @@ def _check_config_keys(main_config):
         "orca_version",
         "wait_for_results_time",
         "common_input_files",
+        "xyz_path",
     ]
     structure_check_config_keys = ["run_checks"]
     analysis_config_keys = ["run_benchmark"]
@@ -250,7 +251,16 @@ def read_config(config_file, perform_validation=True, override_continue_job=Fals
 
     with open(config_file, "r", encoding="utf-8") as f:
         main_config = json.load(f)
+
     main_config = OrderedDict(main_config)
+
+    input_path = pathlib.Path(main_config["main_config"]["input_file_path"])
+
+    # make relative paths absolute
+    if input_path.is_absolute() is False:
+        input_path = pathlib.Path(config_file).parent / input_path
+        input_path = input_path.resolve()
+        main_config["main_config"]["input_file_path"] = str(input_path)
 
     # check if continue_previous_run is set to True
     if override_continue_job:
@@ -306,3 +316,103 @@ def read_config(config_file, perform_validation=True, override_continue_job=Fals
     file_handler_failed.setLevel("DEBUG")
 
     return main_config
+
+
+def _check_input_csv(input_csv, xyz_dir=None):
+    input_df = pd.read_csv(input_csv)
+    all_input_files = input_df["path"].values
+    file_not_found_list = []
+    file_suffix_error_list = []
+
+    found_files = []
+
+    for file in all_input_files:
+        if isinstance(file, str):
+            file = pathlib.Path(file)
+
+        if file.is_absolute() is False:
+            if xyz_dir is None:
+                raise FileNotFoundError(
+                    "Please provide the full path or the xyz dir name."
+                )
+            file = list(pathlib.Path(xyz_dir).glob(file))
+            if len(file) == 0:
+                file_not_found_list.append(file)
+            if len(file) > 1:
+                raise ValueError(
+                    f"Found multiple files for {file}. Please provide the full path."
+                )
+            file = file[0]
+
+        if not file.exists():
+            file_not_found_list.append(file)
+
+        elif file.suffix != ".xyz":
+            file_suffix_error_list.append(file)
+
+        else:
+            found_files.append(file)
+
+    if len(file_not_found_list) > 0:
+        raise FileNotFoundError(
+            f"Can't find the following input files: {file_not_found_list}"
+        )
+    if len(file_suffix_error_list) > 0:
+        raise ValueError(
+            f"Input files must be in xyz format. The following files are not: {file_suffix_error_list}"
+        )
+
+    return found_files, input_df
+
+
+def collect_input_files(config_path, preparation_dir):
+    """This function collects all input files (xyz, config, csv) and
+
+    Args:
+        config_path (str): Path to the config file
+        input_csv (str): Path to the input csv file
+        xyz_dir (str): Path to the xyz files
+    """
+    # check if config is valid
+    main_config = read_config(config_path, perform_validation=True)
+
+    input_csv = pathlib.Path(main_config["main_config"]["input_file_path"])
+    xyz_dir = pathlib.Path(main_config["main_config"]["xyz_path"])
+
+    # check if input_csv contains valid file paths
+    found_files, input_df = _check_input_csv(input_csv, xyz_dir)
+
+    # replace path in input_df with new path
+    for i, file in enumerate(found_files):
+        file = pathlib.Path(file)
+        input_df.loc[i, "path"] = str(pathlib.Path(xyz_dir.name) / file.name)
+
+    main_config["main_config"]["input_file_path"] = str(input_csv.name)
+    main_config["main_config"]["xyz_path"] = str(xyz_dir.name)
+    main_config["main_config"]["output_dir"] = pathlib.Path(
+        main_config["main_config"]["output_dir"]
+    ).stem
+
+    preparation_dir = pathlib.Path(preparation_dir)
+    preparation_dir.mkdir(parents=True, exist_ok=True)
+
+    # write new input csv and config to preparation dir
+    new_csv_name = preparation_dir / input_csv.name
+
+    input_df.to_csv(new_csv_name)
+    new_config_name = preparation_dir / config_path.name
+
+    with open(new_config_name, "w", encoding="utf-8") as json_file:
+        json.dump(main_config, json_file)
+
+    tar_path = preparation_dir / "test.tar.gz"
+
+    with tarfile.open(tar_path, "w:gz") as tar:
+        for file in found_files:
+            tar.add(file, arcname="extracted_xyz/" + pathlib.Path(file).name)
+        tar.add(new_csv_name, arcname=new_csv_name.name)
+        tar.add(new_config_name, arcname=new_config_name.name)
+
+    tar_path = pathlib.Path(tar_path)
+
+    return tar_path
