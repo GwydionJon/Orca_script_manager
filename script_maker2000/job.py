@@ -641,7 +641,7 @@ class Job:
                 [
                     shutil.which("sacct"),
                     "-j",
-                    slurm_key,
+                    str(slurm_key),
                     "--format",
                     ",".join(collection_format_arguments),
                     "-p",
