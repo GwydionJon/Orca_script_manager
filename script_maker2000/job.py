@@ -55,6 +55,8 @@ class Job:
         self.final_dir = None
         self.failed_reason = None
 
+        self.efficiency_data = {}
+
         # for each config_key this will save the location of the job_dir
         self.input_dir_per_key = {}
         self.output_dir_per_key = {}
@@ -411,6 +413,7 @@ class Job:
         for key in self.all_keys[self.all_keys.index(self.current_key) + 1 :]:
             self.status_per_key[key] = "failed_prior"
 
+        self.collect_efficiency_data()
         self._clean_up()
 
         return self.failed_reason
@@ -439,6 +442,7 @@ class Job:
             )
             shutil.copytree(finished_dir, self.final_dir / key_id, dirs_exist_ok=True)
 
+        self.collect_efficiency_data()
         self._clean_up()
 
     def prepare_initial_job(self, key, step, input_file):
@@ -491,6 +495,8 @@ class Job:
         export_dict["status_per_key"] = {
             str(key): str(value) for key, value in self.status_per_key.items()
         }
+
+        export_dict["efficiency_data"] = self.efficiency_data
         return export_dict
 
     @classmethod
@@ -529,6 +535,8 @@ class Job:
         new_job.slurm_id_per_key = input_dict["slurm_id_per_key"]
         new_job.status_per_key = input_dict["status_per_key"]
         new_job.finished_keys = input_dict["finished_keys"]
+
+        new_job.efficiency_data = input_dict["efficiency_data"]
         return new_job
 
     # here the job will handle collecting its efficiency data
@@ -587,7 +595,7 @@ class Job:
                 filtered_data[key] = (
                     self._convert_order_of_magnitude(value[0]) * ureg.byte
                 )
-            elif key == "max_ram_usage":
+            elif key == "maxRamUsage":
                 filtered_data[key] = (
                     self._convert_order_of_magnitude(value[1]) * ureg.byte
                 )
@@ -608,18 +616,20 @@ class Job:
             "MaxDiskWrite",
             "MaxVMSize",
             "reqmem",
-            "TRESUsageInTot",
+            "MaxRSS",
         ]
 
         if shutil.which("sacct") is None:
-            raise FileNotFoundError("sacct not found in PATH")
+            # if sacct is not available, return None
+            # this will skip the collection of efficiency data
+            return None
 
         ouput_sacct = subprocess.run(
             [
                 shutil.which("sacct"),
                 "-j",
                 f"{self.slurm_id_per_key[self.current_key]}",
-                "--format=",
+                "--format",
                 ",".join(collection_format_arguments),
                 "-p",
             ],
@@ -628,7 +638,8 @@ class Job:
             capture_output=True,
             text=True,
         )
-
+        print(ouput_sacct.stdout)
+        ouput_sacct = ouput_sacct.stdout.strip().replace("\n", "")
         ouput_sacct_split = ouput_sacct.split("|")
 
         # split at first digit to seperate header from data
@@ -648,15 +659,12 @@ class Job:
 
             if header_name == "JobID":
                 data[header_name] = output_split
-            elif header_name in ["TRESUsageInTot"]:
-                match = [re.search(r"mem=(\d+\w)", column) for column in output_split]
-                match = [m.group(1) if m else None for m in match]
-                data["max_ram_usage"] = match
+            elif header_name in ["MaxRSS"]:
+
+                data["maxRamUsage"] = output_split
 
             else:
                 data[header_name] = output_split
 
         filtered_data = self._filter_data(data)
-
-        print(filtered_data)
-        1 / 0
+        self.efficiency_data = filtered_data
