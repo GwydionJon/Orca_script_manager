@@ -1,6 +1,9 @@
 import shutil
 import subprocess
 from pathlib import Path
+import re
+
+from pint import UnitRegistry
 
 
 class Job:
@@ -30,6 +33,9 @@ class Job:
         self.current_step = 0
         self.current_step_id = "START___" + input_id
         self.all_keys = all_keys
+
+        if isinstance(working_dir, str):
+            working_dir = Path(working_dir)
 
         # private attributes
         self.input_file_types = input_file_types
@@ -524,3 +530,133 @@ class Job:
         new_job.status_per_key = input_dict["status_per_key"]
         new_job.finished_keys = input_dict["finished_keys"]
         return new_job
+
+    # here the job will handle collecting its efficiency data
+
+    def _convert_order_of_magnitude(self, value):
+        if "K" in value:
+            scaling = 1000
+        elif "M" in value:
+            scaling = 1000000
+        elif "G" in value:
+            scaling = 1000000000
+        elif "T" in value:
+            scaling = 1000000000000
+        elif "P" in value:
+            scaling = 1000000000000000
+        else:
+            scaling = 1
+
+        return float(value[:-1]) * scaling
+
+    def _filter_data(self, data):
+        ureg = UnitRegistry()
+
+        filtered_data = {}
+
+        for key, value in data.items():
+            if key == "JobID":
+                filtered_data[key] = value[0]
+            elif key == "JobName":
+                filtered_data[key] = value[0]
+            elif key == "ExitCode":
+                filtered_data[key] = value[0]
+            elif key == "NCPUS":
+                filtered_data[key] = value[0]
+            elif key == "CPUTimeRAW":
+                filtered_data[key] = value[0] * ureg.second
+            elif key == "ElapsedRaw":
+                filtered_data[key] = value[0] * ureg.second
+            elif key == "TimelimitRaw":
+                filtered_data[key] = value[0] * ureg.minute
+            elif key == "ConsumedEnergyRaw":
+                filtered_data[key] = value[0] * ureg.joule
+            elif key == "MaxDiskRead":
+                filtered_data[key] = (
+                    self._convert_order_of_magnitude(value[1]) * ureg.byte
+                )
+            elif key == "MaxDiskWrite":
+                filtered_data[key] = (
+                    self._convert_order_of_magnitude(value[1]) * ureg.byte
+                )
+            elif key == "MaxVMSize":
+                filtered_data[key] = (
+                    self._convert_order_of_magnitude(value[1]) * ureg.byte
+                )
+            elif key == "ReqMem":
+                filtered_data[key] = (
+                    self._convert_order_of_magnitude(value[0]) * ureg.byte
+                )
+            elif key == "max_ram_usage":
+                filtered_data[key] = (
+                    self._convert_order_of_magnitude(value[1]) * ureg.byte
+                )
+        return filtered_data
+
+    def collect_efficiency_data(self):
+
+        collection_format_arguments = [
+            "jobid",
+            "jobname",
+            "exitcode",
+            "NCPUS",
+            "cputimeraw",
+            "elapsedraw",
+            "timelimitraw",
+            "consumedenergyraw",
+            "MaxDiskRead",
+            "MaxDiskWrite",
+            "MaxVMSize",
+            "reqmem",
+            "TRESUsageInTot",
+        ]
+
+        if shutil.which("sacct") is None:
+            raise FileNotFoundError("sacct not found in PATH")
+
+        ouput_sacct = subprocess.run(
+            [
+                shutil.which("sacct"),
+                "-j",
+                f"{self.slurm_id_per_key[self.current_key]}",
+                "--format=",
+                ",".join(collection_format_arguments),
+                "-p",
+            ],
+            shell=False,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+
+        ouput_sacct_split = ouput_sacct.split("|")
+
+        # split at first digit to seperate header from data
+        header = re.split(r"(\d)", ouput_sacct, 1)[0]
+
+        # number of header is number of | -1
+        header_names = header.split("|")[:-1]
+
+        data = {}
+
+        for i, header_name in enumerate(header_names):
+
+            output_split = ouput_sacct_split[i :: len(header_names)][1:]
+
+            if i == 0:
+                output_split = output_split[:-1]
+
+            if header_name == "JobID":
+                data[header_name] = output_split
+            elif header_name in ["TRESUsageInTot"]:
+                match = [re.search(r"mem=(\d+\w)", column) for column in output_split]
+                match = [m.group(1) if m else None for m in match]
+                data["max_ram_usage"] = match
+
+            else:
+                data[header_name] = output_split
+
+        filtered_data = self._filter_data(data)
+
+        print(filtered_data)
+        1 / 0
