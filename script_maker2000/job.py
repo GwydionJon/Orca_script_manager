@@ -579,13 +579,13 @@ class Job:
             elif key == "NCPUS":
                 filtered_data[key] = value[0]
             elif key == "CPUTimeRAW":
-                filtered_data[key] = value[0] * ureg.second
+                filtered_data[key] = float(value[0]) * ureg.second
             elif key == "ElapsedRaw":
-                filtered_data[key] = value[0] * ureg.second
+                filtered_data[key] = float(value[0]) * ureg.second
             elif key == "TimelimitRaw":
-                filtered_data[key] = value[0] * ureg.minute
+                filtered_data[key] = float(value[0]) * ureg.minute
             elif key == "ConsumedEnergyRaw":
-                filtered_data[key] = value[0] * ureg.joule
+                filtered_data[key] = float(value[0]) * ureg.joule
             elif key == "MaxDiskRead":
                 filtered_data[key] = (
                     self._convert_order_of_magnitude(value[1]) * ureg.byte
@@ -684,7 +684,7 @@ class Job:
                 if isinstance(value, pint.Quantity):
                     str_dict[slurm_key][key] = str(value.to_compact())
                 else:
-                    str_dict[slurm_key][key] = str(value)
+                    str_dict[slurm_key][key] = value
         return str_dict
 
     @staticmethod
