@@ -302,24 +302,23 @@ class Job:
 
             if self.current_status == "finished":
 
+                old_step_id = self.current_step_id
                 self.start_new_key(next_key, self.current_step + 1)
                 self.finished_keys.append(current_key)
 
                 for input_file_type in self.input_file_types:
 
-                    for input_file in self.finished_per_key[current_key].glob(
-                        f"*{input_file_type}"
-                    ):
+                    input_file = old_step_id + input_file_type
 
-                        new_input_dir = self.current_dirs["input"]
-                        new_input_dir.mkdir(parents=True, exist_ok=True)
-                        new_file_name = self.current_step_id + input_file.suffix
-                        new_file = new_input_dir / new_file_name
+                    new_input_dir = self.current_dirs["input"]
+                    new_input_dir.mkdir(parents=True, exist_ok=True)
+                    new_file_name = self.current_step_id + input_file.suffix
+                    new_file = new_input_dir / new_file_name
 
-                        if not new_file.exists():
-                            shutil.copy(input_file, new_file)
-                        else:
-                            return "file_exists"
+                    if not new_file.exists():
+                        shutil.copy(input_file, new_file)
+                    else:
+                        return "file_exists"
                 return "success"
 
             elif self.current_status == "failed":
@@ -631,49 +630,50 @@ class Job:
             # this will skip the collection of efficiency data
             return None
 
-        ouput_sacct = subprocess.run(
-            [
-                shutil.which("sacct"),
-                "-j",
-                f"{self.slurm_id_per_key[self.current_key]}",
-                "--format",
-                ",".join(collection_format_arguments),
-                "-p",
-            ],
-            shell=False,
-            check=False,
-            capture_output=True,
-            text=True,
-        )
-        ouput_sacct = ouput_sacct.stdout.strip().replace("\n", "")
-        ouput_sacct_split = ouput_sacct.split("|")
+        for slurm_key in self.slurm_id_per_key.values():
+            ouput_sacct = subprocess.run(
+                [
+                    shutil.which("sacct"),
+                    "-j",
+                    slurm_key,
+                    "--format",
+                    ",".join(collection_format_arguments),
+                    "-p",
+                ],
+                shell=False,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            ouput_sacct = ouput_sacct.stdout.strip().replace("\n", "")
+            ouput_sacct_split = ouput_sacct.split("|")
 
-        # split at first digit to seperate header from data
-        header = re.split(r"(\d)", ouput_sacct, 1)[0]
+            # split at first digit to seperate header from data
+            header = re.split(r"(\d)", ouput_sacct, 1)[0]
 
-        # number of header is number of | -1
-        header_names = header.split("|")[:-1]
+            # number of header is number of | -1
+            header_names = header.split("|")[:-1]
 
-        data = {}
+            data = {}
 
-        for i, header_name in enumerate(header_names):
+            for i, header_name in enumerate(header_names):
 
-            output_split = ouput_sacct_split[i :: len(header_names)][1:]
+                output_split = ouput_sacct_split[i :: len(header_names)][1:]
 
-            if i == 0:
-                output_split = output_split[:-1]
+                if i == 0:
+                    output_split = output_split[:-1]
 
-            if header_name == "JobID":
-                data[header_name] = output_split
-            elif header_name in ["MaxRSS"]:
+                if header_name == "JobID":
+                    data[header_name] = output_split
+                elif header_name in ["MaxRSS"]:
 
-                data["maxRamUsage"] = output_split
+                    data["maxRamUsage"] = output_split
 
-            else:
-                data[header_name] = output_split
+                else:
+                    data[header_name] = output_split
 
-        filtered_data = self._filter_data(data)
-        self.efficiency_data[self.slurm_id_per_key[self.current_key]] = filtered_data
+            filtered_data = self._filter_data(data)
+            self.efficiency_data[slurm_key] = filtered_data
 
     def export_efficiency_data(self):
 
