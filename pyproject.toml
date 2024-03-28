@@ -33,6 +33,7 @@ dependencies = [
     "dash-renderjson",
     "dash_cytoscape",
     "clickqt",
+    "pint",
 ]
 
 
