@@ -569,6 +569,11 @@ class Job:
         filtered_data = {}
 
         for key, value in data.items():
+
+            if value[0] == [""] and value[1] == [""]:
+                filtered_data[key] = "Missing"
+                continue
+
             if key == "JobID":
                 filtered_data[key] = value[0]
             elif key == "JobName":
