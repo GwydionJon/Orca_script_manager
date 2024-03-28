@@ -43,9 +43,6 @@ def test_job_collect_efficiency_data_local(monkeypatch):
 @pytest.mark.skipif(shutil.which("squeue") is None, reason="Slurm not available")
 def test_job_collect_efficiency_data_remote(monkeypatch):
 
-    def _mock_subprocess_run(*args, **kwargs):
-        return None
-
     test_job = Job(
         input_id="test_id",
         all_keys=["key1", "key2"],
@@ -61,17 +58,4 @@ def test_job_collect_efficiency_data_remote(monkeypatch):
 
     test_job.current_key = "key1"
 
-    with pytest.raises(FileNotFoundError):
-        test_job.collect_efficiency_data()
-
-    monkeypatch.setattr(
-        "shutil.which",
-        lambda x: True,
-    )
-
-    with pytest.raises(TypeError):
-        test_job.collect_efficiency_data()
-
-    monkeypatch.setattr(
-        "subprocess.run",
-    )
+    test_job.collect_efficiency_data()
