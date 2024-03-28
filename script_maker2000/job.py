@@ -1,6 +1,9 @@
 import shutil
 import subprocess
 from pathlib import Path
+import re
+import pint
+from pint import UnitRegistry
 
 
 class Job:
@@ -31,6 +34,9 @@ class Job:
         self.current_step_id = "START___" + input_id
         self.all_keys = all_keys
 
+        if isinstance(working_dir, str):
+            working_dir = Path(working_dir)
+
         # private attributes
         self.input_file_types = input_file_types
         self.charge = charge
@@ -48,6 +54,8 @@ class Job:
         }
         self.final_dir = None
         self.failed_reason = None
+
+        self.efficiency_data = {}
 
         # for each config_key this will save the location of the job_dir
         self.input_dir_per_key = {}
@@ -405,6 +413,7 @@ class Job:
         for key in self.all_keys[self.all_keys.index(self.current_key) + 1 :]:
             self.status_per_key[key] = "failed_prior"
 
+        self.collect_efficiency_data()
         self._clean_up()
 
         return self.failed_reason
@@ -433,6 +442,7 @@ class Job:
             )
             shutil.copytree(finished_dir, self.final_dir / key_id, dirs_exist_ok=True)
 
+        self.collect_efficiency_data()
         self._clean_up()
 
     def prepare_initial_job(self, key, step, input_file):
@@ -485,6 +495,8 @@ class Job:
         export_dict["status_per_key"] = {
             str(key): str(value) for key, value in self.status_per_key.items()
         }
+
+        export_dict["efficiency_data"] = self.export_efficiency_data()
         return export_dict
 
     @classmethod
@@ -523,4 +535,169 @@ class Job:
         new_job.slurm_id_per_key = input_dict["slurm_id_per_key"]
         new_job.status_per_key = input_dict["status_per_key"]
         new_job.finished_keys = input_dict["finished_keys"]
+
+        new_job.efficiency_data = cls.import_efficiency_data(
+            input_dict["efficiency_data"]
+        )
         return new_job
+
+    # here the job will handle collecting its efficiency data
+
+    def _convert_order_of_magnitude(self, value):
+        if "K" in value:
+            scaling = 1000
+        elif "M" in value:
+            scaling = 1000000
+        elif "G" in value:
+            scaling = 1000000000
+        elif "T" in value:
+            scaling = 1000000000000
+        elif "P" in value:
+            scaling = 1000000000000000
+        else:
+            scaling = 1
+
+        try:
+            new_value = float(value[:-1]) * scaling
+        except ValueError:
+            if int(value) == 0:
+                new_value = 0.0
+        return new_value
+
+    def _filter_data(self, data):
+        ureg = UnitRegistry()
+
+        filtered_data = {}
+
+        for key, value in data.items():
+            if key == "JobID":
+                filtered_data[key] = value[0]
+            elif key == "JobName":
+                filtered_data[key] = value[0]
+            elif key == "ExitCode":
+                filtered_data[key] = value[0]
+            elif key == "NCPUS":
+                filtered_data[key] = value[0]
+            elif key == "CPUTimeRAW":
+                filtered_data[key] = float(value[0]) * ureg.second
+            elif key == "ElapsedRaw":
+                filtered_data[key] = float(value[0]) * ureg.second
+            elif key == "TimelimitRaw":
+                filtered_data[key] = float(value[0]) * ureg.minute
+            elif key == "ConsumedEnergyRaw":
+                filtered_data[key] = float(value[0]) * ureg.joule
+            elif key == "MaxDiskRead":
+                filtered_data[key] = (
+                    self._convert_order_of_magnitude(value[1]) * ureg.byte
+                )
+            elif key == "MaxDiskWrite":
+                filtered_data[key] = (
+                    self._convert_order_of_magnitude(value[1]) * ureg.byte
+                )
+            elif key == "MaxVMSize":
+                filtered_data[key] = (
+                    self._convert_order_of_magnitude(value[1]) * ureg.byte
+                )
+            elif key == "ReqMem":
+                filtered_data[key] = (
+                    self._convert_order_of_magnitude(value[0]) * ureg.byte
+                )
+            elif key == "maxRamUsage":
+                filtered_data[key] = (
+                    self._convert_order_of_magnitude(value[1]) * ureg.byte
+                )
+        return filtered_data
+
+    def collect_efficiency_data(self):
+
+        collection_format_arguments = [
+            "jobid",
+            "jobname",
+            "exitcode",
+            "NCPUS",
+            "cputimeraw",
+            "elapsedraw",
+            "timelimitraw",
+            "consumedenergyraw",
+            "MaxDiskRead",
+            "MaxDiskWrite",
+            "MaxVMSize",
+            "reqmem",
+            "MaxRSS",
+        ]
+
+        if shutil.which("sacct") is None:
+            # if sacct is not available, return None
+            # this will skip the collection of efficiency data
+            return None
+
+        ouput_sacct = subprocess.run(
+            [
+                shutil.which("sacct"),
+                "-j",
+                f"{self.slurm_id_per_key[self.current_key]}",
+                "--format",
+                ",".join(collection_format_arguments),
+                "-p",
+            ],
+            shell=False,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        ouput_sacct = ouput_sacct.stdout.strip().replace("\n", "")
+        ouput_sacct_split = ouput_sacct.split("|")
+
+        # split at first digit to seperate header from data
+        header = re.split(r"(\d)", ouput_sacct, 1)[0]
+
+        # number of header is number of | -1
+        header_names = header.split("|")[:-1]
+
+        data = {}
+
+        for i, header_name in enumerate(header_names):
+
+            output_split = ouput_sacct_split[i :: len(header_names)][1:]
+
+            if i == 0:
+                output_split = output_split[:-1]
+
+            if header_name == "JobID":
+                data[header_name] = output_split
+            elif header_name in ["MaxRSS"]:
+
+                data["maxRamUsage"] = output_split
+
+            else:
+                data[header_name] = output_split
+
+        filtered_data = self._filter_data(data)
+        self.efficiency_data[self.slurm_id_per_key[self.current_key]] = filtered_data
+
+    def export_efficiency_data(self):
+
+        str_dict = {}
+        for slurm_key, data in self.efficiency_data.items():
+            str_dict[slurm_key] = {}
+            for key, value in data.items():
+                if isinstance(value, pint.Quantity):
+                    str_dict[slurm_key][key] = str(value.to_compact())
+                else:
+                    str_dict[slurm_key][key] = value
+        return str_dict
+
+    @staticmethod
+    def import_efficiency_data(efficiency_data_as_str):
+        # convert the string dict to a dict of pint quantities
+        efficiency_data = {}
+
+        for slurm_key, data in efficiency_data_as_str.items():
+            efficiency_data[int(slurm_key)] = {}
+            for key, value in data.items():
+                if key in ["JobID", "JobName", "ExitCode", "NCPUS"]:
+                    efficiency_data[int(slurm_key)][key] = value
+                else:
+                    ureg = UnitRegistry()
+                    efficiency_data[int(slurm_key)][key] = ureg(value)
+        return efficiency_data

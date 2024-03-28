@@ -24,6 +24,17 @@ def add_main_config(app: Dash) -> Dash:
         children=[
             dbc.Row(
                 children=[
+                    dbc.InputGroupText("Config Name"),
+                    dbc.Input(
+                        id="config_name_input",
+                        value="config",
+                        type="text",
+                    ),
+                ],
+                style=default_style,
+            ),
+            dbc.Row(
+                children=[
                     dbc.InputGroupText("Relativ output path"),
                     dbc.Input(
                         id="output_path_input",
@@ -692,8 +703,12 @@ def add_callbacks(app: Dash) -> Dash:
     def displayTapNodeData(data):
         return json.dumps(data, indent=2)
 
-    def export_json(n_clicks, settings_dict):
-        with open("config.json", "w") as f:
+    def export_json(n_clicks, config_name_input, settings_dict):
+
+        if ".json" not in config_name_input:
+            config_name_input += ".json"
+
+        with open(config_name_input, "w") as f:
             json.dump(settings_dict, f)
 
     app.callback(
@@ -818,6 +833,7 @@ def add_callbacks(app: Dash) -> Dash:
     app.callback(
         Output("download_config_file", "data"),
         Input("export_config_file_button", "n_clicks"),
+        State("config_name_input", "value"),
         State("json_view", "data"),
         prevent_initial_call=True,
     )(export_json)
