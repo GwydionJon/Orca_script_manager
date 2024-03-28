@@ -1,10 +1,11 @@
 import shutil
 import pytest
 from script_maker2000.job import Job
+import json
 
 
 @pytest.mark.skipif(shutil.which("squeue") is not None, reason="Slurm available")
-def test_job_collect_efficiency_data_local(monkeypatch):
+def test_job_collect_efficiency_data_local(clean_tmp_dir, monkeypatch):
 
     def _mock_subprocess_run(*args, **kwargs):
 
@@ -34,8 +35,8 @@ def test_job_collect_efficiency_data_local(monkeypatch):
     )
 
     test_job.slurm_id_per_key = {
-        "key1": "1234",
-        "key2": "5678",
+        "key1": 1234,
+        "key2": 5678,
     }
 
     test_job.current_key = "key1"
@@ -56,19 +57,29 @@ def test_job_collect_efficiency_data_local(monkeypatch):
 
     efficiency_data = test_job.efficiency_data
 
-    assert efficiency_data["JobID"]
-    assert efficiency_data["JobName"]
-    assert efficiency_data["ExitCode"]
-    assert efficiency_data["NCPUS"]
-    assert efficiency_data["CPUTimeRAW"]
-    assert efficiency_data["ElapsedRaw"]
-    assert efficiency_data["TimelimitRaw"]
-    assert efficiency_data["ConsumedEnergyRaw"]
-    assert efficiency_data["MaxDiskRead"]
-    assert efficiency_data["MaxDiskWrite"]
-    assert efficiency_data["MaxVMSize"]
-    assert efficiency_data["ReqMem"]
-    assert efficiency_data["maxRamUsage"]
+    assert efficiency_data[1234]["JobID"]
+    assert efficiency_data[1234]["JobName"]
+    assert efficiency_data[1234]["ExitCode"]
+    assert efficiency_data[1234]["NCPUS"]
+    assert efficiency_data[1234]["CPUTimeRAW"]
+    assert efficiency_data[1234]["ElapsedRaw"]
+    assert efficiency_data[1234]["TimelimitRaw"]
+    assert efficiency_data[1234]["ConsumedEnergyRaw"]
+    assert efficiency_data[1234]["MaxDiskRead"]
+    assert efficiency_data[1234]["MaxDiskWrite"]
+    assert efficiency_data[1234]["MaxVMSize"]
+    assert efficiency_data[1234]["ReqMem"]
+    assert efficiency_data[1234]["maxRamUsage"]
 
     job_export_dict = test_job.export_as_dict()
-    assert job_export_dict["efficiency_data"] == efficiency_data
+    assert job_export_dict["efficiency_data"][1234]["MaxVMSize"]
+
+    # test json export
+    with open(clean_tmp_dir / "test_job.json", "w") as f:
+        json.dump(job_export_dict, f)
+
+    with open(clean_tmp_dir / "test_job.json", "r") as f:
+        job_export_dict = json.load(f)
+
+    test_job2 = Job.import_from_dict(job_export_dict, clean_tmp_dir)
+    assert test_job2.efficiency_data[1234]["MaxVMSize"]

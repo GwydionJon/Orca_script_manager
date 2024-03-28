@@ -2,7 +2,7 @@ import shutil
 import subprocess
 from pathlib import Path
 import re
-
+import pint
 from pint import UnitRegistry
 
 
@@ -496,7 +496,7 @@ class Job:
             str(key): str(value) for key, value in self.status_per_key.items()
         }
 
-        export_dict["efficiency_data"] = self.efficiency_data
+        export_dict["efficiency_data"] = self.export_efficiency_data()
         return export_dict
 
     @classmethod
@@ -536,7 +536,9 @@ class Job:
         new_job.status_per_key = input_dict["status_per_key"]
         new_job.finished_keys = input_dict["finished_keys"]
 
-        new_job.efficiency_data = input_dict["efficiency_data"]
+        new_job.efficiency_data = cls.import_efficiency_data(
+            input_dict["efficiency_data"]
+        )
         return new_job
 
     # here the job will handle collecting its efficiency data
@@ -555,7 +557,12 @@ class Job:
         else:
             scaling = 1
 
-        return float(value[:-1]) * scaling
+        try:
+            new_value = float(value[:-1]) * scaling
+        except ValueError:
+            if int(value) == 0:
+                new_value = 0.0
+        return new_value
 
     def _filter_data(self, data):
         ureg = UnitRegistry()
@@ -638,7 +645,6 @@ class Job:
             capture_output=True,
             text=True,
         )
-        print(ouput_sacct.stdout)
         ouput_sacct = ouput_sacct.stdout.strip().replace("\n", "")
         ouput_sacct_split = ouput_sacct.split("|")
 
@@ -667,4 +673,31 @@ class Job:
                 data[header_name] = output_split
 
         filtered_data = self._filter_data(data)
-        self.efficiency_data = filtered_data
+        self.efficiency_data[self.slurm_id_per_key[self.current_key]] = filtered_data
+
+    def export_efficiency_data(self):
+
+        str_dict = {}
+        for slurm_key, data in self.efficiency_data.items():
+            str_dict[slurm_key] = {}
+            for key, value in data.items():
+                if isinstance(value, pint.Quantity):
+                    str_dict[slurm_key][key] = str(value.to_compact())
+                else:
+                    str_dict[slurm_key][key] = str(value)
+        return str_dict
+
+    @staticmethod
+    def import_efficiency_data(efficiency_data_as_str):
+        # convert the string dict to a dict of pint quantities
+        efficiency_data = {}
+
+        for slurm_key, data in efficiency_data_as_str.items():
+            efficiency_data[int(slurm_key)] = {}
+            for key, value in data.items():
+                if key in ["JobID", "JobName", "ExitCode", "NCPUS"]:
+                    efficiency_data[int(slurm_key)][key] = value
+                else:
+                    ureg = UnitRegistry()
+                    efficiency_data[int(slurm_key)][key] = ureg(value)
+        return efficiency_data
