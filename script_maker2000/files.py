@@ -249,7 +249,6 @@ def _check_config_keys(main_config):
         for option_key, option_value in main_config["loop_config"][loop_config][
             "options"
         ].items():
-            print(option_key, option_value, type(option_value))
             if option_key in [
                 "ram_per_core",
                 "n_cores_per_calculation",

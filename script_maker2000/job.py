@@ -296,6 +296,7 @@ class Job:
         """
 
         current_key = self.current_key
+
         self.status_per_key[current_key] = self.current_status
         if current_key != self.all_keys[-1]:
             next_key = self.all_keys[self.all_keys.index(current_key) + 1]
@@ -303,16 +304,16 @@ class Job:
             if self.current_status == "finished":
 
                 old_step_id = self.current_step_id
+                old_output_dir = self.current_dirs["output"]
                 self.start_new_key(next_key, self.current_step + 1)
                 self.finished_keys.append(current_key)
 
                 for input_file_type in self.input_file_types:
-
-                    input_file = old_step_id + input_file_type
+                    input_file = old_output_dir / (old_step_id + input_file_type)
 
                     new_input_dir = self.current_dirs["input"]
                     new_input_dir.mkdir(parents=True, exist_ok=True)
-                    new_file_name = self.current_step_id + input_file.suffix
+                    new_file_name = self.current_step_id + input_file_type
                     new_file = new_input_dir / new_file_name
 
                     if not new_file.exists():
