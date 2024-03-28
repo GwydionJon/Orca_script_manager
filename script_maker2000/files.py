@@ -5,6 +5,7 @@ import shutil
 from collections import OrderedDict
 import pandas as pd
 import tarfile
+import os
 
 script_maker_log = logging.getLogger("Script_maker_log")
 script_maker_error = logging.getLogger("Script_maker_error")
@@ -223,6 +224,13 @@ def _check_config_keys(main_config):
             + f" {set(analysis_config_keys) - set(main_config['analysis_config'].keys())}"
         )
 
+    for key in ["max_n_jobs", "max_ram_per_core", "max_nodes", "wait_for_results_time"]:
+        if not isinstance(main_config["main_config"][key], int):
+            raise ValueError(
+                f"{key} must be an integer. Found {main_config['main_config'][key]} of type"
+                + "{type(main_config['main_config'][key])}"
+            )
+
     for loop_config in main_config["loop_config"]:
         if not set(loop_config_keys).issubset(
             main_config["loop_config"][loop_config].keys()
@@ -238,6 +246,20 @@ def _check_config_keys(main_config):
                 "Options keys are missing. Please provide all the following keys:"
                 + f" {set(options_keys) - set(main_config['loop_config'][loop_config]['options'].keys())}"
             )
+        for option_key, option_value in main_config["loop_config"][loop_config][
+            "options"
+        ].items():
+            print(option_key, option_value, type(option_value))
+            if option_key in [
+                "ram_per_core",
+                "n_cores_per_calculation",
+                "n_calculation_at_once",
+                "disk_storage",
+            ]:
+                if not isinstance(option_value, int):
+                    raise ValueError(
+                        f"{option_key} must be an integer. Found {option_value} of type {type(option_value)}"
+                    )
 
 
 def read_config(config_file, perform_validation=True, override_continue_job=False):
@@ -249,8 +271,11 @@ def read_config(config_file, perform_validation=True, override_continue_job=Fals
         config_file (_type_): _description_
     """
 
-    with open(config_file, "r", encoding="utf-8") as f:
-        main_config = json.load(f)
+    if not isinstance(config_file, dict):
+        with open(config_file, "r", encoding="utf-8") as f:
+            main_config = json.load(f)
+    else:
+        main_config = config_file
 
     main_config = OrderedDict(main_config)
 
@@ -269,7 +294,10 @@ def read_config(config_file, perform_validation=True, override_continue_job=Fals
     output_dir = pathlib.Path(main_config["main_config"]["output_dir"])
     # when giving a relativ path resolve it in relation to the config file.
     if output_dir.is_absolute() is False:
-        output_dir = pathlib.Path(config_file).parent / output_dir
+        if isinstance(config_file, dict):
+            output_dir = os.getcwd() / output_dir
+        else:
+            output_dir = pathlib.Path(config_file).parent / output_dir
 
     output_dir = output_dir.resolve()
     main_config["main_config"]["output_dir"] = str(output_dir)
@@ -365,7 +393,7 @@ def _check_input_csv(input_csv, xyz_dir=None):
     return found_files, input_df
 
 
-def collect_input_files(config_path, preparation_dir):
+def collect_input_files(config_path, preparation_dir, config_name=None, tar_name=None):
     """This function collects all input files (xyz, config, csv) and
 
     Args:
@@ -377,7 +405,10 @@ def collect_input_files(config_path, preparation_dir):
     main_config = read_config(config_path, perform_validation=True)
 
     input_csv = pathlib.Path(main_config["main_config"]["input_file_path"])
-    xyz_dir = pathlib.Path(main_config["main_config"]["xyz_path"])
+    if main_config["main_config"]["xyz_path"]:
+        xyz_dir = pathlib.Path(main_config["main_config"]["xyz_path"])
+    else:
+        xyz_dir = None
 
     # check if input_csv contains valid file paths
     found_files, input_df = _check_input_csv(input_csv, xyz_dir)
@@ -385,10 +416,18 @@ def collect_input_files(config_path, preparation_dir):
     # replace path in input_df with new path
     for i, file in enumerate(found_files):
         file = pathlib.Path(file)
-        input_df.loc[i, "path"] = str(pathlib.Path(xyz_dir.name) / file.name)
+        if file.is_absolute() is False:
+            file_path = str(pathlib.Path(xyz_dir.name) / file.name)
+        else:
+            file_path = str(file)
+        input_df.loc[i, "path"] = file_path
 
     main_config["main_config"]["input_file_path"] = str(input_csv.name)
-    main_config["main_config"]["xyz_path"] = str(xyz_dir.name)
+    if xyz_dir is not None:
+        main_config["main_config"]["xyz_path"] = str(xyz_dir.name)
+    else:
+        main_config["main_config"]["xyz_path"] = ""
+
     main_config["main_config"]["output_dir"] = pathlib.Path(
         main_config["main_config"]["output_dir"]
     ).stem
@@ -400,12 +439,23 @@ def collect_input_files(config_path, preparation_dir):
     new_csv_name = preparation_dir / input_csv.name
 
     input_df.to_csv(new_csv_name)
-    new_config_name = preparation_dir / config_path.name
+    if config_name is None:
+        new_config_name = preparation_dir / config_path.name
+    else:
+        new_config_name = preparation_dir / config_name
 
     with open(new_config_name, "w", encoding="utf-8") as json_file:
         json.dump(main_config, json_file)
 
-    tar_path = preparation_dir / "test.tar.gz"
+    if tar_name is None:
+        tar_path = preparation_dir / "test.tar.gz"
+    else:
+        if tar_name.endswith(".tar.gz"):
+            tar_path = preparation_dir / tar_name
+        else:
+            tar_name = tar_name + ".tar.gz"
+
+            tar_path = preparation_dir / tar_name
 
     with tarfile.open(tar_path, "w:gz") as tar:
         for file in found_files:

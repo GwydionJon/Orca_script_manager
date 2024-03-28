@@ -128,7 +128,13 @@ def start_tar(tar, extract_path, remove_extracted):
 @click.option(
     "--output", "-o", default="input_files", help="Path where the tar ball is created."
 )
-def collect_input(config, output):
+@click.option(
+    "--tar_name",
+    "-t",
+    default="input_files.tar.gz",
+    help="Name of the tar ball with the input files.",
+)
+def collect_input(config, output, tar_name):
     """Will search the config file for input files and prepares a tar ball with all the files."""
 
     prep_path = Path(output)
@@ -137,7 +143,7 @@ def collect_input(config, output):
 
     config_path = Path(config)
 
-    tar_path = collect_input_files(config_path, prep_path)
+    tar_path = collect_input_files(config_path, prep_path, tar_name=tar_name)
     click.echo(f"Tarball created at {tar_path}")
     click.echo(
         "The tarball will contain all the input files needed for the batch processing."
