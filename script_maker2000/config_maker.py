@@ -6,7 +6,7 @@ import dash_cytoscape as cyto
 import json
 from dash import Dash, html, dcc, Input, Output, State, MATCH, ALL
 from pathlib import Path
-from script_maker2000.files import check_config
+from script_maker2000.files import check_config, collect_input_files
 
 currently_avaiable_layer_types = ["orca"]
 default_style = {"margin": "10px", "width": "100%"}
@@ -183,7 +183,6 @@ def add_main_config(app: Dash) -> Dash:
                         placeholder="Wait For Results Time",
                         value=600,
                         min=1,
-                        step=30,
                         type="number",
                     ),
                 ],
@@ -230,9 +229,23 @@ def add_main_config(app: Dash) -> Dash:
         n_clicks=0,
         style={"margin": "10px", "width": "30%"},
     )
+
+    collect_input_files_button = dbc.Button(
+        "Collect Input Files",
+        id="collect_input_files_button",
+        n_clicks=0,
+        style={"margin": "10px", "width": "30%"},
+        disabled=True,
+    )
+
     download_object = dcc.Download(id="download_config_file")
     button_row = dbc.Row(
-        [create_config_file_button, export_config_file_button, download_object]
+        [
+            create_config_file_button,
+            export_config_file_button,
+            download_object,
+            collect_input_files_button,
+        ]
     )
 
     empty_div = html.Div(id="empty_div", children=[])
@@ -247,7 +260,7 @@ def add_main_config(app: Dash) -> Dash:
                 dcc.Textarea(
                     id="config_check_output",
                     placeholder="If the config check fails the error will be displayed here.",
-                    style={"width": "100%"},
+                    style={"width": "100%", "height": "130px"},
                     disabled=True,
                 )
             ),
@@ -285,8 +298,6 @@ def add_main_config(app: Dash) -> Dash:
     new_row = dbc.Row([acc_column, json_col, cyto_col])
 
     app.layout.children.append(new_row)
-
-    # app.layout.children.append(button_row)
 
     app.layout.children.append(empty_div)
     app = add_callbacks(app)
@@ -531,20 +542,27 @@ def create_config_file(
     for key, value in main_config_inputs.items():
         if key == "parallel_layer_run":
             settings_dict["main_config"][key] = bool(value)
-        if key == "common_input_files":
+        elif key == "common_input_files":
             settings_dict["main_config"][key] = [
                 v.strip() for v in value.split(",") if v.strip() != ""
             ]
-        if key == "xyz_path":
+        elif key == "xyz_path":
             if value is None:
                 settings_dict["main_config"][key] = "empty"
             else:
                 settings_dict["main_config"][key] = str(Path(value).resolve())
-        if key == "input_file_path":
+        elif key == "input_file_path":
             if value is None:
                 settings_dict["main_config"][key] = "empty"
             else:
                 settings_dict["main_config"][key] = str(Path(value).resolve())
+        elif key in [
+            "max_n_jobs",
+            "max_ram_per_core",
+            "max_nodes",
+            "wait_for_results_time",
+        ]:
+            settings_dict["main_config"][key] = int(value)
         else:
             settings_dict["main_config"][key] = value
 
@@ -557,27 +575,45 @@ def create_config_file(
     layer_names = layer_config_inputs["layer_name"]
 
     for i, layer_name in enumerate(layer_names):
-        settings_dict["loop_config"][layer_name] = {}
-        settings_dict["loop_config"][layer_name]["options"] = {}
-        for key, value in layer_config_inputs.items():
-
-            if key in ["type", "step_id", "additional_input_files"]:
-                settings_dict["loop_config"][layer_name][key] = value[i]
-
-            elif key == "additional_settings_block":
-                settings_dict["loop_config"][layer_name]["options"]["args"] = {
-                    value["block"][i]: value["value"][i]
-                }
-            elif key != "additional_settings_block" and key != "layer_name":
-                settings_dict["loop_config"][layer_name]["options"][key] = value[i]
+        check_layer_config(layer_config_inputs, settings_dict, i, layer_name)
 
     config_check_output = "All seems in order with the config shown below."
+    disbale_input_files_button = False
     try:
         check_config(settings_dict, skip_file_check=False)
     except Exception as e:
         config_check_output = f"Config check failed with error: {e}"
+        config_check_output += "\n\n Input collection disabled."
+        disbale_input_files_button = True
+    return (
+        [html.Div("Config file created")],
+        settings_dict,
+        config_check_output,
+        disbale_input_files_button,
+    )
 
-    return [html.Div("Config file created")], settings_dict, config_check_output
+
+def check_layer_config(layer_config_inputs, settings_dict, i, layer_name):
+    settings_dict["loop_config"][layer_name] = {}
+    settings_dict["loop_config"][layer_name]["options"] = {}
+    for key, value in layer_config_inputs.items():
+        if key in ["type", "step_id", "additional_input_files"]:
+            settings_dict["loop_config"][layer_name][key] = value[i]
+
+        elif key == "additional_settings_block":
+            settings_dict["loop_config"][layer_name]["options"]["args"] = {
+                value["block"][i]: value["value"][i]
+            }
+
+        elif key in [
+            "ram_per_core",
+            "n_cores_per_calculation",
+            "n_calculation_at_once",
+            "disk_storage",
+        ]:
+            settings_dict["loop_config"][layer_name]["options"][key] = int(value[i])
+        elif key != "additional_settings_block" and key != "layer_name":
+            settings_dict["loop_config"][layer_name]["options"][key] = value[i]
 
 
 def create_layer_cyto_graph(settings_dict):
@@ -711,6 +747,39 @@ def add_callbacks(app: Dash) -> Dash:
         with open(config_name_input, "w") as f:
             json.dump(settings_dict, f)
 
+    def _collect_input_files(n_clicks, settings_dict, config_name_input):
+
+        try:
+            if ".json" not in config_name_input:
+                config_json_name = f"{config_name_input}.json"
+            else:
+                config_json_name = config_name_input
+            tar_path = collect_input_files(
+                settings_dict,
+                config_name_input,
+                config_name=config_json_name,
+                tar_name=config_name_input,
+            )
+            output_str = f"Input files collected and tarred at {tar_path}.\n\n"
+            output_str += "The tarball will contain all the input files needed for the batch processing.\n"
+            output_str += (
+                "Please move the tarball to the remote server and extract it there.\n"
+            )
+            output_str += "To copy the tarball to the remote server you can use the following command:\n"
+
+            output_str += (
+                "scp -P <port> <local_file> <remote_user>@<remote_host>:<remote_path>\n"
+            )
+            output_str += "To start the batch processing on the remote server, run the following command:\n"
+
+            output_str += "python script_maker2000.py start --tar <tar_path>\n"
+            output_str += "The tar ball will be automatically extracted and the batch processing will start."
+
+        except Exception as e:
+            output_str = f"Error during input collection: {e}"
+
+        return output_str
+
     app.callback(
         Output("input_path_input", "valid"),
         Output("input_path_input", "invalid"),
@@ -739,9 +808,10 @@ def add_callbacks(app: Dash) -> Dash:
     # callback to create config file
     # the order and structure of this dict will be the same as the config file
     app.callback(
-        Output("empty_div", "children"),
+        Output("empty_div", "children", allow_duplicate=True),
         Output("json_view", "data"),
-        Output("config_check_output", "value"),
+        Output("config_check_output", "value", allow_duplicate=True),
+        Output("collect_input_files_button", "disabled"),
         inputs={
             "n_clicks": Input("create_config_file_button", "n_clicks"),
             "main_config_inputs": {
@@ -837,4 +907,15 @@ def add_callbacks(app: Dash) -> Dash:
         State("json_view", "data"),
         prevent_initial_call=True,
     )(export_json)
+
+    app.callback(
+        Output("config_check_output", "value", allow_duplicate=True),
+        inputs={
+            "n_clicks": Input("collect_input_files_button", "n_clicks"),
+            "settings_dict": State("json_view", "data"),
+            "config_name_input": State("config_name_input", "value"),
+        },
+        prevent_initial_call=True,
+    )(_collect_input_files)
+
     return app

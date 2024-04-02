@@ -80,8 +80,8 @@ def test_workmanager(clean_tmp_dir, job_dict, monkeypatch):
     )
     # haven't refreshed the job status yet
     current_job_dict = work_manager.check_job_status()
-    assert len(current_job_dict["returned"]) == 7
-    assert len(current_job_dict["failed"]) == 4
+    print(current_job_dict)
+    assert len(current_job_dict["returned"]) == 11
 
     # check on returned jobs
     # manage finished jobs

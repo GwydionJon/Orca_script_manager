@@ -32,15 +32,31 @@ def config_check(config):
 
 @script_maker_cli.command()
 @click.option("--config", "-c", default="config.json", help="Path to the config file")
-def start_config(config):
+@click.option(
+    "--continue_run",
+    "-cont",
+    is_flag=True,
+    flag_value=False,
+    type=click.BOOL,
+    default=False,
+    help="If the batch processing should continue from the last calculation.",
+)
+def start_config(config, continue_run):
     """Start the batch manager with the given config file."""
     if not Path(config).exists():
         click.echo(f"Config file not found at {config}")
 
         return 1
 
-    check_config(main_config=config)
-    batch_manager = BatchManager(config)
+    check_config(main_config=config, override_continue_job=continue_run)
+
+    click.echo(f"Starting the batch processing with the config file at {config}")
+
+    if continue_run:
+        click.echo("Continuing from the last calculation.")
+
+    batch_manager = BatchManager(config, override_continue_job=continue_run)
+
     batch_manager.run_batch_processing()
 
 
@@ -128,7 +144,13 @@ def start_tar(tar, extract_path, remove_extracted):
 @click.option(
     "--output", "-o", default="input_files", help="Path where the tar ball is created."
 )
-def collect_input(config, output):
+@click.option(
+    "--tar_name",
+    "-t",
+    default="input_files.tar.gz",
+    help="Name of the tar ball with the input files.",
+)
+def collect_input(config, output, tar_name):
     """Will search the config file for input files and prepares a tar ball with all the files."""
 
     prep_path = Path(output)
@@ -137,7 +159,7 @@ def collect_input(config, output):
 
     config_path = Path(config)
 
-    tar_path = collect_input_files(config_path, prep_path)
+    tar_path = collect_input_files(config_path, prep_path, tar_name=tar_name)
     click.echo(f"Tarball created at {tar_path}")
     click.echo(
         "The tarball will contain all the input files needed for the batch processing."

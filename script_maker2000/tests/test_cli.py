@@ -141,7 +141,7 @@ def test_collect_files(clean_tmp_dir):
     assert result.exit_code == 0
     assert "Tarball created at" in result.output
 
-    tar_path = prep_path / "test.tar.gz"
+    tar_path = prep_path / "input_files.tar.gz"
     extract_path = clean_tmp_dir / "example_prep" / "extracted_test"
 
     with tarfile.open(tar_path, "r:gz") as tar:
@@ -209,7 +209,7 @@ def test_start_tar_local(clean_tmp_dir, monkeypatch):
     )
     assert result.exit_code == 0
 
-    tar_path = prep_path / "test.tar.gz"
+    tar_path = prep_path / "input_files.tar.gz"
     result = runner.invoke(
         start_tar, ["--tar", tar_path, "-e", str(prep_path)], catch_exceptions=True
     )
