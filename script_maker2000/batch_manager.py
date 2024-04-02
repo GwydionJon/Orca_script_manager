@@ -6,6 +6,8 @@ import logging
 import itertools
 import json
 from pathlib import Path
+from tqdm import tqdm
+
 
 from script_maker2000.files import read_config, create_working_dir_structure
 from script_maker2000.work_manager import WorkManager
@@ -174,7 +176,7 @@ class BatchManager:
         with open(json_file_path, "r", encoding="utf-8") as json_file:
             job_backup = json.load(json_file)
 
-        for job_id_backup, job_dict_backup in job_backup.items():
+        for job_id_backup, job_dict_backup in tqdm(job_backup.items()):
             job_dict[job_id_backup] = Job.import_from_dict(
                 job_dict_backup, self.working_dir
             )
@@ -332,6 +334,7 @@ class BatchManager:
         # check tasks for errors:
         exit_code = 0
         all_errors = []
+        all_error_tasks = []
         for task in task_results:
             try:
                 self.log.info(task.result())
@@ -339,22 +342,27 @@ class BatchManager:
                 if e:
                     exit_code = 1
                     all_errors.append(e)
+                    all_error_tasks.append(task)
+
             except asyncio.CancelledError as e:
                 if e:
                     exit_code = 1
                     all_errors.append(e)
+                    all_error_tasks.append(task)
+
             except Exception as e:
                 if e:
                     exit_code = 1
                     all_errors.append(e)
+                    all_error_tasks.append(task)
 
         if exit_code == 1:
             self.log.error(
-                "There was an error in the batch processing loop."
+                f"There was an error in the batch processing loop in task {all_error_tasks}."
                 + f"Errors: {all_errors}"
             )
             raise RuntimeError(
-                "There was an error in the batch processing loop."
+                f"There was an error in the batch processing loop in task {all_error_tasks}."
                 + f"Errors: {all_errors}"
             )
         return exit_code, task_results

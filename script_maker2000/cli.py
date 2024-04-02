@@ -36,7 +36,7 @@ def config_check(config):
     "--continue_run",
     "-cont",
     is_flag=True,
-    flag_value=False,
+    flag_value=True,
     type=click.BOOL,
     default=False,
     help="If the batch processing should continue from the last calculation.",
