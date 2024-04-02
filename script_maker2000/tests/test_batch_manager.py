@@ -328,8 +328,8 @@ def test_parallel_steps(multilayer_tmp_dir, monkeypatch):
         # move files for opt_config 1 + 2
         working_dir = batch_manager.working_dir
         target_dirs = [
-            working_dir / "opt_config1" / "output",
-            working_dir / "opt_config2" / "output",
+            working_dir / "working" / "opt_config1" / "output",
+            working_dir / "working" / "opt_config2" / "output",
         ]
 
         for target_dir in target_dirs:
@@ -363,8 +363,8 @@ def test_parallel_steps(multilayer_tmp_dir, monkeypatch):
 
         # copy and rename these files to the target dirs
         target_dirs = [
-            working_dir / "sp_config1" / "output",
-            working_dir / "sp_config2" / "output",
+            working_dir / "working" / "sp_config1" / "output",
+            working_dir / "working" / "sp_config2" / "output",
         ]
 
         copy_output(target_dirs, succesful_output_dirs)
