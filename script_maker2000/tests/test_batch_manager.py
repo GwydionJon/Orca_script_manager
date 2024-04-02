@@ -39,7 +39,7 @@ def test_batch_manager(clean_tmp_dir, monkeypatch):
     main_config_path = clean_tmp_dir / "example_config.json"
     batch_manager = BatchManager(main_config_path)
 
-    first_input_dir = batch_manager.working_dir / "opt_config" / "input"
+    first_input_dir = batch_manager.working_dir / "working" / "opt_config" / "input"
     assert len(list(first_input_dir.glob("*"))) == 11
     assert len(list(first_input_dir.glob("*/*xyz"))) == 11
 

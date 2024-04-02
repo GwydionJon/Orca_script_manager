@@ -36,10 +36,10 @@ def create_working_dir_structure(
     for subfolder in sub_dir_names:
         if main_config["main_config"]["continue_previous_run"] is False:
 
-            (output_dir / subfolder / "input").mkdir(parents=True)
-            (output_dir / subfolder / "output").mkdir(parents=True)
-            (output_dir / subfolder / "finished").mkdir(parents=True)
-            (output_dir / subfolder / "failed").mkdir(parents=True)
+            (output_dir / "working" / subfolder / "input").mkdir(parents=True)
+            (output_dir / "working" / subfolder / "output").mkdir(parents=True)
+            (output_dir / "working" / subfolder / "finished").mkdir(parents=True)
+            (output_dir / "working" / subfolder / "failed").mkdir(parents=True)
 
             # copy template files to sub-folder
             if main_config["loop_config"][str(subfolder)]["type"] == "orca":
@@ -47,7 +47,7 @@ def create_working_dir_structure(
                     pathlib.Path(__file__).parent / "data/orca_template.sbatch"
                 )
 
-                shutil.copy(slurm_template_path, output_dir / subfolder)
+                shutil.copy(slurm_template_path, output_dir / "working" / subfolder)
 
     (output_dir / "finished" / "raw_results").mkdir(parents=True)
     (output_dir / "finished" / "results").mkdir(parents=True)

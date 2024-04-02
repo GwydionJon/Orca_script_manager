@@ -100,10 +100,18 @@ class Job:
         for i, key in enumerate(all_keys):
 
             id_for_step = "__".join(all_keys[: i + 1]) + "___" + self.mol_id
-            self.input_dir_per_key[key] = working_dir / key / "input" / id_for_step
-            self.output_dir_per_key[key] = working_dir / key / "output" / id_for_step
-            self.finished_per_key[key] = working_dir / key / "finished" / id_for_step
-            self.failed_per_key[key] = working_dir / key / "failed" / id_for_step
+            self.input_dir_per_key[key] = (
+                working_dir / "working" / key / "input" / id_for_step
+            )
+            self.output_dir_per_key[key] = (
+                working_dir / "working" / key / "output" / id_for_step
+            )
+            self.finished_per_key[key] = (
+                working_dir / "working" / key / "finished" / id_for_step
+            )
+            self.failed_per_key[key] = (
+                working_dir / "working" / key / "failed" / id_for_step
+            )
 
     @property
     def current_status(self):
