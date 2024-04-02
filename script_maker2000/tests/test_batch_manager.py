@@ -55,7 +55,6 @@ def test_batch_manager(clean_tmp_dir, monkeypatch):
     assert "All jobs done after " in worker_output
 
     batch_manager.advance_jobs()
-    1 / 0
     second_worker = list(batch_manager.work_managers.values())[1][0]
     monkeypatch.setattr(second_worker, "wait_time", 0.2)
     monkeypatch.setattr(second_worker, "max_loop", 5)

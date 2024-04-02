@@ -197,7 +197,7 @@ class Job:
             if self.status_per_key[key] == "submitted":
                 if self._check_slurm_completed(key):
 
-                    if not list(self.current_dirs["output"].glob("*xyz")):
+                    if not list(self.current_dirs["output"].glob("*")):
                         self.current_status = "failed"
                         self.failed_reason = "missing_output"
                         return "failed"
