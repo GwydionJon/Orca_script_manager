@@ -307,7 +307,7 @@ class OrcaModule(TemplateModule):
         # check for orca errors only if xyz file exists
 
         if orca_out_file.exists():
-            with open(orca_out_file) as f:
+            with open(orca_out_file, encoding="utf-8") as f:
                 file_contents = f.read()
 
                 if check_orca_normal_termination(file_contents):
@@ -315,7 +315,7 @@ class OrcaModule(TemplateModule):
                 if check_orca_memory_error(file_contents):
                     return "missing_ram_error"
         if slurm_file.exists():
-            with open(slurm_file) as f:
+            with open(slurm_file, encoding="utf-8") as f:
                 file_contents = f.read()
                 if check_slurm_walltime_error(file_contents):
                     return "walltime_error"

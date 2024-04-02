@@ -401,7 +401,7 @@ class Job:
                     if self.failed_reason == "missing_output":
                         src_dir.mkdir(parents=True, exist_ok=True)
                         missing_file = src_dir / "missing_output.txt"
-                        with open(missing_file, "w") as f:
+                        with open(missing_file, "w", encoding="utf-8") as f:
                             f.write(
                                 f"No output files found in the output directory for job: {self}."
                             )
@@ -544,9 +544,11 @@ class Job:
         new_job.status_per_key = input_dict["status_per_key"]
         new_job.finished_keys = input_dict["finished_keys"]
 
-        new_job.efficiency_data = cls.import_efficiency_data(
-            input_dict["efficiency_data"]
-        )
+        # new_job.efficiency_data = cls.import_efficiency_data(
+        #     input_dict["efficiency_data"]
+        # )
+        new_job.efficiency_data = input_dict["efficiency_data"]
+
         return new_job
 
     # here the job will handle collecting its efficiency data
@@ -701,17 +703,20 @@ class Job:
                     str_dict[slurm_key][key] = value
         return str_dict
 
-    @staticmethod
-    def import_efficiency_data(efficiency_data_as_str):
-        # convert the string dict to a dict of pint quantities
-        efficiency_data = {}
+    # i dont think this is needed anymore
+    # since this the unit conversion only needs to happen when reading this data in
 
-        for slurm_key, data in efficiency_data_as_str.items():
-            efficiency_data[int(slurm_key)] = {}
-            for key, value in data.items():
-                if key in ["JobID", "JobName", "ExitCode", "NCPUS"]:
-                    efficiency_data[int(slurm_key)][key] = value
-                else:
-                    ureg = UnitRegistry()
-                    efficiency_data[int(slurm_key)][key] = ureg(value)
-        return efficiency_data
+    # @staticmethod
+    # def import_efficiency_data(efficiency_data_as_str):
+    #     # convert the string dict to a dict of pint quantities
+    #     efficiency_data = {}
+
+    #     for slurm_key, data in efficiency_data_as_str.items():
+    #         efficiency_data[int(slurm_key)] = {}
+    #         for key, value in data.items():
+    #             if key in ["JobID", "JobName", "ExitCode", "NCPUS"]:
+    #                 efficiency_data[int(slurm_key)][key] = value
+    #             else:
+    #                 ureg = UnitRegistry()
+    #                 efficiency_data[int(slurm_key)][key] = ureg(value)
+    #     return efficiency_data

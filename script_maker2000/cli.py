@@ -93,14 +93,14 @@ def start_tar(tar, extract_path, remove_extracted):
 
     # load config file and replace output path
 
-    with open(config_path, "r") as f:
+    with open(config_path, "r", encoding="utf-8") as f:
         config = json.load(f)
 
     current_output_path = config["main_config"]["output_dir"]
     config["main_config"]["output_dir"] = str(
         extract_path.parents[0] / current_output_path
     )
-    with open(config_path, "w") as f:
+    with open(config_path, "w", encoding="utf-8") as f:
         json.dump(config, f)
 
     click.echo(f"Config file found at {config_path}")

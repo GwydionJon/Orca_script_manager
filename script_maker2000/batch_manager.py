@@ -171,7 +171,7 @@ class BatchManager:
         """
         # prepare all job ids
         job_dict = {}
-        with open(json_file_path, "r") as json_file:
+        with open(json_file_path, "r", encoding="utf-8") as json_file:
             job_backup = json.load(json_file)
 
         for job_id_backup, job_dict_backup in job_backup.items():
@@ -274,7 +274,9 @@ class BatchManager:
         for job in self.job_dict.values():
             job_backup[job.unique_job_id] = job.export_as_dict()
 
-        with open(self.working_dir / "job_backup.json", "w") as json_file:
+        with open(
+            self.working_dir / "job_backup.json", "w", encoding="utf-8"
+        ) as json_file:
             json.dump(job_backup, json_file)
 
     async def batch_processing_loop(self):

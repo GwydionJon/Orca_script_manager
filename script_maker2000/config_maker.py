@@ -744,7 +744,7 @@ def add_callbacks(app: Dash) -> Dash:
         if ".json" not in config_name_input:
             config_name_input += ".json"
 
-        with open(config_name_input, "w") as f:
+        with open(config_name_input, "w", encoding="utf-8") as f:
             json.dump(settings_dict, f)
 
     def _collect_input_files(n_clicks, settings_dict, config_name_input):
