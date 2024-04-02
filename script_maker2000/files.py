@@ -86,7 +86,7 @@ def prepare_xyz_files(input_csv):
     for file in found_files:
 
         if file.stem.startswith("START_") is False:
-            new_file_name = file.parent / "START___" + file.name
+            new_file_name = file.parent / ("START___" + file.name)
 
         elif file.stem.startswith("START___") is True:
             continue
@@ -227,10 +227,12 @@ def _check_config_keys(main_config):
         )
 
     for key in ["max_n_jobs", "max_ram_per_core", "max_nodes", "wait_for_results_time"]:
-        if not isinstance(main_config["main_config"][key], int):
+        if not isinstance(main_config["main_config"][key], int) and not isinstance(
+            main_config["main_config"][key], float
+        ):
             raise ValueError(
-                f"{key} must be an integer. Found {main_config['main_config'][key]} of type"
-                + "{type(main_config['main_config'][key])}"
+                f"{key} must be an integer or float. Found {main_config['main_config'][key]} of type"
+                + f"{type(main_config['main_config'][key])}"
             )
 
     for loop_config in main_config["loop_config"]:
