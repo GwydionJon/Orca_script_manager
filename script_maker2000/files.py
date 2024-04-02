@@ -103,7 +103,7 @@ def prepare_xyz_files(input_csv):
     return new_files, input_df
 
 
-def check_config(main_config, skip_file_check=False):
+def check_config(main_config, skip_file_check=False, override_continue_job=False):
     """This function checks the main config for the necessary keys and values."""
 
     if isinstance(main_config, str):
@@ -121,9 +121,11 @@ def check_config(main_config, skip_file_check=False):
 
     for sub_dir in sub_dir_names:
 
-        if (output_dir / sub_dir).exists() and main_config["main_config"][
-            "continue_previous_run"
-        ] is False:
+        if (
+            (output_dir / sub_dir).exists()
+            and main_config["main_config"]["continue_previous_run"] is False
+            and override_continue_job is False
+        ):
             raise FileExistsError(
                 f"The directory {output_dir} already has subfolders setup. "
                 + "If you want to continue a previous run please change the "

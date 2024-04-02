@@ -590,7 +590,7 @@ class Job:
             elif key == "TimelimitRaw":
                 filtered_data[key] = float(value[0]) * ureg.minute
             elif key == "ConsumedEnergyRaw":
-                filtered_data[key] = float(value[0]) * ureg.joule
+                filtered_data[key] = float(value[1]) * ureg.joule
             elif key == "MaxDiskRead":
                 filtered_data[key] = (
                     self._convert_order_of_magnitude(value[1]) * ureg.byte
