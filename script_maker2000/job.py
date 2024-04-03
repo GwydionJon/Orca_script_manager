@@ -286,10 +286,10 @@ class Job:
             self.current_status = "failed"
             self.failed_reason = return_str
 
-            # if not self.current_dirs[self.failed_reason].exists():
-            shutil.copytree(
-                self.current_dirs["output"], self.current_dirs[self.failed_reason]
-            )
+            if not self.current_dirs[self.failed_reason].exists():
+                shutil.copytree(
+                    self.current_dirs["output"], self.current_dirs[self.failed_reason]
+                )
 
     def advance_to_next_key(self):
         """Advance to the next key and update the current status and directories.
@@ -305,7 +305,14 @@ class Job:
 
         current_key = self.current_key
 
+        debug = False
+        if "opt_config1__sp_config1___a004_b007" == self.unique_job_id:
+            debug = True
+
         self.status_per_key[current_key] = self.current_status
+        if debug:
+            print(f"current_key: {current_key}", f"last_key: {self.all_keys[-1]}")
+
         if current_key != self.all_keys[-1]:
             next_key = self.all_keys[self.all_keys.index(current_key) + 1]
 
@@ -345,6 +352,7 @@ class Job:
                 return "not_finished"
 
         else:
+            # if the current key is the last key, the job is finished
             if self.current_status == "finished":
                 if current_key not in self.finished_keys:
 
@@ -353,6 +361,15 @@ class Job:
                     self.wrap_up()
                 self.tqdm.update()
                 return "finalized"
+
+            elif self.current_status == "failed":
+                if current_key not in self.finished_keys:
+                    self.finished_keys.append(current_key)
+                    self.tqdm.update()
+
+                self.wrap_up_failed()
+
+                return self.failed_reason
             else:
                 return self.current_status
 
@@ -396,7 +413,7 @@ class Job:
             if key in self.status_per_key:
                 if self.status_per_key[key] == "finished":
                     src_dir = self.finished_per_key[key]
-                    target_dir = self.final_dir / key_id
+                    target_dir = self.raw_success_dir / key_id
                 elif self.status_per_key[key] == "failed":
                     src_dir = (
                         self.failed_per_key[key].parents[0]
