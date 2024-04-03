@@ -168,15 +168,15 @@ class BatchManager:
 
     def _create_job_tqdm(self):
 
-        total_jobs = set()
+        total_jobs = 0
         job_tqdm = tqdm(total=0, desc="Jobs done", position=0)
 
         for job in self.job_dict.values():
             job.tqdm = job_tqdm
-            for job_key in job.all_keys:
-                total_jobs.add(job_key)
+            for _ in job.all_keys:
+                total_jobs += 1
 
-        job_tqdm.total = len(total_jobs)
+        job_tqdm.total = total_jobs
 
         job_tqdm.refresh()
 
