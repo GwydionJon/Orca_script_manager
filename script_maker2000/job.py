@@ -72,6 +72,8 @@ class Job:
 
         self._init_all_dicts(working_dir, all_keys)
 
+        self.tqdm = None
+
         # prepare final_output dirs
         self.raw_success_dir = working_dir / "finished" / "raw_results" / self.mol_id
         self.raw_failed_dir = self.raw_success_dir / "failed"
@@ -332,6 +334,7 @@ class Job:
                             shutil.copy(input_file, new_file)
                         else:
                             return "file_exists"
+                    self.tqdm.update()
                     return "success"
 
             elif self.current_status == "failed":
@@ -352,6 +355,7 @@ class Job:
                     self.finished_keys.append(current_key)
 
                 self.wrap_up()
+                self.tqdm.update()
                 return "finalized"
             else:
                 return self.current_status

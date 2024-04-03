@@ -2,6 +2,7 @@ import logging
 import asyncio
 from collections import defaultdict
 from script_maker2000.job import Job
+import time
 
 
 class WorkManager:
@@ -100,6 +101,7 @@ class WorkManager:
                 job_id = int(process.stdout.split("job ")[1])
                 job.slurm_id_per_key[self.config_key] = job_id
                 job.current_status = "submitted"
+                time.sleep(0.2)
 
         self.log.info(f"Submitted {len(not_started_jobs)} new jobs.")
         return not_started_jobs

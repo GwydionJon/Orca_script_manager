@@ -45,6 +45,7 @@ class BatchManager:
 
             self.work_managers = self.setup_work_modules_manager()
             self.copy_input_files_to_first_work_manager()
+
         else:
             self.working_dir = Path(self.main_config["main_config"]["output_dir"])
             self.new_input_path = self.working_dir / "start_input_files"
@@ -57,6 +58,9 @@ class BatchManager:
         # parameter for loop
         self.wait_time = self.main_config["main_config"]["wait_for_results_time"]
         self.max_loop = -1  # -1 means infinite loop until all jobs are done
+
+        # setup_progress_bat
+        self.job_tqdm = self._create_job_tqdm()
 
         # set up logging for this module
         self.log = logging.getLogger("BatchManager")
@@ -161,6 +165,22 @@ class BatchManager:
 
         job_dict = {job.unique_job_id: job for job in jobs}
         return job_dict
+
+    def _create_job_tqdm(self):
+
+        total_jobs = set()
+        job_tqdm = tqdm(total=0, desc="Jobs done", position=0)
+
+        for job in self.job_dict.values():
+            job.tqdm = job_tqdm
+            for job_key in job.all_keys:
+                total_jobs.add(job_key)
+
+        job_tqdm.total = len(total_jobs)
+
+        job_tqdm.refresh()
+
+        return job_tqdm
 
     def _jobs_from_backup_json(self, json_file_path):
         """
