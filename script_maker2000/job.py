@@ -335,8 +335,9 @@ class Job:
             elif self.current_status == "failed":
                 if current_key not in self.finished_keys:
                     self.finished_keys.append(current_key)
+                    self.tqdm.update()
 
-                    self.wrap_up_failed()
+                self.wrap_up_failed()
 
                 return self.failed_reason
 
@@ -349,7 +350,7 @@ class Job:
 
                     self.finished_keys.append(current_key)
 
-                self.wrap_up()
+                    self.wrap_up()
                 self.tqdm.update()
                 return "finalized"
             else:
@@ -414,13 +415,10 @@ class Job:
 
             else:
                 src_dir = self.failed_per_key[key].parents[0] / self.failed_reason
+
                 target_dir = self.final_dir / self.failed_reason / key_id
 
             shutil.copytree(src_dir, target_dir, dirs_exist_ok=True)
-
-        # key_id = "__".join(self.all_keys[:]) + "___" + self.mol_id
-
-        # shutil.copytree(self.current_dirs[self.failed_reason], self.final_dir / key_id/"failed", dirs_exist_ok=True)
 
         self.status_per_key[self.current_key] = "failed"
         # set failed for all remaining keys
