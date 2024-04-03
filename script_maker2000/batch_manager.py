@@ -7,6 +7,7 @@ import itertools
 import json
 from pathlib import Path
 from tqdm import tqdm
+import traceback
 
 
 from script_maker2000.files import read_config, create_working_dir_structure
@@ -335,6 +336,8 @@ class BatchManager:
         exit_code = 0
         all_errors = []
         all_error_tasks = []
+        all_error_traceback = []
+
         for task in task_results:
             try:
                 self.log.info(task.result())
@@ -342,27 +345,31 @@ class BatchManager:
                 if e:
                     exit_code = 1
                     all_errors.append(e)
+                    all_error_traceback.append(traceback.format_exc())
                     all_error_tasks.append(task)
-
             except asyncio.CancelledError as e:
                 if e:
                     exit_code = 1
                     all_errors.append(e)
+                    all_error_traceback.append(traceback.format_exc())
                     all_error_tasks.append(task)
 
             except Exception as e:
                 if e:
                     exit_code = 1
                     all_errors.append(e)
+                    all_error_traceback.append(traceback.format_exc())
                     all_error_tasks.append(task)
 
         if exit_code == 1:
             self.log.error(
                 f"There was an error in the batch processing loop in task {all_error_tasks}."
-                + f"Errors: {all_errors}"
+                + f"Errors: {all_errors} /n /n"
+                + f"Adding Traceback: {all_error_traceback}"
             )
             raise RuntimeError(
                 f"There was an error in the batch processing loop in task {all_error_tasks}."
                 + f"Errors: {all_errors}"
+                + f"Adding Traceback: {all_error_traceback}"
             )
         return exit_code, task_results

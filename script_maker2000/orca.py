@@ -307,18 +307,40 @@ class OrcaModule(TemplateModule):
         # check for orca errors only if xyz file exists
 
         if orca_out_file.exists():
-            with open(orca_out_file, encoding="utf-8") as f:
-                file_contents = f.read()
+            try:
+                with open(
+                    orca_out_file,
+                    encoding="utf-8",
+                ) as f:
+                    file_contents = f.read()
+            except UnicodeDecodeError:
+                cls.log.warning(
+                    f"An encoding error occured in {orca_out_file}. Unreadable symbol will be replaced by '?'"
+                )
+                with open(orca_out_file, encoding="utf-8", errors="replace") as f:
+                    file_contents = f.read()
 
-                if check_orca_normal_termination(file_contents):
-                    return "success"
-                if check_orca_memory_error(file_contents):
-                    return "missing_ram_error"
+            if check_orca_normal_termination(file_contents):
+                return "success"
+            if check_orca_memory_error(file_contents):
+                return "missing_ram_error"
+
         if slurm_file.exists():
-            with open(slurm_file, encoding="utf-8") as f:
-                file_contents = f.read()
-                if check_slurm_walltime_error(file_contents):
-                    return "walltime_error"
+            try:
+                with open(
+                    slurm_file,
+                    encoding="utf-8",
+                ) as f:
+                    file_contents = f.read()
+            except UnicodeDecodeError:
+                cls.log.warning(
+                    f"An encoding error occured in {orca_out_file}. Unreadable symbol will be replaced by '?'"
+                )
+                with open(slurm_file, encoding="utf-8", errors="replace") as f:
+                    file_contents = f.read()
+
+            if check_slurm_walltime_error(file_contents):
+                return "walltime_error"
 
         if not orca_out_file.exists() and not slurm_file.exists():
             return "missing_files_error"
