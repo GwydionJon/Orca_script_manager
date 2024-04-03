@@ -286,15 +286,10 @@ class Job:
             self.current_status = "failed"
             self.failed_reason = return_str
 
-            if not self.current_dirs[self.failed_reason].exists():
-                shutil.copytree(
-                    self.current_dirs["output"], self.current_dirs[self.failed_reason]
-                )
-
-        # # clean up input and output by archiving
-        # for dir in [self.current_dirs["input"], self.current_dirs["output"]]:
-        #     shutil.make_archive(dir.parents[0] / ("archive_" + dir.stem), "gztar", dir)
-        #     shutil.rmtree(dir)
+            # if not self.current_dirs[self.failed_reason].exists():
+            shutil.copytree(
+                self.current_dirs["output"], self.current_dirs[self.failed_reason]
+            )
 
     def advance_to_next_key(self):
         """Advance to the next key and update the current status and directories.
