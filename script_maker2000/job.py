@@ -305,13 +305,7 @@ class Job:
 
         current_key = self.current_key
 
-        debug = False
-        if "opt_config1__sp_config1___a004_b007" == self.unique_job_id:
-            debug = True
-
         self.status_per_key[current_key] = self.current_status
-        if debug:
-            print(f"current_key: {current_key}", f"last_key: {self.all_keys[-1]}")
 
         if current_key != self.all_keys[-1]:
             next_key = self.all_keys[self.all_keys.index(current_key) + 1]
