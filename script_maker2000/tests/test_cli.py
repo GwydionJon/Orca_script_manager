@@ -97,10 +97,11 @@ def test_start_config_local(clean_tmp_dir, monkeypatch):
     monkeypatch.setattr("subprocess.run", mock_run_job)
 
     runner = CliRunner()
-    result = runner.invoke(start_config, ["--config", main_config_path])
+    result = runner.invoke(start_config, ["--config", main_config_path, "--profile"])
     assert "FileNotFoundError" in str(result.exception)
     assert result.exit_code == 1
     BatchManager.__init__ = original_init
+    1 / 0
 
 
 @pytest.mark.skipif(
