@@ -296,10 +296,6 @@ class OrcaModule(TemplateModule):
         if isinstance(job_out_dir, str):
             job_out_dir = Path(job_out_dir)
 
-        # check for walltime error
-        if list(job_out_dir.glob("walltime_error.txt")):
-            return "walltime_error"
-
         # get orca output file
         orca_out_file = job_out_dir / (job_out_dir.stem + ".out")
         slurm_file = list(job_out_dir.glob("slurm*"))[0]
@@ -307,20 +303,60 @@ class OrcaModule(TemplateModule):
         # check for orca errors only if xyz file exists
 
         if orca_out_file.exists():
-            with open(orca_out_file) as f:
-                file_contents = f.read()
+            try:
+                with open(
+                    orca_out_file,
+                    encoding="utf-8",
+                ) as f:
+                    file_contents = f.read()
+            except UnicodeDecodeError:
+                file_contents = _handle_encoding_error(orca_out_file)
 
-                if check_orca_normal_termination(file_contents):
-                    return "success"
-                if check_orca_memory_error(file_contents):
-                    return "missing_ram_error"
+            if check_orca_normal_termination(file_contents):
+                return "success"
+            if check_orca_memory_error(file_contents):
+                return "missing_ram_error"
+
         if slurm_file.exists():
-            with open(slurm_file) as f:
-                file_contents = f.read()
-                if check_slurm_walltime_error(file_contents):
-                    return "walltime_error"
+            try:
+                with open(
+                    slurm_file,
+                    encoding="utf-8",
+                ) as f:
+                    file_contents = f.read()
+            except UnicodeDecodeError:
+                file_contents = _handle_encoding_error(slurm_file)
+
+            if check_slurm_walltime_error(file_contents):
+                return "walltime_error"
 
         if not orca_out_file.exists() and not slurm_file.exists():
             return "missing_files_error"
 
         return "unknown_error"
+
+
+def _handle_encoding_error(filename):
+
+    # read file as bytes to find the misbehaving character
+    with open(filename, "rb") as f:
+        byte_data = f.read()
+
+    try:
+        byte_data.decode("utf-8")
+    except UnicodeDecodeError as e:
+        error_position = e.start
+
+    # Decode up to the error position
+    partial_decoded_data = byte_data[:error_position].decode("utf-8", errors="ignore")
+
+    print(
+        f"An encoding error occured in {filename}. Unreadable symbol will be replaced by '?'"
+    )
+    print("Here are the last characters before the error occured:")
+    print(partial_decoded_data[-500:])
+
+    # now open the file with the error handling
+    with open(filename, encoding="utf-8", errors="replace") as f:
+        file_contents = f.read()
+    return file_contents

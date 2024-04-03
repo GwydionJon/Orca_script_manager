@@ -42,6 +42,9 @@ class Job:
         self.charge = charge
         self.multiplicity = multiplicity
 
+        # handles unit conversion
+        self.ureg = UnitRegistry(cache_folder=":auto:")
+
         self.current_key = "not_assigned"
         self._current_status = (
             "not_assigned"  # not_assigned,found, submitted, finished, failed
@@ -68,6 +71,8 @@ class Job:
         self.finished_keys = []
 
         self._init_all_dicts(working_dir, all_keys)
+
+        self.tqdm = None
 
         # prepare final_output dirs
         self.raw_success_dir = working_dir / "finished" / "raw_results" / self.mol_id
@@ -100,10 +105,18 @@ class Job:
         for i, key in enumerate(all_keys):
 
             id_for_step = "__".join(all_keys[: i + 1]) + "___" + self.mol_id
-            self.input_dir_per_key[key] = working_dir / key / "input" / id_for_step
-            self.output_dir_per_key[key] = working_dir / key / "output" / id_for_step
-            self.finished_per_key[key] = working_dir / key / "finished" / id_for_step
-            self.failed_per_key[key] = working_dir / key / "failed" / id_for_step
+            self.input_dir_per_key[key] = (
+                working_dir / "working" / key / "input" / id_for_step
+            )
+            self.output_dir_per_key[key] = (
+                working_dir / "working" / key / "output" / id_for_step
+            )
+            self.finished_per_key[key] = (
+                working_dir / "working" / key / "finished" / id_for_step
+            )
+            self.failed_per_key[key] = (
+                working_dir / "working" / key / "failed" / id_for_step
+            )
 
     @property
     def current_status(self):
@@ -123,8 +136,8 @@ class Job:
                     overlapping_job.slurm_id_per_key[self.current_key] = (
                         self.slurm_id_per_key[self.current_key]
                     )
-                else:
-                    overlapping_job.status_per_key[self.current_key] = "submitted"
+                # else:
+                #     overlapping_job.status_per_key[self.current_key] = "submitted"
 
         self._current_status = value
         self.status_per_key[self.current_key] = value
@@ -278,11 +291,6 @@ class Job:
                     self.current_dirs["output"], self.current_dirs[self.failed_reason]
                 )
 
-        # # clean up input and output by archiving
-        # for dir in [self.current_dirs["input"], self.current_dirs["output"]]:
-        #     shutil.make_archive(dir.parents[0] / ("archive_" + dir.stem), "gztar", dir)
-        #     shutil.rmtree(dir)
-
     def advance_to_next_key(self):
         """Advance to the next key and update the current status and directories.
 
@@ -298,6 +306,7 @@ class Job:
         current_key = self.current_key
 
         self.status_per_key[current_key] = self.current_status
+
         if current_key != self.all_keys[-1]:
             next_key = self.all_keys[self.all_keys.index(current_key) + 1]
 
@@ -306,24 +315,28 @@ class Job:
                 old_step_id = self.current_step_id
                 old_output_dir = self.current_dirs["output"]
                 self.start_new_key(next_key, self.current_step + 1)
-                self.finished_keys.append(current_key)
+                if current_key not in self.finished_keys:
+                    self.finished_keys.append(current_key)
 
-                for input_file_type in self.input_file_types:
-                    input_file = old_output_dir / (old_step_id + input_file_type)
+                    for input_file_type in self.input_file_types:
+                        input_file = old_output_dir / (old_step_id + input_file_type)
 
-                    new_input_dir = self.current_dirs["input"]
-                    new_input_dir.mkdir(parents=True, exist_ok=True)
-                    new_file_name = self.current_step_id + input_file_type
-                    new_file = new_input_dir / new_file_name
+                        new_input_dir = self.current_dirs["input"]
+                        new_input_dir.mkdir(parents=True, exist_ok=True)
+                        new_file_name = self.current_step_id + input_file_type
+                        new_file = new_input_dir / new_file_name
 
-                    if not new_file.exists():
-                        shutil.copy(input_file, new_file)
-                    else:
-                        return "file_exists"
-                return "success"
+                        if not new_file.exists():
+                            shutil.copy(input_file, new_file)
+                        else:
+                            return "file_exists"
+                    self.tqdm.update()
+                    return "success"
 
             elif self.current_status == "failed":
-                self.finished_keys.append(current_key)
+                if current_key not in self.finished_keys:
+                    self.finished_keys.append(current_key)
+                    self.tqdm.update()
 
                 self.wrap_up_failed()
 
@@ -333,11 +346,24 @@ class Job:
                 return "not_finished"
 
         else:
+            # if the current key is the last key, the job is finished
             if self.current_status == "finished":
-                self.finished_keys.append(current_key)
+                if current_key not in self.finished_keys:
 
-                self.wrap_up()
+                    self.finished_keys.append(current_key)
+
+                    self.wrap_up()
+                self.tqdm.update()
                 return "finalized"
+
+            elif self.current_status == "failed":
+                if current_key not in self.finished_keys:
+                    self.finished_keys.append(current_key)
+                    self.tqdm.update()
+
+                self.wrap_up_failed()
+
+                return self.failed_reason
             else:
                 return self.current_status
 
@@ -381,7 +407,7 @@ class Job:
             if key in self.status_per_key:
                 if self.status_per_key[key] == "finished":
                     src_dir = self.finished_per_key[key]
-                    target_dir = self.final_dir / key_id
+                    target_dir = self.raw_success_dir / key_id
                 elif self.status_per_key[key] == "failed":
                     src_dir = (
                         self.failed_per_key[key].parents[0]
@@ -393,20 +419,17 @@ class Job:
                     if self.failed_reason == "missing_output":
                         src_dir.mkdir(parents=True, exist_ok=True)
                         missing_file = src_dir / "missing_output.txt"
-                        with open(missing_file, "w") as f:
+                        with open(missing_file, "w", encoding="utf-8") as f:
                             f.write(
                                 f"No output files found in the output directory for job: {self}."
                             )
 
             else:
                 src_dir = self.failed_per_key[key].parents[0] / self.failed_reason
+
                 target_dir = self.final_dir / self.failed_reason / key_id
 
             shutil.copytree(src_dir, target_dir, dirs_exist_ok=True)
-
-        # key_id = "__".join(self.all_keys[:]) + "___" + self.mol_id
-
-        # shutil.copytree(self.current_dirs[self.failed_reason], self.final_dir / key_id/"failed", dirs_exist_ok=True)
 
         self.status_per_key[self.current_key] = "failed"
         # set failed for all remaining keys
@@ -536,9 +559,13 @@ class Job:
         new_job.status_per_key = input_dict["status_per_key"]
         new_job.finished_keys = input_dict["finished_keys"]
 
-        new_job.efficiency_data = cls.import_efficiency_data(
-            input_dict["efficiency_data"]
-        )
+        # new_job.efficiency_data = cls.import_efficiency_data(
+        #     input_dict["efficiency_data"]
+        # )
+        new_job.efficiency_data = {
+            int(key): value for key, value in input_dict["efficiency_data"].items()
+        }
+
         return new_job
 
     # here the job will handle collecting its efficiency data
@@ -565,8 +592,8 @@ class Job:
         return new_value
 
     def _filter_data(self, data):
-        ureg = UnitRegistry()
 
+        ureg = self.ureg
         filtered_data = {}
 
         for key, value in data.items():
@@ -693,17 +720,20 @@ class Job:
                     str_dict[slurm_key][key] = value
         return str_dict
 
-    @staticmethod
-    def import_efficiency_data(efficiency_data_as_str):
-        # convert the string dict to a dict of pint quantities
-        efficiency_data = {}
+    # i dont think this is needed anymore
+    # since this the unit conversion only needs to happen when reading this data in
 
-        for slurm_key, data in efficiency_data_as_str.items():
-            efficiency_data[int(slurm_key)] = {}
-            for key, value in data.items():
-                if key in ["JobID", "JobName", "ExitCode", "NCPUS"]:
-                    efficiency_data[int(slurm_key)][key] = value
-                else:
-                    ureg = UnitRegistry()
-                    efficiency_data[int(slurm_key)][key] = ureg(value)
-        return efficiency_data
+    # @staticmethod
+    # def import_efficiency_data(efficiency_data_as_str):
+    #     # convert the string dict to a dict of pint quantities
+    #     efficiency_data = {}
+
+    #     for slurm_key, data in efficiency_data_as_str.items():
+    #         efficiency_data[int(slurm_key)] = {}
+    #         for key, value in data.items():
+    #             if key in ["JobID", "JobName", "ExitCode", "NCPUS"]:
+    #                 efficiency_data[int(slurm_key)][key] = value
+    #             else:
+    #                 ureg = UnitRegistry()
+    #                 efficiency_data[int(slurm_key)][key] = ureg(value)
+    #     return efficiency_data

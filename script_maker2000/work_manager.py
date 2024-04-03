@@ -1,8 +1,8 @@
 import logging
-import time
 import asyncio
 from collections import defaultdict
 from script_maker2000.job import Job
+import time
 
 
 class WorkManager:
@@ -101,6 +101,7 @@ class WorkManager:
                 job_id = int(process.stdout.split("job ")[1])
                 job.slurm_id_per_key[self.config_key] = job_id
                 job.current_status = "submitted"
+                time.sleep(0.2)
 
         self.log.info(f"Submitted {len(not_started_jobs)} new jobs.")
         return not_started_jobs
@@ -131,13 +132,10 @@ class WorkManager:
 
             else:
                 non_existing_output.append(job)
-
                 continue
 
             return_status_dict[work_module_status] += 1
-
             job.manage_return(work_module_status)
-
         for job in non_existing_output:
             finished_jobs.remove(job)
 
@@ -212,9 +210,6 @@ class WorkManager:
             current_job_dict["submitted"].extend(
                 self.submit_jobs(current_job_dict["not_started"])
             )
-
-            # this should catch submission errors
-            time.sleep(3)
 
             # check on submitted jobs
             current_job_dict["returned"].extend(

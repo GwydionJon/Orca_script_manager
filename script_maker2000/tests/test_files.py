@@ -39,9 +39,10 @@ def test_create_working_dir_structure(test_setup_work_dir):
     # check that log files, settings, inputs and dirs are at the correct level
     output_path = pathlib.Path(main_config["main_config"]["output_dir"])
 
-    assert len(list(output_path.glob("*"))) == 8
+    assert len(list(output_path.glob("*"))) == 7
     # check that sub dirs are present
-    assert len(list(output_path.glob("*/*"))) == 23
+    assert len(list(output_path.glob("*/*"))) == 15
+    assert len(list(output_path.glob("*/*/*"))) == 10
 
     # reset input filenames
     for file in pathlib.Path(test_setup_work_dir / "example_xyz").glob("*.xyz"):
@@ -59,9 +60,10 @@ def test_create_working_dir_structure(test_setup_work_dir):
 
     create_working_dir_structure(main_config)
 
-    assert len(list(output_path.glob("*"))) == 8
+    assert len(list(output_path.glob("*"))) == 7
     # check that two new sub dirs are present
-    assert len(list(output_path.glob("*/*"))) == 22
+    assert len(list(output_path.glob("*/*"))) == 15
+    assert len(list(output_path.glob("*/*/*"))) == 9
 
     with pytest.raises(KeyError):
         read_config(test_setup_work_dir / "example_config6.json")

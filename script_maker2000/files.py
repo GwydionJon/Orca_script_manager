@@ -36,10 +36,10 @@ def create_working_dir_structure(
     for subfolder in sub_dir_names:
         if main_config["main_config"]["continue_previous_run"] is False:
 
-            (output_dir / subfolder / "input").mkdir(parents=True)
-            (output_dir / subfolder / "output").mkdir(parents=True)
-            (output_dir / subfolder / "finished").mkdir(parents=True)
-            (output_dir / subfolder / "failed").mkdir(parents=True)
+            (output_dir / "working" / subfolder / "input").mkdir(parents=True)
+            (output_dir / "working" / subfolder / "output").mkdir(parents=True)
+            (output_dir / "working" / subfolder / "finished").mkdir(parents=True)
+            (output_dir / "working" / subfolder / "failed").mkdir(parents=True)
 
             # copy template files to sub-folder
             if main_config["loop_config"][str(subfolder)]["type"] == "orca":
@@ -47,7 +47,7 @@ def create_working_dir_structure(
                     pathlib.Path(__file__).parent / "data/orca_template.sbatch"
                 )
 
-                shutil.copy(slurm_template_path, output_dir / subfolder)
+                shutil.copy(slurm_template_path, output_dir / "working" / subfolder)
 
     (output_dir / "finished" / "raw_results").mkdir(parents=True)
     (output_dir / "finished" / "results").mkdir(parents=True)
@@ -59,16 +59,16 @@ def create_working_dir_structure(
 
     # save input csv in output folder
 
-    valid_files, input_df = prepare_xyz_files(input_path)
-    script_maker_log.info(valid_files)
+    new_file_names, found_files, input_df = prepare_xyz_files(input_path)
+    script_maker_log.info(found_files)
 
     new_input_path = output_dir / "start_input_files"
     new_input_path.mkdir(parents=True, exist_ok=True)
-    for file in valid_files:
-        script_maker_log.info(file)
-        mol_id = file.stem.split("___")[1]
-        input_df.loc[input_df["key"] == mol_id, "path"] = file
-        shutil.copy(file, new_input_path / file.name)
+    for orig_file, new_name in zip(found_files, new_file_names):
+        script_maker_log.info(orig_file)
+        mol_id = new_name.split("___")[1]
+        input_df.loc[input_df["key"] == mol_id, "path"] = orig_file
+        shutil.copy(orig_file, new_input_path / new_name)
 
     new_csv_file = output_dir / "input.csv"
     input_df.to_csv(new_csv_file)
@@ -82,25 +82,25 @@ def prepare_xyz_files(input_csv):
 
     found_files, input_df = _check_input_csv(input_csv)
 
-    new_files = []
+    new_file_names = []
     for file in found_files:
 
         if file.stem.startswith("START_") is False:
-            new_file_name = file.parent / ("START___" + file.name)
+            new_file_name = "START___" + file.name
 
         elif file.stem.startswith("START___") is True:
-            continue
+            new_file_name = file.name
         elif file.stem.startswith("START_") is True:
-            new_file_name = file.parent / file.name.replace("START_", "START___")
+            new_file_name = file.name.replace("START_", "START___")
 
         else:
             raise ValueError(
                 "File name does not match any expected pattern. "
                 + "Please rename the file according to the following pattern: START_molIdentifier.xyz"
             )
-        new_files.append(file.rename(new_file_name))
+        new_file_names.append(new_file_name)
 
-    return new_files, input_df
+    return new_file_names, found_files, input_df
 
 
 def check_config(main_config, skip_file_check=False, override_continue_job=False):

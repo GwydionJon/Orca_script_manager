@@ -39,7 +39,7 @@ def test_batch_manager(clean_tmp_dir, monkeypatch):
     main_config_path = clean_tmp_dir / "example_config.json"
     batch_manager = BatchManager(main_config_path)
 
-    first_input_dir = batch_manager.working_dir / "opt_config" / "input"
+    first_input_dir = batch_manager.working_dir / "working" / "opt_config" / "input"
     assert len(list(first_input_dir.glob("*"))) == 11
     assert len(list(first_input_dir.glob("*/*xyz"))) == 11
 
@@ -328,8 +328,8 @@ def test_parallel_steps(multilayer_tmp_dir, monkeypatch):
         # move files for opt_config 1 + 2
         working_dir = batch_manager.working_dir
         target_dirs = [
-            working_dir / "opt_config1" / "output",
-            working_dir / "opt_config2" / "output",
+            working_dir / "working" / "opt_config1" / "output",
+            working_dir / "working" / "opt_config2" / "output",
         ]
 
         for target_dir in target_dirs:
@@ -363,11 +363,54 @@ def test_parallel_steps(multilayer_tmp_dir, monkeypatch):
 
         # copy and rename these files to the target dirs
         target_dirs = [
-            working_dir / "sp_config1" / "output",
-            working_dir / "sp_config2" / "output",
+            working_dir / "working" / "sp_config1" / "output",
+            working_dir / "working" / "sp_config2" / "output",
         ]
 
         copy_output(target_dirs, succesful_output_dirs)
+
+        # this will get a bit ugly but i need to
+        # overwrite at least one of the slurm output files for the second run
+        # with a walltime error
+
+        # copy output file from opt_config1___a001_b001 to opt_config1_sp_config1___a004_b006
+        # and overwrite the slurm output file
+        src_file = (
+            working_dir
+            / "working"
+            / "opt_config1"
+            / "output"
+            / "opt_config1___a001_b001"
+            / "slurm_output.out"
+        )
+        target_file = (
+            working_dir
+            / "working"
+            / "sp_config1"
+            / "output"
+            / "opt_config1__sp_config1___a004_b007"
+            / "slurm_output.out"
+        )
+        shutil.copy(src_file, target_file)
+
+        # copy and then rename the orca output file
+        src_file = (
+            working_dir
+            / "working"
+            / "opt_config1"
+            / "output"
+            / "opt_config1___a001_b001"
+            / "opt_config1___a001_b001.out"
+        )
+        target_file = (
+            working_dir
+            / "working"
+            / "sp_config1"
+            / "output"
+            / "opt_config1__sp_config1___a004_b007"
+            / "opt_config1__sp_config1___a004_b007.out"
+        )
+        shutil.copy(src_file, target_file)
 
         monkeypatch.setattr(batch_manager, "wait_time", 0.14)
         monkeypatch.setattr(batch_manager, "max_loop", 8)
@@ -402,8 +445,8 @@ def test_parallel_steps(multilayer_tmp_dir, monkeypatch):
     )
 
     assert len(all_results) == 11
-    assert len(failed) == 7
-    assert len(not_failed) == 24
+    assert len(failed) == 8
+    assert len(not_failed) == 23
 
 
 def copy_output(target_dirs, succesful_output_dirs):

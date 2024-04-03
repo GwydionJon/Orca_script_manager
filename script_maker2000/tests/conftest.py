@@ -190,6 +190,17 @@ def pre_started_dir(multilayer_tmp_dir):
     shutil.copy(current_path / "test_data" / "output.tar.gz", multilayer_tmp_dir)
     shutil.unpack_archive(multilayer_tmp_dir / "output.tar.gz", multilayer_tmp_dir)
 
+    # src_dirs
+    src_dirs = [
+        multilayer_tmp_dir / "output" / "sp_config1",
+        multilayer_tmp_dir / "output" / "sp_config2",
+        multilayer_tmp_dir / "output" / "opt_config1",
+        multilayer_tmp_dir / "output" / "opt_config2",
+    ]
+
+    for dir in src_dirs:
+        shutil.move(dir, multilayer_tmp_dir / "output" / "working" / dir.stem)
+
     with open(multilayer_tmp_dir / "output" / "job_backup.json", "r") as f:
         job_backup = json.load(f)
 

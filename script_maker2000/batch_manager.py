@@ -6,6 +6,9 @@ import logging
 import itertools
 import json
 from pathlib import Path
+from tqdm import tqdm
+import traceback
+
 
 from script_maker2000.files import read_config, create_working_dir_structure
 from script_maker2000.work_manager import WorkManager
@@ -42,6 +45,7 @@ class BatchManager:
 
             self.work_managers = self.setup_work_modules_manager()
             self.copy_input_files_to_first_work_manager()
+
         else:
             self.working_dir = Path(self.main_config["main_config"]["output_dir"])
             self.new_input_path = self.working_dir / "start_input_files"
@@ -54,6 +58,9 @@ class BatchManager:
         # parameter for loop
         self.wait_time = self.main_config["main_config"]["wait_for_results_time"]
         self.max_loop = -1  # -1 means infinite loop until all jobs are done
+
+        # setup_progress_bat
+        self.job_tqdm = self._create_job_tqdm()
 
         # set up logging for this module
         self.log = logging.getLogger("BatchManager")
@@ -159,6 +166,26 @@ class BatchManager:
         job_dict = {job.unique_job_id: job for job in jobs}
         return job_dict
 
+    def _create_job_tqdm(self):
+
+        total_jobs = set()
+        job_tqdm = tqdm(total=0, desc="Jobs done", position=0)
+
+        for job in self.job_dict.values():
+            job.tqdm = job_tqdm
+            for job_key in job.all_keys:
+                different_keys = (
+                    "_".join(job.all_keys[: job.all_keys.index(job_key) + 1])
+                    + job.mol_id
+                )
+                total_jobs.add(different_keys)
+        print("total jobs to do:", len(total_jobs))
+        job_tqdm.total = len(total_jobs)
+
+        job_tqdm.refresh()
+
+        return job_tqdm
+
     def _jobs_from_backup_json(self, json_file_path):
         """
         Creates job objects from a backup JSON file.
@@ -171,10 +198,10 @@ class BatchManager:
         """
         # prepare all job ids
         job_dict = {}
-        with open(json_file_path, "r") as json_file:
+        with open(json_file_path, "r", encoding="utf-8") as json_file:
             job_backup = json.load(json_file)
 
-        for job_id_backup, job_dict_backup in job_backup.items():
+        for job_id_backup, job_dict_backup in tqdm(job_backup.items()):
             job_dict[job_id_backup] = Job.import_from_dict(
                 job_dict_backup, self.working_dir
             )
@@ -274,7 +301,9 @@ class BatchManager:
         for job in self.job_dict.values():
             job_backup[job.unique_job_id] = job.export_as_dict()
 
-        with open(self.working_dir / "job_backup.json", "w") as json_file:
+        with open(
+            self.working_dir / "job_backup.json", "w", encoding="utf-8"
+        ) as json_file:
             json.dump(job_backup, json_file)
 
     async def batch_processing_loop(self):
@@ -330,6 +359,9 @@ class BatchManager:
         # check tasks for errors:
         exit_code = 0
         all_errors = []
+        all_error_tasks = []
+        all_error_traceback = []
+
         for task in task_results:
             try:
                 self.log.info(task.result())
@@ -337,22 +369,31 @@ class BatchManager:
                 if e:
                     exit_code = 1
                     all_errors.append(e)
+                    all_error_traceback.append(traceback.format_exc())
+                    all_error_tasks.append(task)
             except asyncio.CancelledError as e:
                 if e:
                     exit_code = 1
                     all_errors.append(e)
+                    all_error_traceback.append(traceback.format_exc())
+                    all_error_tasks.append(task)
+
             except Exception as e:
                 if e:
                     exit_code = 1
                     all_errors.append(e)
+                    all_error_traceback.append(traceback.format_exc())
+                    all_error_tasks.append(task)
 
         if exit_code == 1:
             self.log.error(
-                "There was an error in the batch processing loop."
-                + f"Errors: {all_errors}"
+                f"There was an error in the batch processing loop in task {all_error_tasks}."
+                + f"Errors: {all_errors} /n /n"
+                + f"Adding Traceback: {all_error_traceback}"
             )
             raise RuntimeError(
-                "There was an error in the batch processing loop."
+                f"There was an error in the batch processing loop in task {all_error_tasks}."
                 + f"Errors: {all_errors}"
+                + f"Adding Traceback: {all_error_traceback}"
             )
         return exit_code, task_results

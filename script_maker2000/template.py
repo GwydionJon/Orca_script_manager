@@ -36,7 +36,9 @@ class TemplateModule:
         self.main_config = main_config
         self.config_key = config_key
         self.internal_config = self.create_internal_config(main_config, config_key)
-        self.working_dir = Path(main_config["main_config"]["output_dir"]) / config_key
+        self.working_dir = (
+            Path(main_config["main_config"]["output_dir"]) / "working" / config_key
+        )
 
         # set up logging for this module
         self.log = logging.getLogger(self.config_key)

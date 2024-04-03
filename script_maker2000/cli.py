@@ -4,6 +4,11 @@ import tarfile
 import shutil
 import pandas as pd
 import json
+
+import cProfile
+
+import atexit
+
 from script_maker2000.config_maker import app, add_main_config
 from script_maker2000.files import check_config, collect_input_files
 from script_maker2000 import BatchManager
@@ -36,17 +41,35 @@ def config_check(config):
     "--continue_run",
     "-cont",
     is_flag=True,
-    flag_value=False,
+    flag_value=True,
     type=click.BOOL,
     default=False,
     help="If the batch processing should continue from the last calculation.",
 )
-def start_config(config, continue_run):
+@click.option(
+    "--profile",
+    is_flag=True,
+    help="If the code should be profiled. Will create a '.prof' file",
+)
+def start_config(config, continue_run, profile: bool):
     """Start the batch manager with the given config file."""
     if not Path(config).exists():
         click.echo(f"Config file not found at {config}")
 
         return 1
+
+    if profile:
+        print("Profiling the code")
+        pr = cProfile.Profile()
+        pr.enable()
+
+        def exit_():
+            pr.disable()
+            print("Profiling completed")
+
+            pr.dump_stats("profiling_run.prof")
+
+        atexit.register(exit_)
 
     check_config(main_config=config, override_continue_job=continue_run)
 
@@ -77,12 +100,30 @@ def start_config(config, continue_run):
     default=False,
     help="If the extracted files should be removed initilization of the calculation.",
 )
-def start_tar(tar, extract_path, remove_extracted):
+@click.option(
+    "--profile",
+    is_flag=True,
+    help="If the code should be profiled. Will create a '.prof' file",
+)
+def start_tar(tar, extract_path, remove_extracted, profile: bool):
     """Start the batch processing with the given tarball."""
 
     extract_path = Path(extract_path)
     extract_path = extract_path.resolve()
     extract_path.mkdir(exist_ok=True, parents=True)
+
+    if profile:
+        print("Profiling the code")
+        pr = cProfile.Profile()
+        pr.enable()
+
+        def exit_():
+            pr.disable()
+            print("Profiling completed")
+
+            pr.dump_stats(extract_path / "profiling_run.prof")
+
+        atexit.register(exit_)
 
     click.echo(f"Starting the batch processing with the tarball at {tar}.")
     with tarfile.open(tar, "r:gz") as tar:
@@ -93,14 +134,14 @@ def start_tar(tar, extract_path, remove_extracted):
 
     # load config file and replace output path
 
-    with open(config_path, "r") as f:
+    with open(config_path, "r", encoding="utf-8") as f:
         config = json.load(f)
 
     current_output_path = config["main_config"]["output_dir"]
     config["main_config"]["output_dir"] = str(
         extract_path.parents[0] / current_output_path
     )
-    with open(config_path, "w") as f:
+    with open(config_path, "w", encoding="utf-8") as f:
         json.dump(config, f)
 
     click.echo(f"Config file found at {config_path}")
