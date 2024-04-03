@@ -314,11 +314,7 @@ class OrcaModule(TemplateModule):
                 ) as f:
                     file_contents = f.read()
             except UnicodeDecodeError:
-                cls.log.warning(
-                    f"An encoding error occured in {orca_out_file}. Unreadable symbol will be replaced by '?'"
-                )
-                with open(orca_out_file, encoding="utf-8", errors="replace") as f:
-                    file_contents = f.read()
+                file_contents = _handle_encoding_error(orca_out_file)
 
             if check_orca_normal_termination(file_contents):
                 return "success"
@@ -333,11 +329,7 @@ class OrcaModule(TemplateModule):
                 ) as f:
                     file_contents = f.read()
             except UnicodeDecodeError:
-                cls.log.warning(
-                    f"An encoding error occured in {orca_out_file}. Unreadable symbol will be replaced by '?'"
-                )
-                with open(slurm_file, encoding="utf-8", errors="replace") as f:
-                    file_contents = f.read()
+                file_contents = _handle_encoding_error(slurm_file)
 
             if check_slurm_walltime_error(file_contents):
                 return "walltime_error"
@@ -346,3 +338,29 @@ class OrcaModule(TemplateModule):
             return "missing_files_error"
 
         return "unknown_error"
+
+
+def _handle_encoding_error(filename):
+
+    # read file as bytes to find the misbehaving character
+    with open(filename, "rb") as f:
+        byte_data = f.read()
+
+    try:
+        byte_data.decode("utf-8")
+    except UnicodeDecodeError as e:
+        error_position = e.start
+
+    # Decode up to the error position
+    partial_decoded_data = byte_data[:error_position].decode("utf-8", errors="ignore")
+
+    print(
+        f"An encoding error occured in {filename}. Unreadable symbol will be replaced by '?'"
+    )
+    print("Here are the last characters before the error occured:")
+    print(partial_decoded_data[-500:])
+
+    # now open the file with the error handling
+    with open(filename, encoding="utf-8", errors="replace") as f:
+        file_contents = f.read()
+    return file_contents

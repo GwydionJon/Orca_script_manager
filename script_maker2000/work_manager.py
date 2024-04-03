@@ -1,5 +1,4 @@
 import logging
-import time
 import asyncio
 from collections import defaultdict
 from script_maker2000.job import Job
@@ -212,9 +211,6 @@ class WorkManager:
             current_job_dict["submitted"].extend(
                 self.submit_jobs(current_job_dict["not_started"])
             )
-
-            # this should catch submission errors
-            time.sleep(3)
 
             # check on submitted jobs
             current_job_dict["returned"].extend(

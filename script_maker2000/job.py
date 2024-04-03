@@ -131,8 +131,8 @@ class Job:
                     overlapping_job.slurm_id_per_key[self.current_key] = (
                         self.slurm_id_per_key[self.current_key]
                     )
-                else:
-                    overlapping_job.status_per_key[self.current_key] = "submitted"
+                # else:
+                #     overlapping_job.status_per_key[self.current_key] = "submitted"
 
         self._current_status = value
         self.status_per_key[self.current_key] = value
@@ -314,26 +314,28 @@ class Job:
                 old_step_id = self.current_step_id
                 old_output_dir = self.current_dirs["output"]
                 self.start_new_key(next_key, self.current_step + 1)
-                self.finished_keys.append(current_key)
+                if current_key not in self.finished_keys:
+                    self.finished_keys.append(current_key)
 
-                for input_file_type in self.input_file_types:
-                    input_file = old_output_dir / (old_step_id + input_file_type)
+                    for input_file_type in self.input_file_types:
+                        input_file = old_output_dir / (old_step_id + input_file_type)
 
-                    new_input_dir = self.current_dirs["input"]
-                    new_input_dir.mkdir(parents=True, exist_ok=True)
-                    new_file_name = self.current_step_id + input_file_type
-                    new_file = new_input_dir / new_file_name
+                        new_input_dir = self.current_dirs["input"]
+                        new_input_dir.mkdir(parents=True, exist_ok=True)
+                        new_file_name = self.current_step_id + input_file_type
+                        new_file = new_input_dir / new_file_name
 
-                    if not new_file.exists():
-                        shutil.copy(input_file, new_file)
-                    else:
-                        return "file_exists"
-                return "success"
+                        if not new_file.exists():
+                            shutil.copy(input_file, new_file)
+                        else:
+                            return "file_exists"
+                    return "success"
 
             elif self.current_status == "failed":
-                self.finished_keys.append(current_key)
+                if current_key not in self.finished_keys:
+                    self.finished_keys.append(current_key)
 
-                self.wrap_up_failed()
+                    self.wrap_up_failed()
 
                 return self.failed_reason
 
@@ -342,7 +344,9 @@ class Job:
 
         else:
             if self.current_status == "finished":
-                self.finished_keys.append(current_key)
+                if current_key not in self.finished_keys:
+
+                    self.finished_keys.append(current_key)
 
                 self.wrap_up()
                 return "finalized"
