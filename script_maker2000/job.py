@@ -562,7 +562,9 @@ class Job:
         # new_job.efficiency_data = cls.import_efficiency_data(
         #     input_dict["efficiency_data"]
         # )
-        new_job.efficiency_data = input_dict["efficiency_data"]
+        new_job.efficiency_data = {
+            int(key): value for key, value in input_dict["efficiency_data"].items()
+        }
 
         return new_job
 

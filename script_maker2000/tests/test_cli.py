@@ -101,7 +101,6 @@ def test_start_config_local(clean_tmp_dir, monkeypatch):
     assert "FileNotFoundError" in str(result.exception)
     assert result.exit_code == 1
     BatchManager.__init__ = original_init
-    1 / 0
 
 
 @pytest.mark.skipif(
