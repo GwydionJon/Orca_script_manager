@@ -296,10 +296,6 @@ class OrcaModule(TemplateModule):
         if isinstance(job_out_dir, str):
             job_out_dir = Path(job_out_dir)
 
-        # check for walltime error
-        if list(job_out_dir.glob("walltime_error.txt")):
-            return "walltime_error"
-
         # get orca output file
         orca_out_file = job_out_dir / (job_out_dir.stem + ".out")
         slurm_file = list(job_out_dir.glob("slurm*"))[0]

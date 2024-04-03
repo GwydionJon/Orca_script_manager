@@ -132,13 +132,10 @@ class WorkManager:
 
             else:
                 non_existing_output.append(job)
-
                 continue
 
             return_status_dict[work_module_status] += 1
-
             job.manage_return(work_module_status)
-
         for job in non_existing_output:
             finished_jobs.remove(job)
 
