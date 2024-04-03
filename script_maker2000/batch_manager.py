@@ -176,7 +176,7 @@ class BatchManager:
             for job_key in job.all_keys:
                 different_keys = job.all_keys[job.all_keys.index(job_key) + 1 :]
                 total_jobs.add(different_keys)
-
+        print("total jobs to do:", total_jobs)
         job_tqdm.total = len(total_jobs)
 
         job_tqdm.refresh()
