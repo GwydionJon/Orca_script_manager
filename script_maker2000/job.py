@@ -42,6 +42,9 @@ class Job:
         self.charge = charge
         self.multiplicity = multiplicity
 
+        # handles unit conversion
+        self.ureg = UnitRegistry(cache_folder=":auto:")
+
         self.current_key = "not_assigned"
         self._current_status = (
             "not_assigned"  # not_assigned,found, submitted, finished, failed
@@ -579,8 +582,8 @@ class Job:
         return new_value
 
     def _filter_data(self, data):
-        ureg = UnitRegistry()
 
+        ureg = self.ureg
         filtered_data = {}
 
         for key, value in data.items():
