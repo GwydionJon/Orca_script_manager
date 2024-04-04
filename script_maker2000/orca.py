@@ -84,8 +84,9 @@ class OrcaModule(TemplateModule):
         working_dir = self.working_dir.resolve()
 
         for key in orca_file_dict.keys():
+            print(key, orca_file_dict[key])
             slurm_dict[key] = {
-                "__jobname": f"{self.config_key}_{key}",
+                "__jobname": f"{key}",
                 "__VERSION": options["orca_version"],
                 "__ntasks": options["n_cores_per_calculation"],
                 "__memcore": options["ram_per_core"],
@@ -98,7 +99,6 @@ class OrcaModule(TemplateModule):
                 "__marked_files": f"{key}.inp",
                 "__timestemp": date_str,
             }
-
         return slurm_dict
 
     def create_slurm_scripts(self, slurm_config=None) -> Union[str, Path]:
