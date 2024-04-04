@@ -304,6 +304,8 @@ class OrcaModule(TemplateModule):
             raise Exception(f"Can't find slurm file in {job_out_dir} for job {job}")
         # check for orca errors only if xyz file exists
 
+        output_string = "unknown_error"
+
         if orca_out_file.exists():
             try:
                 with open(
@@ -315,9 +317,9 @@ class OrcaModule(TemplateModule):
                 file_contents = _handle_encoding_error(orca_out_file)
 
             if check_orca_normal_termination(file_contents):
-                return "success"
+                output_string = "success"
             if check_orca_memory_error(file_contents):
-                return "missing_ram_error"
+                output_string = "missing_ram_error"
 
         if slurm_file.exists():
             try:
@@ -330,12 +332,12 @@ class OrcaModule(TemplateModule):
                 file_contents = _handle_encoding_error(slurm_file)
 
             if check_slurm_walltime_error(file_contents):
-                return "walltime_error"
+                output_string = "walltime_error"
 
         if not orca_out_file.exists() and not slurm_file.exists():
-            return "missing_files_error"
+            output_string = "missing_files_error"
 
-        return "unknown_error"
+        return output_string
 
 
 def _handle_encoding_error(filename):

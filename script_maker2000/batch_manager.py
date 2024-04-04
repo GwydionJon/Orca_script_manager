@@ -267,9 +267,13 @@ class BatchManager:
 
             advancement_dict[advancement_output] += 1
 
+            if advancement_output != "not_finished":
+                self.job_tqdm.update(1)
+
         log_message = "Advancement dict: "
         for key, value in advancement_dict.items():
             log_message += f"{key}: {value} "
+
         self.log.info(log_message)
 
     def start_work_manager_loops(self):

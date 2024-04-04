@@ -72,7 +72,7 @@ class Job:
 
         self._init_all_dicts(working_dir, all_keys)
 
-        self.tqdm = None
+        # self.tqdm = None
 
         # prepare final_output dirs
         self.raw_success_dir = working_dir / "finished" / "raw_results" / self.mol_id
@@ -340,13 +340,13 @@ class Job:
                             shutil.copy(input_file, new_file)
                         else:
                             return "file_exists"
-                    self.tqdm.update()
+                    # self.tqdm.update()
                     return "success"
 
             elif self.current_status == "failed":
                 if current_key not in self.finished_keys:
                     self.finished_keys.append(current_key)
-                    self.tqdm.update()
+                    # self.tqdm.update()
 
                 self.wrap_up_combined()
 
@@ -359,7 +359,7 @@ class Job:
             # if the current key is the last key, the job is finished
             if self.current_status in ["finished", "failed"]:
                 self.finished_keys.append(current_key)
-                self.tqdm.update()
+                # self.tqdm.update()
 
                 return_str = self.wrap_up_combined()
 
@@ -373,13 +373,13 @@ class Job:
             #         self.finished_keys.append(current_key)
 
             #         self.wrap_up()
-            #     self.tqdm.update()
+            #     # self.tqdm.update()
             #     return "finalized"
 
             # elif self.current_status == "failed":
             #     if current_key not in self.finished_keys:
             #         self.finished_keys.append(current_key)
-            #         self.tqdm.update()
+            #         # self.tqdm.update()
 
             #     self.wrap_up_failed()
 
