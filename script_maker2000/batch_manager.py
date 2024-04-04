@@ -59,8 +59,6 @@ class BatchManager:
         self.wait_time = self.main_config["main_config"]["wait_for_results_time"]
         self.max_loop = -1  # -1 means infinite loop until all jobs are done
 
-        # setup_progress_bat
-
         # set up logging for this module
         self.log = logging.getLogger("BatchManager")
         formatter = logging.Formatter(

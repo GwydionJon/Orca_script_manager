@@ -203,7 +203,6 @@ class WorkManager:
 
             return_status_dict[work_module_status] += 1
             job.manage_return(work_module_status)
-
         for job in non_existing_output:
             returned_jobs.remove(job)
 
