@@ -267,8 +267,8 @@ class BatchManager:
 
             advancement_dict[advancement_output] += 1
 
-            if advancement_output != "not_finished":
-                self.job_tqdm.update(1)
+            # if advancement_output != "not_finished":
+            #     self.job_tqdm.update(1)
 
         log_message = "Advancement dict: "
         for key, value in advancement_dict.items():
@@ -335,8 +335,22 @@ class BatchManager:
                 break
 
             await asyncio.sleep(self.wait_time)
-
+            self.collect_current_job_status()
         return manager_tasks
+
+    def collect_current_job_status(self):
+
+        status_dict = defaultdict(lambda: 0)
+
+        for job in self.job_dict.values():
+            status = job.current_status
+            status_dict[status] += 1
+
+        progress_msg = "Current jobs status: "
+        for status, num in status_dict.items():
+            progress_msg += f"{status}: {num},"
+
+        print(progress_msg, end="\r", flush=True)
 
     def collect_result_overview(self):
         """
