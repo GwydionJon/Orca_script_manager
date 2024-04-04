@@ -60,7 +60,6 @@ class BatchManager:
         self.max_loop = -1  # -1 means infinite loop until all jobs are done
 
         # setup_progress_bat
-        self.job_tqdm = self._create_job_tqdm()
 
         # set up logging for this module
         self.log = logging.getLogger("BatchManager")
@@ -165,26 +164,6 @@ class BatchManager:
 
         job_dict = {job.unique_job_id: job for job in jobs}
         return job_dict
-
-    def _create_job_tqdm(self):
-
-        total_jobs = set()
-        job_tqdm = tqdm(total=0, desc="Jobs done", position=0)
-
-        for job in self.job_dict.values():
-            job.tqdm = job_tqdm
-            for job_key in job.all_keys:
-                different_keys = (
-                    "_".join(job.all_keys[: job.all_keys.index(job_key) + 1])
-                    + job.mol_id
-                )
-                total_jobs.add(different_keys)
-        print("total jobs to do:", len(total_jobs))
-        job_tqdm.total = len(total_jobs)
-
-        job_tqdm.refresh()
-
-        return job_tqdm
 
     def _jobs_from_backup_json(self, json_file_path):
         """
@@ -345,10 +324,12 @@ class BatchManager:
         for job in self.job_dict.values():
             status = job.current_status
             status_dict[status] += 1
+            for status in job.status_per_key.values():
+                status_dict[status] += 1
 
         progress_msg = "Current jobs status: "
         for status, num in status_dict.items():
-            progress_msg += f"{status}: {num},"
+            progress_msg += f"{status}: {num}, "
 
         print(progress_msg, end="\r", flush=True)
 
