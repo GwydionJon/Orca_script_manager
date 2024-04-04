@@ -443,6 +443,15 @@ class Job:
             if (target_dir).exists():
                 continue
 
+            # check if overlapping jobs have already started the next key. if not skip
+            for overlapping_job in self.overlapping_jobs:
+                continuing = False
+                if overlapping_job.current_key == key:
+                    if overlapping_job.current_status == "found":
+                        continuing = True
+            if continuing:
+                continue
+
             shutil.move(src_dir, target_dir)
 
             self.final_dirs[key] = target_dir
