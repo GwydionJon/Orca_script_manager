@@ -146,18 +146,11 @@ class WorkManager:
 
             if i == 0:
                 output_split = output_split[:-1]
-
-            if header_name == "JobID":
-                data[header_name] = output_split
-            elif header_name in ["MaxRSS"]:
-
-                data["maxRamUsage"] = output_split
-
             else:
                 data[header_name] = output_split
 
         filtered_data = self._filter_data(data)
-        print(filtered_data)
+        return filtered_data
 
     # self.efficiency_data[slurm_key] = filtered_data
 
@@ -170,9 +163,9 @@ class WorkManager:
         # sacct_format_keys = ["JobID", "State"]
         finished_jobs = []
 
-        for job in submitted_jobs:
-            if job.check_status_for_key(self.config_key) in ["returned", "failed"]:
-                finished_jobs.append(job)
+        # for job in submitted_jobs:
+        #     if job.check_status_for_key(self.config_key) in ["returned", "failed"]:
+        #         finished_jobs.append(job)
 
         self.log.info(f"Collected {len(finished_jobs)} returned jobs.")
 
@@ -203,8 +196,8 @@ class WorkManager:
 
             return_status_dict[work_module_status] += 1
             job.manage_return(work_module_status)
-        for job in non_existing_output:
-            returned_jobs.remove(job)
+            for job in non_existing_output:
+                returned_jobs.remove(job)
 
         self.log.info(
             f"Skipped {len(overlapping_jobs_info)} overlapping jobs as they are already done."
@@ -310,3 +303,73 @@ class WorkManager:
         self.log.info(f"All jobs done after {n_loops}.")
         self.is_finished = True
         return f"All jobs done after {n_loops}."
+
+    def _convert_order_of_magnitude(self, value):
+        if "K" in value:
+            scaling = 1000
+        elif "M" in value:
+            scaling = 1000000
+        elif "G" in value:
+            scaling = 1000000000
+        elif "T" in value:
+            scaling = 1000000000000
+        elif "P" in value:
+            scaling = 1000000000000000
+        else:
+            scaling = 1
+
+        try:
+            new_value = float(value[:-1]) * scaling
+        except ValueError:
+            if int(value) == 0:
+                new_value = 0.0
+        return new_value
+
+    def _filter_data(self, data):
+
+        ureg = self.ureg
+        filtered_data = {}
+
+        for key, value in data.items():
+
+            if value[0] == [""] and value[1] == [""]:
+                filtered_data[key] = "Missing"
+                continue
+
+            if key == "JobID":
+                filtered_data[key] = value[0]
+            elif key == "JobName":
+                filtered_data[key] = value[0]
+            elif key == "ExitCode":
+                filtered_data[key] = value[0]
+            elif key == "NCPUS":
+                filtered_data[key] = value[0]
+            elif key == "CPUTimeRAW":
+                filtered_data[key] = float(value[0]) * ureg.second
+            elif key == "ElapsedRaw":
+                filtered_data[key] = float(value[0]) * ureg.second
+            elif key == "TimelimitRaw":
+                filtered_data[key] = float(value[0]) * ureg.minute
+            elif key == "ConsumedEnergyRaw":
+                filtered_data[key] = float(value[1]) * ureg.joule
+            elif key == "MaxDiskRead":
+                filtered_data[key] = (
+                    self._convert_order_of_magnitude(value[1]) * ureg.byte
+                )
+            elif key == "MaxDiskWrite":
+                filtered_data[key] = (
+                    self._convert_order_of_magnitude(value[1]) * ureg.byte
+                )
+            elif key == "MaxVMSize":
+                filtered_data[key] = (
+                    self._convert_order_of_magnitude(value[1]) * ureg.byte
+                )
+            elif key == "ReqMem":
+                filtered_data[key] = (
+                    self._convert_order_of_magnitude(value[0]) * ureg.byte
+                )
+            elif key == "maxRamUsage":
+                filtered_data[key] = (
+                    self._convert_order_of_magnitude(value[1]) * ureg.byte
+                )
+        return filtered_data
