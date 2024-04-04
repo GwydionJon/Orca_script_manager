@@ -6,6 +6,7 @@ import shutil
 import re
 from typing import Union
 from script_maker2000.template import TemplateModule
+from script_maker2000.job import Job
 
 
 class OrcaModule(TemplateModule):
@@ -267,7 +268,7 @@ class OrcaModule(TemplateModule):
         return process
 
     @classmethod
-    def check_job_status(cls, job_out_dir: Union[str, Path]) -> int:
+    def check_job_status(cls, job: Job) -> int:
         """provide some method to verify if a single calculation was succesful.
         This should be handled indepentendly from the existence of this class object.
 
@@ -293,13 +294,14 @@ class OrcaModule(TemplateModule):
             pattern = re.compile(r"ORCA TERMINATED NORMALLY")
             return pattern.search(input_text)
 
-        if isinstance(job_out_dir, str):
-            job_out_dir = Path(job_out_dir)
+        job_out_dir = job.current_dirs["output"]
 
         # get orca output file
         orca_out_file = job_out_dir / (job_out_dir.stem + ".out")
-        slurm_file = list(job_out_dir.glob("slurm*"))[0]
-
+        try:
+            slurm_file = list(job_out_dir.glob("slurm*"))[0]
+        except IndexError:
+            raise Exception(f"Can't find slurm file in {job_out_dir} for job {job}")
         # check for orca errors only if xyz file exists
 
         if orca_out_file.exists():

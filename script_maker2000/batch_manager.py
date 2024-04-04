@@ -339,13 +339,25 @@ class BatchManager:
         Collects the result overview of the jobs.
         """
         status_dict = defaultdict(lambda: 0)
+        failed_set = set()
         for job in self.job_dict.values():
+
+            if job.current_status == "failed":
+                status_dict[job.failed_reason] += 1
+                failed_set.add(job.failed_reason)
+
             status_dict[job.current_status] += 1
 
-        log_message = "Status overview: "
-        for key, value in status_dict.items():
-            log_message += f"{key}: {value} "
+        log_message = "Status overview: \n"
+        for status, num in status_dict.items():
+            if status in failed_set:
+                log_message += f"\t{num} jobs failed with {status} \n"
+            elif status == "failed":
+                log_message += f"\t{num} jobs failed in total. \n"
+            else:
+                log_message += f"\t{num} jobs with {status} \n"
         self.log.info(log_message)
+        return status_dict
 
     def run_batch_processing(self):
         """
@@ -354,7 +366,7 @@ class BatchManager:
         This is the main working loop.
         """
         task_results = asyncio.run(self.batch_processing_loop())
-        self.collect_result_overview()
+        result_dict = self.collect_result_overview()
 
         # check tasks for errors:
         exit_code = 0
@@ -388,7 +400,7 @@ class BatchManager:
         if exit_code == 1:
             self.log.error(
                 f"There was an error in the batch processing loop in task {all_error_tasks}."
-                + f"Errors: {all_errors} /n /n"
+                + f"Errors: {all_errors} \n \n"
                 + f"Adding Traceback: {all_error_traceback}"
             )
             raise RuntimeError(
@@ -396,4 +408,13 @@ class BatchManager:
                 + f"Errors: {all_errors}"
                 + f"Adding Traceback: {all_error_traceback}"
             )
+
+        if "failed" in result_dict.keys():
+            exit_code = 1
+            self.log.error("Jobs have failed, please check log. Exiting with code 1.")
+            raise RuntimeError(
+                "Jobs have failed, please check log. Exiting with code 1."
+            )
+        else:
+            self.log.info(f"Batch processing loop finished with exit code {exit_code}.")
         return exit_code, task_results

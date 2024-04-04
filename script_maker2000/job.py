@@ -55,8 +55,8 @@ class Job:
             "finished": None,
             "failed": None,
         }
-        self.final_dir = None
-        self.failed_reason = None
+        self.final_dirs = {}
+        self._failed_reason = None
 
         self.efficiency_data = {}
 
@@ -81,7 +81,7 @@ class Job:
         self._overlapping_jobs = []
 
     def __repr__(self):
-        return (
+        rep_str = (
             "JOB: "
             + self.unique_job_id
             + " current_key: "
@@ -89,6 +89,9 @@ class Job:
             + " current status: "
             + self.current_status
         )
+        if self.current_status == "failed":
+            rep_str += " failed reason: " + self.failed_reason
+        return rep_str
 
     def _init_all_dicts(
         self,
@@ -125,22 +128,31 @@ class Job:
     @current_status.setter
     def current_status(self, value):
 
-        if value == "submitted":
+        if value in ["submitted", "finished", "failed"]:
             for overlapping_job in self.overlapping_jobs:
                 if (
                     overlapping_job.current_key == self.current_key
-                    and overlapping_job.current_status != "submitted"
+                    and overlapping_job.current_status != value
                 ):
-                    overlapping_job._current_status = "submitted"  # noqa
-                    overlapping_job.status_per_key[self.current_key] = "submitted"
+                    overlapping_job._current_status = value  # noqa
+                    overlapping_job.status_per_key[self.current_key] = value
                     overlapping_job.slurm_id_per_key[self.current_key] = (
                         self.slurm_id_per_key[self.current_key]
                     )
-                # else:
-                #     overlapping_job.status_per_key[self.current_key] = "submitted"
 
         self._current_status = value
         self.status_per_key[self.current_key] = value
+
+    @property
+    def failed_reason(self):
+        return self._failed_reason
+
+    @failed_reason.setter
+    def failed_reason(self, value):
+        self._failed_reason = value
+        for overlapping_job in self.overlapping_jobs:
+            if overlapping_job.failed_reason is None:
+                overlapping_job._failed_reason = value
 
     @property
     def overlapping_jobs(self):
@@ -278,16 +290,14 @@ class Job:
         if return_str == "success":
             self.current_status = "finished"
             if not self.current_dirs["finished"].exists():
-                shutil.copytree(
-                    self.current_dirs["output"], self.current_dirs["finished"]
-                )
-
+                shutil.move(self.current_dirs["output"], self.current_dirs["finished"])
         else:
             self.current_status = "failed"
             self.failed_reason = return_str
 
             if not self.current_dirs[self.failed_reason].exists():
-                shutil.copytree(
+
+                shutil.move(
                     self.current_dirs["output"], self.current_dirs[self.failed_reason]
                 )
 
@@ -313,13 +323,13 @@ class Job:
             if self.current_status == "finished":
 
                 old_step_id = self.current_step_id
-                old_output_dir = self.current_dirs["output"]
+                old_finished_dir = self.current_dirs["finished"]
                 self.start_new_key(next_key, self.current_step + 1)
                 if current_key not in self.finished_keys:
                     self.finished_keys.append(current_key)
 
                     for input_file_type in self.input_file_types:
-                        input_file = old_output_dir / (old_step_id + input_file_type)
+                        input_file = old_finished_dir / (old_step_id + input_file_type)
 
                         new_input_dir = self.current_dirs["input"]
                         new_input_dir.mkdir(parents=True, exist_ok=True)
@@ -338,7 +348,7 @@ class Job:
                     self.finished_keys.append(current_key)
                     self.tqdm.update()
 
-                self.wrap_up_failed()
+                self.wrap_up_combined()
 
                 return self.failed_reason
 
@@ -347,25 +357,35 @@ class Job:
 
         else:
             # if the current key is the last key, the job is finished
-            if self.current_status == "finished":
-                if current_key not in self.finished_keys:
-
-                    self.finished_keys.append(current_key)
-
-                    self.wrap_up()
+            if self.current_status in ["finished", "failed"]:
+                self.finished_keys.append(current_key)
                 self.tqdm.update()
-                return "finalized"
 
-            elif self.current_status == "failed":
-                if current_key not in self.finished_keys:
-                    self.finished_keys.append(current_key)
-                    self.tqdm.update()
+                return_str = self.wrap_up_combined()
 
-                self.wrap_up_failed()
-
-                return self.failed_reason
             else:
-                return self.current_status
+                return_str = "not_finished"
+
+            return return_str
+            # if self.current_status == "finished":
+            #     if current_key not in self.finished_keys:
+
+            #         self.finished_keys.append(current_key)
+
+            #         self.wrap_up()
+            #     self.tqdm.update()
+            #     return "finalized"
+
+            # elif self.current_status == "failed":
+            #     if current_key not in self.finished_keys:
+            #         self.finished_keys.append(current_key)
+            #         self.tqdm.update()
+
+            #     self.wrap_up_failed()
+
+            #     return self.failed_reason
+            # else:
+            #     return self.current_status
 
     def _clean_up(self):
         """Clean up the input and output directories.
@@ -382,91 +402,54 @@ class Job:
                 )
                 shutil.rmtree(dir)
 
-    def wrap_up_failed(self):
-        """
-        Performs the necessary actions when a job fails.
+    def wrap_up_combined(self):
 
-        This method copies the current directory associated with the failed reason to a final directory,
-        sets the status of the current key to "failed", and sets the status of all remaining keys to "failed".
+        wrap_up_return_str = "finalized"
 
-        Returns:
-            str: The reason for the job failure.
-        """
+        final_dir = self.raw_success_dir
 
-        # self.current_dirs[self.failed_reason]
-        self.final_dir = self.raw_failed_dir
-        # self.final_dir.mkdir(parents=True, exist_ok=True)
-        # copy previous finished directories to the final directory
         for key in self.finished_keys:  # pylint: disable=C0206
+
+            if key in self.final_dirs.keys():
+                continue
+
             key_id = (
                 "__".join(self.all_keys[: self.all_keys.index(key) + 1])
                 + "___"
                 + self.mol_id
             )
 
-            if key in self.status_per_key:
-                if self.status_per_key[key] == "finished":
-                    src_dir = self.finished_per_key[key]
-                    target_dir = self.raw_success_dir / key_id
-                elif self.status_per_key[key] == "failed":
-                    src_dir = (
-                        self.failed_per_key[key].parents[0]
-                        / self.failed_reason
-                        / key_id
-                    )
-                    target_dir = self.final_dir / self.failed_reason / key_id
-                    target_dir.mkdir(parents=True, exist_ok=True)
-                    if self.failed_reason == "missing_output":
-                        src_dir.mkdir(parents=True, exist_ok=True)
-                        missing_file = src_dir / "missing_output.txt"
-                        with open(missing_file, "w", encoding="utf-8") as f:
-                            f.write(
-                                f"No output files found in the output directory for job: {self}."
-                            )
+            if self.status_per_key[key] == "finished":
+                src_dir = self.finished_per_key[key]
+                target_dir = final_dir / key_id
 
+            elif self.status_per_key[key] == "failed":
+                src_dir = (
+                    self.failed_per_key[key].parents[0] / self.failed_reason / key_id
+                )
+                target_dir = final_dir / "failed" / self.failed_reason / key_id
+
+                wrap_up_return_str = self.failed_reason
+
+                if self.failed_reason == "missing_output":
+                    src_dir.mkdir(parents=True, exist_ok=True)
+                    missing_file = src_dir / "missing_output.txt"
+                    with open(missing_file, "w", encoding="utf-8") as f:
+                        f.write(
+                            f"No output files found in the output directory for job: {self}."
+                        )
             else:
-                src_dir = self.failed_per_key[key].parents[0] / self.failed_reason
+                continue
+            if (target_dir).exists():
+                continue
 
-                target_dir = self.final_dir / self.failed_reason / key_id
+            shutil.move(src_dir, target_dir)
 
-            shutil.copytree(src_dir, target_dir, dirs_exist_ok=True)
-
-        self.status_per_key[self.current_key] = "failed"
-        # set failed for all remaining keys
-        for key in self.all_keys[self.all_keys.index(self.current_key) + 1 :]:
-            self.status_per_key[key] = "failed_prior"
+            self.final_dirs[key] = target_dir
 
         self.collect_efficiency_data()
         self._clean_up()
-
-        return self.failed_reason
-
-    def wrap_up(self):
-        """
-        Performs the necessary actions when a job is finished.
-
-        This method copies all current finished files into the final success directory.
-
-        Returns:
-        str: The status of the job.
-        """
-
-        self.final_dir = self.raw_success_dir
-        self.current_status = "finalized"
-
-        # Copy all finished files to the final success directory
-
-        for key, finished_dir in self.finished_per_key.items():
-
-            key_id = (
-                "__".join(self.all_keys[: self.all_keys.index(key) + 1])
-                + "___"
-                + self.mol_id
-            )
-            shutil.copytree(finished_dir, self.final_dir / key_id, dirs_exist_ok=True)
-
-        self.collect_efficiency_data()
-        self._clean_up()
+        return wrap_up_return_str
 
     def prepare_initial_job(self, key, step, input_file):
         """Prepare the initial job for execution.
@@ -509,7 +492,9 @@ class Job:
         export_dict["current_key"] = self.current_key
         export_dict["_current_status"] = self._current_status
         export_dict["finished_keys"] = self.finished_keys
-        export_dict["final_dir"] = str(self.final_dir)
+        export_dict["final_dirs"] = {
+            key: str(value) for key, value in self.final_dirs.items()
+        }
         export_dict["failed_reason"] = self.failed_reason
 
         export_dict["slurm_id_per_key"] = {
@@ -552,7 +537,9 @@ class Job:
             / new_job.failed_per_key[new_job.current_key].name,
         }
 
-        new_job.final_dir = Path(input_dict["final_dir"])
+        new_job.final_dirs = {
+            key: Path(value) for key, value in input_dict["final_dirs"].items()
+        }
         new_job.failed_reason = input_dict["failed_reason"]
 
         new_job.slurm_id_per_key = input_dict["slurm_id_per_key"]
@@ -719,21 +706,3 @@ class Job:
                 else:
                     str_dict[slurm_key][key] = value
         return str_dict
-
-    # i dont think this is needed anymore
-    # since this the unit conversion only needs to happen when reading this data in
-
-    # @staticmethod
-    # def import_efficiency_data(efficiency_data_as_str):
-    #     # convert the string dict to a dict of pint quantities
-    #     efficiency_data = {}
-
-    #     for slurm_key, data in efficiency_data_as_str.items():
-    #         efficiency_data[int(slurm_key)] = {}
-    #         for key, value in data.items():
-    #             if key in ["JobID", "JobName", "ExitCode", "NCPUS"]:
-    #                 efficiency_data[int(slurm_key)][key] = value
-    #             else:
-    #                 ureg = UnitRegistry()
-    #                 efficiency_data[int(slurm_key)][key] = ureg(value)
-    #     return efficiency_data

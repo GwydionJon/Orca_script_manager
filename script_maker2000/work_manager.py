@@ -121,23 +121,34 @@ class WorkManager:
 
         # get job status from work module
         return_status_dict = defaultdict(lambda: 0)
-
+        overlapping_jobs_info = []
         non_existing_output = []
         for job in finished_jobs:
 
-            if job.current_dirs["output"].exists():
-                work_module_status = self.workModule.check_job_status(
-                    job.current_dirs["output"]
-                )
+            # first check if the job was successful and
+            # if the job was already performed by an overlapping job
 
-            else:
+            if job.check_status_for_key(self.config_key) != "returned":
+                overlapping_jobs_info.append(
+                    f"Job {job.unique_job_id} was already handled due to overlapping jobs."
+                )
+                continue
+
+            if not job.current_dirs["output"].exists():
                 non_existing_output.append(job)
                 continue
 
+            work_module_status = self.workModule.check_job_status(job)
+
             return_status_dict[work_module_status] += 1
             job.manage_return(work_module_status)
+
         for job in non_existing_output:
             finished_jobs.remove(job)
+
+        self.log.info(
+            f"Skipped {len(overlapping_jobs_info)} overlapping jobs as they are already done."
+        )
 
         if non_existing_output:
             self.log.warning(
