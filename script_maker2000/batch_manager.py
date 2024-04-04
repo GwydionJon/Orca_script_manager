@@ -324,8 +324,9 @@ class BatchManager:
         for job in self.job_dict.values():
             status = job.current_status
             status_dict[status] += 1
-            for status in job.status_per_key.values():
-                status_dict[status] += 1
+            for key, status in job.status_per_key.items():
+                if key != job.current_key:
+                    status_dict[status] += 1
 
         progress_msg = "Current jobs status: "
         for status, num in status_dict.items():
