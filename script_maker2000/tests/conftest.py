@@ -206,6 +206,7 @@ def pre_started_dir(multilayer_tmp_dir):
 
     for key in job_backup.keys():
         job_backup[key]["efficiency_data"] = {}
+        job_backup[key]["final_dirs"] = {}
 
     with open(multilayer_tmp_dir / "output" / "job_backup.json", "w") as f:
         json.dump(job_backup, f)

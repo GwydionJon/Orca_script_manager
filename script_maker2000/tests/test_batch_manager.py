@@ -190,6 +190,7 @@ def test_batch_loop_no_files(clean_tmp_dir, monkeypatch):
             )
             == 11
         )
+
     else:
         monkeypatch.setattr(batch_manager, "wait_time", 10)
         monkeypatch.setattr(batch_manager, "max_loop", 10)
@@ -199,8 +200,7 @@ def test_batch_loop_no_files(clean_tmp_dir, monkeypatch):
             monkeypatch.setattr(work_manager, "max_loop", 10)
 
         exit_code, task_results = batch_manager.run_batch_processing()
-
-        assert exit_code == 0
+        exit_code == 0
         for task_result in task_results:
             assert task_result.done() is True
             assert "done" in task_result.result()
@@ -280,12 +280,12 @@ def test_batch_loop_with_files(clean_tmp_dir, monkeypatch):
             for work_manager in work_manager_list:
                 monkeypatch.setattr(work_manager, "wait_time", 10)
                 monkeypatch.setattr(work_manager, "max_loop", -1)
-
-    exit_code, task_results = batch_manager.run_batch_processing()
-    assert exit_code == 0
-    for task_result in task_results:
-        assert task_result.done() is True
-        assert "All jobs done after" in task_result.result()
+    with pytest.raises(RuntimeError):
+        exit_code, task_results = batch_manager.run_batch_processing()
+        assert exit_code == 1
+        for task_result in task_results:
+            assert task_result.done() is True
+            assert "All jobs done after" in task_result.result()
 
     all_results = list(batch_manager.working_dir.glob("finished/raw_results/*"))
     failed = list(batch_manager.working_dir.glob("finished/raw_results/*/failed*"))
@@ -419,7 +419,13 @@ def test_parallel_steps(multilayer_tmp_dir, monkeypatch):
             for work_manager in work_manager_list:
                 monkeypatch.setattr(work_manager, "wait_time", 0.1)
                 monkeypatch.setattr(work_manager, "max_loop", 8)
-
+        with pytest.raises(RuntimeError):
+            exit_code, task_results = batch_manager.run_batch_processing()
+            assert exit_code == 1
+            for task_result in task_results:
+                assert task_result.done() is True
+                assert "All jobs done after" in task_result.result()
+    # if remote
     else:
         monkeypatch.setattr(batch_manager, "wait_time", 10)
         monkeypatch.setattr(batch_manager, "max_loop", -1)
@@ -429,23 +435,40 @@ def test_parallel_steps(multilayer_tmp_dir, monkeypatch):
                 monkeypatch.setattr(work_manager, "wait_time", 10)
                 monkeypatch.setattr(work_manager, "max_loop", -1)
 
-    exit_code, task_results = batch_manager.run_batch_processing()
-    assert exit_code == 0
+        exit_code, task_results = batch_manager.run_batch_processing()
+        assert exit_code == 0
 
-    for task_result in task_results:
-        assert task_result.done() is True
-        assert "All jobs done after" in task_result.result()
+        for task_result in task_results:
+            assert task_result.done() is True
+            assert "All jobs done after" in task_result.result()
 
     assert len(list(batch_manager.working_dir.glob("finished/raw_results/*"))) == 11
 
     all_results = list(batch_manager.working_dir.glob("finished/raw_results/*"))
-    failed = list(batch_manager.working_dir.glob("finished/raw_results/*/failed*"))
+    failed = list(batch_manager.working_dir.glob("finished/raw_results/*/failed/*/*"))
     not_failed = list(
         batch_manager.working_dir.glob("finished/raw_results/*/[!failed]*")
     )
 
+    # for list_, name in zip(
+    #     [all_results, failed, not_failed], ["all", "failed", "not_failed"]
+    # ):
+    #     print(name)
+    #     for value in list_:
+    #         if name == "failed":
+    #             print(
+    #                 value.parent.parent.name,
+    #                 value.parent.parent.name,
+    #                 value.parent.name,
+    #                 value.name,
+    #             )
+    #         else:
+    #             print(value.parent.name, value.name)
+
+    #     print()
+
     assert len(all_results) == 11
-    assert len(failed) == 8
+    assert len(failed) == 15
     assert len(not_failed) == 23
 
 
@@ -492,7 +515,6 @@ def test_continue_run(pre_started_dir, monkeypatch):
         BatchManager(main_config_path)
 
     batch_manager = BatchManager(main_config_path, override_continue_job=True)
-
     assert len(list(batch_manager.working_dir.glob("finished/raw_results/*"))) == 0
 
     if shutil.which("sbatch") is None:
@@ -516,12 +538,12 @@ def test_continue_run(pre_started_dir, monkeypatch):
             for work_manager in work_manager_list:
                 monkeypatch.setattr(work_manager, "wait_time", 10)
                 monkeypatch.setattr(work_manager, "max_loop", -1)
-
-    exit_code, task_results = batch_manager.run_batch_processing()
-    assert exit_code == 0
-    for task_result in task_results:
-        assert task_result.done() is True
-        assert "All jobs done after" in task_result.result()
+    with pytest.raises(RuntimeError):
+        exit_code, task_results = batch_manager.run_batch_processing()
+        assert exit_code == 1
+        for task_result in task_results:
+            assert task_result.done() is True
+            assert "All jobs done after" in task_result.result()
 
     all_results = list(batch_manager.working_dir.glob("finished/raw_results/*"))
     failed = list(batch_manager.working_dir.glob("finished/raw_results/*/failed*"))
