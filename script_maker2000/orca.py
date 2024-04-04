@@ -84,7 +84,6 @@ class OrcaModule(TemplateModule):
         working_dir = self.working_dir.resolve()
 
         for key in orca_file_dict.keys():
-            print(key, orca_file_dict[key])
             slurm_dict[key] = {
                 "__jobname": f"{key}",
                 "__VERSION": options["orca_version"],

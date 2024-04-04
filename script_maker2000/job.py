@@ -449,8 +449,8 @@ class Job:
                 if overlapping_job.current_key == key:
                     if overlapping_job.current_status == "found":
                         continuing = True
-            if continuing:
-                continue
+                if continuing:
+                    continue
 
             shutil.move(src_dir, target_dir)
 
