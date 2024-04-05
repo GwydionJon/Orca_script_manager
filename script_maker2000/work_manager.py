@@ -159,12 +159,14 @@ class WorkManager:
 
         if not job_slurm_ids:
             return finished_jobs
+
         slurm_df = self._get_slurm_sacct_output(job_slurm_ids.keys(), sacct_format_keys)
+        self.log.debug(slurm_df)
 
         # remove lines with batch and extern
         slurm_df = slurm_df[~slurm_df["JobName"].str.contains("batch|extern")]
         for slurm_id, job in job_slurm_ids.items():
-            slurm_job = slurm_df[slurm_df["JobID"] == slurm_id]
+            slurm_job = slurm_df[slurm_df["JobID"].astype(int) == int(slurm_id)]
             if slurm_job.empty:
                 continue
 

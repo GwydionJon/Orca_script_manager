@@ -341,7 +341,7 @@ def fake_slurm_function():
 
             id_list = [
                 [
-                    int(i),
+                    str(i),
                     f"{i}.batch",
                     f"{i}.extern",
                 ]
