@@ -6,6 +6,7 @@ import shutil
 import re
 from typing import Union
 from script_maker2000.template import TemplateModule
+from script_maker2000.job import Job
 
 
 class OrcaModule(TemplateModule):
@@ -84,7 +85,7 @@ class OrcaModule(TemplateModule):
 
         for key in orca_file_dict.keys():
             slurm_dict[key] = {
-                "__jobname": f"{self.config_key}_{key}",
+                "__jobname": f"{key}",
                 "__VERSION": options["orca_version"],
                 "__ntasks": options["n_cores_per_calculation"],
                 "__memcore": options["ram_per_core"],
@@ -97,7 +98,6 @@ class OrcaModule(TemplateModule):
                 "__marked_files": f"{key}.inp",
                 "__timestemp": date_str,
             }
-
         return slurm_dict
 
     def create_slurm_scripts(self, slurm_config=None) -> Union[str, Path]:
@@ -267,7 +267,7 @@ class OrcaModule(TemplateModule):
         return process
 
     @classmethod
-    def check_job_status(cls, job_out_dir: Union[str, Path]) -> int:
+    def check_job_status(cls, job: Job) -> int:
         """provide some method to verify if a single calculation was succesful.
         This should be handled indepentendly from the existence of this class object.
 
@@ -293,14 +293,17 @@ class OrcaModule(TemplateModule):
             pattern = re.compile(r"ORCA TERMINATED NORMALLY")
             return pattern.search(input_text)
 
-        if isinstance(job_out_dir, str):
-            job_out_dir = Path(job_out_dir)
+        job_out_dir = job.current_dirs["output"]
 
         # get orca output file
         orca_out_file = job_out_dir / (job_out_dir.stem + ".out")
-        slurm_file = list(job_out_dir.glob("slurm*"))[0]
-
+        try:
+            slurm_file = list(job_out_dir.glob("slurm*"))[0]
+        except IndexError:
+            raise Exception(f"Can't find slurm file in {job_out_dir} for job {job}")
         # check for orca errors only if xyz file exists
+
+        output_string = "unknown_error"
 
         if orca_out_file.exists():
             try:
@@ -313,9 +316,9 @@ class OrcaModule(TemplateModule):
                 file_contents = _handle_encoding_error(orca_out_file)
 
             if check_orca_normal_termination(file_contents):
-                return "success"
+                output_string = "success"
             if check_orca_memory_error(file_contents):
-                return "missing_ram_error"
+                output_string = "missing_ram_error"
 
         if slurm_file.exists():
             try:
@@ -328,12 +331,12 @@ class OrcaModule(TemplateModule):
                 file_contents = _handle_encoding_error(slurm_file)
 
             if check_slurm_walltime_error(file_contents):
-                return "walltime_error"
+                output_string = "walltime_error"
 
         if not orca_out_file.exists() and not slurm_file.exists():
-            return "missing_files_error"
+            output_string = "missing_files_error"
 
-        return "unknown_error"
+        return output_string
 
 
 def _handle_encoding_error(filename):

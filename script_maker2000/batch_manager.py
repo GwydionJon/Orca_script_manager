@@ -59,9 +59,6 @@ class BatchManager:
         self.wait_time = self.main_config["main_config"]["wait_for_results_time"]
         self.max_loop = -1  # -1 means infinite loop until all jobs are done
 
-        # setup_progress_bat
-        self.job_tqdm = self._create_job_tqdm()
-
         # set up logging for this module
         self.log = logging.getLogger("BatchManager")
         formatter = logging.Formatter(
@@ -166,26 +163,6 @@ class BatchManager:
         job_dict = {job.unique_job_id: job for job in jobs}
         return job_dict
 
-    def _create_job_tqdm(self):
-
-        total_jobs = set()
-        job_tqdm = tqdm(total=0, desc="Jobs done", position=0)
-
-        for job in self.job_dict.values():
-            job.tqdm = job_tqdm
-            for job_key in job.all_keys:
-                different_keys = (
-                    "_".join(job.all_keys[: job.all_keys.index(job_key) + 1])
-                    + job.mol_id
-                )
-                total_jobs.add(different_keys)
-        print("total jobs to do:", len(total_jobs))
-        job_tqdm.total = len(total_jobs)
-
-        job_tqdm.refresh()
-
-        return job_tqdm
-
     def _jobs_from_backup_json(self, json_file_path):
         """
         Creates job objects from a backup JSON file.
@@ -267,9 +244,13 @@ class BatchManager:
 
             advancement_dict[advancement_output] += 1
 
+            # if advancement_output != "not_finished":
+            #     self.job_tqdm.update(1)
+
         log_message = "Advancement dict: "
         for key, value in advancement_dict.items():
             log_message += f"{key}: {value} "
+
         self.log.info(log_message)
 
     def start_work_manager_loops(self):
@@ -331,21 +312,50 @@ class BatchManager:
                 break
 
             await asyncio.sleep(self.wait_time)
-
+            self.collect_current_job_status()
         return manager_tasks
+
+    def collect_current_job_status(self):
+
+        status_dict = defaultdict(lambda: 0)
+
+        for job in self.job_dict.values():
+            status = job.current_status
+            status_dict[status] += 1
+            for key, status in job.status_per_key.items():
+                if key != job.current_key:
+                    status_dict[status] += 1
+
+        progress_msg = "Current jobs status: "
+        for status, num in status_dict.items():
+            progress_msg += f"{status}: {num}, "
+
+        print(progress_msg, end="\r", flush=True)
 
     def collect_result_overview(self):
         """
         Collects the result overview of the jobs.
         """
         status_dict = defaultdict(lambda: 0)
+        failed_set = set()
         for job in self.job_dict.values():
+
+            if job.current_status == "failed":
+                status_dict[job.failed_reason] += 1
+                failed_set.add(job.failed_reason)
+
             status_dict[job.current_status] += 1
 
-        log_message = "Status overview: "
-        for key, value in status_dict.items():
-            log_message += f"{key}: {value} "
+        log_message = "Status overview: \n"
+        for status, num in status_dict.items():
+            if status in failed_set:
+                log_message += f"\t{num} jobs failed with {status} \n"
+            elif status == "failed":
+                log_message += f"\t{num} jobs failed in total. \n"
+            else:
+                log_message += f"\t{num} jobs with {status} \n"
         self.log.info(log_message)
+        return status_dict
 
     def run_batch_processing(self):
         """
@@ -354,7 +364,7 @@ class BatchManager:
         This is the main working loop.
         """
         task_results = asyncio.run(self.batch_processing_loop())
-        self.collect_result_overview()
+        result_dict = self.collect_result_overview()
 
         # check tasks for errors:
         exit_code = 0
@@ -388,7 +398,7 @@ class BatchManager:
         if exit_code == 1:
             self.log.error(
                 f"There was an error in the batch processing loop in task {all_error_tasks}."
-                + f"Errors: {all_errors} /n /n"
+                + f"Errors: {all_errors} \n \n"
                 + f"Adding Traceback: {all_error_traceback}"
             )
             raise RuntimeError(
@@ -396,4 +406,13 @@ class BatchManager:
                 + f"Errors: {all_errors}"
                 + f"Adding Traceback: {all_error_traceback}"
             )
+
+        if "failed" in result_dict.keys():
+            exit_code = 1
+            self.log.error("Jobs have failed, please check log. Exiting with code 1.")
+            raise RuntimeError(
+                "Jobs have failed, please check log. Exiting with code 1."
+            )
+        else:
+            self.log.info(f"Batch processing loop finished with exit code {exit_code}.")
         return exit_code, task_results

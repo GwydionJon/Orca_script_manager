@@ -98,7 +98,7 @@ def test_start_config_local(clean_tmp_dir, monkeypatch):
 
     runner = CliRunner()
     result = runner.invoke(start_config, ["--config", main_config_path, "--profile"])
-    assert "FileNotFoundError" in str(result.exception)
+    assert "Jobs have failed" in str(result.exception)
     assert result.exit_code == 1
     BatchManager.__init__ = original_init
 
@@ -178,8 +178,8 @@ def test_collect_files(clean_tmp_dir):
 def test_start_tar_local(clean_tmp_dir, monkeypatch):
     def new_init(self, *args, **kwargs):
         original_init(self, *args, **kwargs)
-        self.wait_time = 3
-        self.max_loop = 3
+        self.wait_time = 1
+        self.max_loop = 10
 
     def mock_run_job(args, **kw):
         class TestClass:
@@ -214,7 +214,7 @@ def test_start_tar_local(clean_tmp_dir, monkeypatch):
         start_tar, ["--tar", tar_path, "-e", str(prep_path)], catch_exceptions=True
     )
 
-    assert "FileNotFoundError" in str(result.exception)
+    assert "Jobs have failed" in str(result.exception)
     assert result.exit_code == 1
     BatchManager.__init__ = original_init
 

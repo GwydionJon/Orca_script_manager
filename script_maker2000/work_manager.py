@@ -3,6 +3,9 @@ import asyncio
 from collections import defaultdict
 from script_maker2000.job import Job
 import time
+import subprocess
+import shutil
+import re
 
 
 class WorkManager:
@@ -106,38 +109,106 @@ class WorkManager:
         self.log.info(f"Submitted {len(not_started_jobs)} new jobs.")
         return not_started_jobs
 
+    def _get_slurm_sacct_output(self, slurm_ids, sacct_format_keys):
+
+        slurm_ids = ",".join([str(slurm_id) for slurm_id in slurm_ids])
+        collection_format_arguments = ",".join(sacct_format_keys)
+
+        ouput_sacct = subprocess.run(
+            [
+                shutil.which("sacct"),
+                "-j",
+                slurm_ids,
+                "--format",
+                collection_format_arguments,
+                "-p",
+            ],
+            shell=False,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+
+        ouput_sacct = ouput_sacct.stdout.strip().replace("\n", "")
+        ouput_sacct_split = ouput_sacct.split("|")
+
+        # split at first digit to seperate header from data
+        header = re.split(r"(\d)", ouput_sacct, 1)[0]
+
+        # number of header is number of | -1
+        header_names = header.split("|")[:-1]
+
+        data = {}
+
+        for i, header_name in enumerate(header_names):
+
+            output_split = ouput_sacct_split[i :: len(header_names)][1:]
+
+            if i == 0:
+                output_split = output_split[:-1]
+
+            if header_name == "JobID":
+                data[header_name] = output_split
+            elif header_name in ["MaxRSS"]:
+
+                data["maxRamUsage"] = output_split
+
+            else:
+                data[header_name] = output_split
+
+        filtered_data = self._filter_data(data)
+        print(filtered_data)
+
+    # self.efficiency_data[slurm_key] = filtered_data
+
     def check_submitted_jobs(self, submitted_jobs):
         """find new jobs in output dir and check if they have returned."""
 
+        # job_slurm_ids = [
+        #     job.slurm_id_per_key[self.config_key] for job in submitted_jobs
+        # ]
+        # sacct_format_keys = ["JobID", "State"]
         finished_jobs = []
+
         for job in submitted_jobs:
             if job.check_status_for_key(self.config_key) in ["returned", "failed"]:
                 finished_jobs.append(job)
+
         self.log.info(f"Collected {len(finished_jobs)} returned jobs.")
 
         return finished_jobs
 
-    def manage_returned_jobs(self, finished_jobs):
+    def manage_returned_jobs(self, returned_jobs):
 
         # get job status from work module
         return_status_dict = defaultdict(lambda: 0)
-
+        overlapping_jobs_info = []
         non_existing_output = []
-        for job in finished_jobs:
+        for job in returned_jobs:
 
-            if job.current_dirs["output"].exists():
-                work_module_status = self.workModule.check_job_status(
-                    job.current_dirs["output"]
+            # first check if the job was successful and
+            # if the job was already performed by an overlapping job
+
+            if job.check_status_for_key(self.config_key) != "returned":
+                overlapping_jobs_info.append(
+                    f"Job {job.unique_job_id} was already handled due to overlapping jobs."
                 )
+                continue
 
-            else:
+            if not job.current_dirs["output"].exists():
                 non_existing_output.append(job)
                 continue
+
+            work_module_status = self.workModule.check_job_status(job)
 
             return_status_dict[work_module_status] += 1
             job.manage_return(work_module_status)
         for job in non_existing_output:
-            finished_jobs.remove(job)
+            returned_jobs.remove(job)
+
+        self.log.info(
+            f"Skipped {len(overlapping_jobs_info)} overlapping jobs as they are already done."
+        )
 
         if non_existing_output:
             self.log.warning(
@@ -152,7 +223,10 @@ class WorkManager:
             [f"{key}: {value}" for key, value in return_status_dict.items()]
         )
 
-        self.log.info(f"Managed {len(finished_jobs)} returned jobs.\n\t" + output_info)
+        self.log.info(f"Managed {len(returned_jobs)} returned jobs.\n\t" + output_info)
+
+    def manage_finished_jobs(self, finished_jobs):
+        pass
 
     async def loop(self):
         """
@@ -220,8 +294,7 @@ class WorkManager:
             self.manage_returned_jobs(current_job_dict["returned"])
 
             # # check on finished jobs job status
-            # self.check_completed_job_status()
-            # self.manage_failed_jobs()
+            self.manage_finished_jobs(current_job_dict["finished"])
 
             if all_jobs_done(current_job_dict):
                 break

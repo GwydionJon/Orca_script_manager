@@ -148,8 +148,7 @@ def test_workmanager_loop(clean_tmp_dir, job_dict, monkeypatch):
     assert len(list(work_manager.failed_dir.glob("*/*"))) == 7
 
     assert len(list(work_manager.input_dir.glob("*"))) == 11
-    assert len(list(work_manager.input_dir.glob("*"))) == 11
-    assert len(list(work_manager.output_dir.glob("*"))) == 11
+    assert len(list(work_manager.output_dir.glob("*"))) == 0
 
 
 # def test_collect_job_data(clean_tmp_dir, monkeypatch):
