@@ -1,6 +1,5 @@
 from click.testing import CliRunner
 import json
-import numpy as np
 import shutil
 import pytest
 import tarfile
@@ -69,16 +68,6 @@ def test_start_config_local(clean_tmp_dir, monkeypatch):
         original_init(self, *args, **kwargs)
         self.max_loop = 3
 
-    def mock_run_job(args, **kw):
-        class TestClass:
-            def __init__(self, args, **kw):
-                self.args = args
-                self.kw = kw
-                self.stdout = f"COMPLETED job {np.random.randint(100)}"
-
-        test = TestClass(args, **kw)
-        return test
-
     main_config_path = clean_tmp_dir / "example_config.json"
     main_config_path = str(main_config_path)
 
@@ -93,12 +82,16 @@ def test_start_config_local(clean_tmp_dir, monkeypatch):
     original_init = BatchManager.__init__
     BatchManager.__init__ = new_init
 
+    # monkeypatch
+    def new_fake_slurm_function(*args, **kwargs):
+        raise NotImplementedError("The slurm commands can't be run inside this test")
+
+    monkeypatch.setattr("subprocess.run", new_fake_slurm_function)
     monkeypatch.setattr("shutil.which", lambda x: True)
-    monkeypatch.setattr("subprocess.run", mock_run_job)
 
     runner = CliRunner()
     result = runner.invoke(start_config, ["--config", main_config_path, "--profile"])
-    assert "Jobs have failed" in str(result.exception)
+    assert "The slurm commands can't be run inside this test" in str(result.exception)
     assert result.exit_code == 1
     BatchManager.__init__ = original_init
 
@@ -181,21 +174,16 @@ def test_start_tar_local(clean_tmp_dir, monkeypatch):
         self.wait_time = 1
         self.max_loop = 10
 
-    def mock_run_job(args, **kw):
-        class TestClass:
-            def __init__(self, args, **kw):
-                self.args = args
-                self.kw = kw
-                self.stdout = f"COMPLETED job {np.random.randint(100)}"
-
-        test = TestClass(args, **kw)
-        return test
-
     original_init = BatchManager.__init__
     BatchManager.__init__ = new_init
 
     monkeypatch.setattr("shutil.which", lambda x: True)
-    monkeypatch.setattr("subprocess.run", mock_run_job)
+
+    # monkeypatch
+    def new_fake_slurm_function(*args, **kwargs):
+        raise NotImplementedError("The slurm commands can't be run inside this test")
+
+    monkeypatch.setattr("subprocess.run", new_fake_slurm_function)
 
     main_config_path = clean_tmp_dir / "example_config.json"
     main_config_path = str(main_config_path)
@@ -214,7 +202,7 @@ def test_start_tar_local(clean_tmp_dir, monkeypatch):
         start_tar, ["--tar", tar_path, "-e", str(prep_path)], catch_exceptions=True
     )
 
-    assert "Jobs have failed" in str(result.exception)
+    assert "The slurm commands can't be run inside this test" in str(result.exception)
     assert result.exit_code == 1
     BatchManager.__init__ = original_init
 

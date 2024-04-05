@@ -319,7 +319,7 @@ def expected_df_second_log_jobs(expected_df_first_log_jobs):
 @pytest.fixture
 def fake_slurm_function():
 
-    def _fake_slurm_function(args, monkey_patch_test, **kwargs):
+    def _fake_slurm_function(args, monkey_patch_test, cache_list=[], **kwargs):
 
         # 12486234|PBEh3c_freq_16cores_sp_PBEh_3c_opt__PBEh3c_freq_16cores_sp___C24H3I13N2O3Si|TIMEOUT|
         # 12486234.batch|batch|CANCELLED|
@@ -330,7 +330,11 @@ def fake_slurm_function():
                 self.stdout = stdout
 
         if "sbatch" == args[0]:
-            fake_output_str = f"job {np.random.randint(100)}"
+            new_id = np.random.randint(100)
+            if new_id in cache_list:
+                new_id = max(cache_list) + 1
+            cache_list.append(new_id)
+            fake_output_str = f"job {new_id}"
 
         if "sacct" in args[0]:
             # get id list
