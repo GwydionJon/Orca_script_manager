@@ -4,6 +4,8 @@ import pandas as pd
 import numpy as np
 import asyncio
 import pytest
+import logging
+import time
 from script_maker2000.batch_manager import BatchManager
 
 
@@ -148,7 +150,7 @@ def test_batch_manager_threads(
     )
 
 
-# @pytest.mark.skipif(shutil.which("sbatch") is None, reason="No slurm available.")
+@pytest.mark.skipif(shutil.which("sbatch") is None, reason="No slurm available.")
 def test_batch_loop_no_files(clean_tmp_dir, monkeypatch):
 
     def mock_run_job(args, **kw):
@@ -206,80 +208,73 @@ def test_batch_loop_no_files(clean_tmp_dir, monkeypatch):
             assert "done" in task_result.result()
 
 
-def test_batch_loop_with_files(clean_tmp_dir, monkeypatch):
-
-    def mock_run_job(args, **kw):
-        class TestClass:
-            def __init__(self, args, **kw):
-                self.args = args
-                self.kw = kw
-                self.stdout = f"COMPLETED job {np.random.randint(100)}"
-
-        test = TestClass(args, **kw)
-        return test
+@pytest.mark.skipif(
+    shutil.which("sbatch") is not None, reason="Slurm available, use no files test."
+)
+def test_batch_loop_with_files(clean_tmp_dir, monkeypatch, fake_slurm_function):
 
     main_config_path = clean_tmp_dir / "example_config.json"
     batch_manager = BatchManager(main_config_path)
 
-    if shutil.which("sbatch") is None:
-        # test locally
-        monkeypatch.setattr("shutil.which", lambda x: True)
-        monkeypatch.setattr("subprocess.run", mock_run_job)
+    for logger in logging.Logger.manager.loggerDict.values():
+        if isinstance(logger, logging.Logger):  # Just to be sure it is a Logger object
+            logger.setLevel(logging.WARNING)
 
-        # copy output files into dir
+    # test locally
+    monkeypatch.setattr("shutil.which", lambda x: x)
 
-        example_output_files = Path(__file__).parent / "test_data" / "example_outputs"
-        target_dirs = []
-        for work_manager_list in batch_manager.work_managers.values():
-            for work_manager in work_manager_list:
-                target_dirs.append(work_manager.output_dir)
+    # copy output files into dir
 
-        for target_dir in target_dirs:
-            shutil.copytree(
-                example_output_files,
-                target_dir,
-                dirs_exist_ok=True,
-            )
-        # move example output files to output dirs and replace name for new naming scheme
-        for out_dir in target_dirs:
+    example_output_files = Path(__file__).parent / "test_data" / "example_outputs"
+    target_dirs = []
+    for work_manager_list in batch_manager.work_managers.values():
+        for work_manager in work_manager_list:
+            target_dirs.append(work_manager.output_dir)
 
-            if "opt_config" in str(out_dir):
-                replacement = "opt_config___"
-            elif "sp_config" in str(out_dir):
-                replacement = "opt_config__sp_config___"
-            for dir_ in out_dir.glob("*"):
-                new_dir = str(dir_).replace("START_", replacement)
-                new_dir = Path(new_dir)
-                new_dir.mkdir()
-                for file in dir_.glob("*"):
+    for target_dir in target_dirs:
+        shutil.copytree(
+            example_output_files,
+            target_dir,
+            dirs_exist_ok=True,
+        )
+    # move example output files to output dirs and replace name for new naming scheme
+    for out_dir in target_dirs:
 
-                    new_file = str(file.name).replace("START_", replacement)
-                    if "slurm" in new_file:
-                        new_file = "slurm_output.out"
+        if "opt_config" in str(out_dir):
+            replacement = "opt_config___"
+        elif "sp_config" in str(out_dir):
+            replacement = "opt_config__sp_config___"
+        for dir_ in out_dir.glob("*"):
+            new_dir = str(dir_).replace("START_", replacement)
+            new_dir = Path(new_dir)
+            new_dir.mkdir()
+            for file in dir_.glob("*"):
 
-                    file.rename(Path(new_dir) / new_file)
-                shutil.rmtree(dir_)
+                new_file = str(file.name).replace("START_", replacement)
+                if "slurm" in new_file:
+                    new_file = "slurm_output.out"
 
-        import time
+                file.rename(Path(new_dir) / new_file)
+            shutil.rmtree(dir_)
 
-        time.sleep(1)
+    time.sleep(1)
 
-        monkeypatch.setattr(batch_manager, "wait_time", 0.3)
-        monkeypatch.setattr(batch_manager, "max_loop", 8)
+    monkeypatch.setattr(batch_manager, "wait_time", 0.5)
+    monkeypatch.setattr(batch_manager, "max_loop", 8)
 
-        for work_manager_list in batch_manager.work_managers.values():
-            for work_manager in work_manager_list:
-                monkeypatch.setattr(work_manager, "wait_time", 0.3)
-                monkeypatch.setattr(work_manager, "max_loop", 5)
+    for work_manager_list in batch_manager.work_managers.values():
+        for work_manager in work_manager_list:
+            monkeypatch.setattr(work_manager, "wait_time", 0.3)
+            monkeypatch.setattr(work_manager, "max_loop", 6)
 
-    else:
-        monkeypatch.setattr(batch_manager, "wait_time", 10)
-        monkeypatch.setattr(batch_manager, "max_loop", -1)
+    # monkeypatch the job dict into the monkeypatched slurm function
+    job_dict = batch_manager.job_dict
 
-        for work_manager_list in batch_manager.work_managers.values():
-            for work_manager in work_manager_list:
-                monkeypatch.setattr(work_manager, "wait_time", 10)
-                monkeypatch.setattr(work_manager, "max_loop", -1)
+    def new_fake_slurm_function(*args, monkey_patch_test=job_dict, **kwargs):
+        return fake_slurm_function(*args, monkey_patch_test=monkey_patch_test, **kwargs)
+
+    monkeypatch.setattr("subprocess.run", new_fake_slurm_function)
+
     with pytest.raises(RuntimeError):
         exit_code, task_results = batch_manager.run_batch_processing()
         assert exit_code == 1

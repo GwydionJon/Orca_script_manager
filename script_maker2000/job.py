@@ -1,9 +1,6 @@
 import shutil
-import subprocess
 from pathlib import Path
-import re
 import pint
-from pint import UnitRegistry
 
 
 class Job:
@@ -41,9 +38,6 @@ class Job:
         self.input_file_types = input_file_types
         self.charge = charge
         self.multiplicity = multiplicity
-
-        # handles unit conversion
-        self.ureg = UnitRegistry(cache_folder=":auto:")
 
         self.current_key = "not_assigned"
         self._current_status = (
@@ -162,31 +156,6 @@ class Job:
     def overlapping_jobs(self, value):
         self._overlapping_jobs = value
 
-    def _check_slurm_completed(self, key):
-        process = subprocess.run(
-            [
-                shutil.which("sacct"),
-                "-j",
-                f"{self.slurm_id_per_key[key]}",
-                "-o",
-                "state",
-            ],
-            shell=False,
-            check=False,
-            capture_output=True,  # Python >= 3.7 only
-            text=True,  # Python >= 3.7 only
-            # shell = False is important on justus
-        )
-        process_out = process.stdout
-        process_out = " ".join(process_out.split())
-
-        if self.current_status == "submitted":
-            if "COMPLETED" in process_out:
-                self.current_status = "returned"
-                return True
-            else:
-                return False
-
     def check_status_for_key(self, key):
         """Check the status of the job for the given key.
 
@@ -218,19 +187,6 @@ class Job:
             return "already_finished"
 
         if key in self.status_per_key:
-
-            if self.status_per_key[key] == "submitted":
-                if self._check_slurm_completed(key):
-
-                    if not list(self.current_dirs["output"].glob("*")):
-                        self.current_status = "failed"
-                        self.failed_reason = "missing_output"
-                        return "failed"
-
-                    return "returned"
-
-                else:
-                    return "submitted"
 
             return self.status_per_key[key]
 
@@ -456,7 +412,7 @@ class Job:
 
             self.final_dirs[key] = target_dir
 
-        self.collect_efficiency_data()
+        # self.collect_efficiency_data()
         self._clean_up()
         return wrap_up_return_str
 
@@ -563,146 +519,6 @@ class Job:
         }
 
         return new_job
-
-    # here the job will handle collecting its efficiency data
-
-    def _convert_order_of_magnitude(self, value):
-        if "K" in value:
-            scaling = 1000
-        elif "M" in value:
-            scaling = 1000000
-        elif "G" in value:
-            scaling = 1000000000
-        elif "T" in value:
-            scaling = 1000000000000
-        elif "P" in value:
-            scaling = 1000000000000000
-        else:
-            scaling = 1
-
-        try:
-            new_value = float(value[:-1]) * scaling
-        except ValueError:
-            if int(value) == 0:
-                new_value = 0.0
-        return new_value
-
-    def _filter_data(self, data):
-
-        ureg = self.ureg
-        filtered_data = {}
-
-        for key, value in data.items():
-
-            if value[0] == [""] and value[1] == [""]:
-                filtered_data[key] = "Missing"
-                continue
-
-            if key == "JobID":
-                filtered_data[key] = value[0]
-            elif key == "JobName":
-                filtered_data[key] = value[0]
-            elif key == "ExitCode":
-                filtered_data[key] = value[0]
-            elif key == "NCPUS":
-                filtered_data[key] = value[0]
-            elif key == "CPUTimeRAW":
-                filtered_data[key] = float(value[0]) * ureg.second
-            elif key == "ElapsedRaw":
-                filtered_data[key] = float(value[0]) * ureg.second
-            elif key == "TimelimitRaw":
-                filtered_data[key] = float(value[0]) * ureg.minute
-            elif key == "ConsumedEnergyRaw":
-                filtered_data[key] = float(value[1]) * ureg.joule
-            elif key == "MaxDiskRead":
-                filtered_data[key] = (
-                    self._convert_order_of_magnitude(value[1]) * ureg.byte
-                )
-            elif key == "MaxDiskWrite":
-                filtered_data[key] = (
-                    self._convert_order_of_magnitude(value[1]) * ureg.byte
-                )
-            elif key == "MaxVMSize":
-                filtered_data[key] = (
-                    self._convert_order_of_magnitude(value[1]) * ureg.byte
-                )
-            elif key == "ReqMem":
-                filtered_data[key] = (
-                    self._convert_order_of_magnitude(value[0]) * ureg.byte
-                )
-            elif key == "maxRamUsage":
-                filtered_data[key] = (
-                    self._convert_order_of_magnitude(value[1]) * ureg.byte
-                )
-        return filtered_data
-
-    def collect_efficiency_data(self):
-
-        collection_format_arguments = [
-            "jobid",
-            "jobname",
-            "exitcode",
-            "NCPUS",
-            "cputimeraw",
-            "elapsedraw",
-            "timelimitraw",
-            "consumedenergyraw",
-            "MaxDiskRead",
-            "MaxDiskWrite",
-            "MaxVMSize",
-            "reqmem",
-            "MaxRSS",
-        ]
-
-        if shutil.which("sacct") is None:
-            # if sacct is not available, return None
-            # this will skip the collection of efficiency data
-            return None
-
-        for slurm_key in self.slurm_id_per_key.values():
-            ouput_sacct = subprocess.run(
-                [
-                    shutil.which("sacct"),
-                    "-j",
-                    str(slurm_key),
-                    "--format",
-                    ",".join(collection_format_arguments),
-                    "-p",
-                ],
-                shell=False,
-                check=False,
-                capture_output=True,
-                text=True,
-            )
-            ouput_sacct = ouput_sacct.stdout.strip().replace("\n", "")
-            ouput_sacct_split = ouput_sacct.split("|")
-
-            # split at first digit to seperate header from data
-            header = re.split(r"(\d)", ouput_sacct, 1)[0]
-
-            # number of header is number of | -1
-            header_names = header.split("|")[:-1]
-
-            data = {}
-
-            for i, header_name in enumerate(header_names):
-
-                output_split = ouput_sacct_split[i :: len(header_names)][1:]
-
-                if i == 0:
-                    output_split = output_split[:-1]
-
-                if header_name == "JobID":
-                    data[header_name] = output_split
-                elif header_name in ["MaxRSS"]:
-
-                    data["maxRamUsage"] = output_split
-
-                else:
-                    data[header_name] = output_split
-
-            filtered_data = self._filter_data(data)
-            self.efficiency_data[slurm_key] = filtered_data
 
     def export_efficiency_data(self):
 
