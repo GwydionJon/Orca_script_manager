@@ -74,10 +74,6 @@ def test_batch_loop_no_files(clean_tmp_dir, monkeypatch):
     monkeypatch.setattr(batch_manager, "wait_time", 10)
     monkeypatch.setattr(batch_manager, "max_loop", 10)
 
-    for work_manager in batch_manager.work_managers.values():
-        monkeypatch.setattr(work_manager, "wait_time", 10)
-        monkeypatch.setattr(work_manager, "max_loop", 10)
-
     exit_code, task_results = batch_manager.run_batch_processing()
     assert exit_code == 0
     for task_result in task_results:
