@@ -159,12 +159,10 @@ class WorkManager:
 
         if not job_slurm_ids:
             return finished_jobs
-
         slurm_df = self._get_slurm_sacct_output(job_slurm_ids.keys(), sacct_format_keys)
 
         # remove lines with batch and extern
         slurm_df = slurm_df[~slurm_df["JobName"].str.contains("batch|extern")]
-
         for slurm_id, job in job_slurm_ids.items():
             slurm_job = slurm_df[slurm_df["JobID"] == slurm_id]
             if slurm_job.empty:
@@ -177,7 +175,9 @@ class WorkManager:
                 job.current_status = "returned"
                 finished_jobs.append(job)
 
-        self.log.info(f"Collected {len(finished_jobs)} returned jobs.")
+        self.log.info(
+            f"Collected {len(finished_jobs)} returned jobs from {len(submitted_jobs)} submitted jobs."
+        )
 
         return finished_jobs
 
@@ -236,7 +236,6 @@ class WorkManager:
         job_slurm_ids = {}
 
         for job in finished_jobs:
-            print(job)
             # skip job if already collected.
             # This shouln't happen but is a safety measure
             if self.config_key in job.efficiency_data.keys():
@@ -338,7 +337,6 @@ class WorkManager:
 
             # manage finished jobs
             fresh_finished = self.manage_returned_jobs(current_job_dict["returned"])
-            print("fresh", fresh_finished)
             current_job_dict["finished"].extend(fresh_finished)
 
             # check on newly finished jobs to collect efficiency data
@@ -392,7 +390,6 @@ class WorkManager:
         filtered_data = {}
 
         for key, value in data.items():
-            print(key, value)
             if value[0] == [""] and value[1] == [""]:
                 filtered_data[key] = "Missing"
                 continue
