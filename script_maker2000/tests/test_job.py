@@ -2,6 +2,7 @@ import shutil
 import pytest
 from script_maker2000.job import Job
 import json
+import subprocess
 
 
 @pytest.mark.skipif(shutil.which("squeue") is not None, reason="Slurm available")
@@ -83,3 +84,55 @@ def test_job_collect_efficiency_data_local(clean_tmp_dir, monkeypatch):
 
     test_job2 = Job.import_from_dict(job_export_dict, clean_tmp_dir)
     assert test_job2.efficiency_data[1234]["MaxVMSize"]
+
+
+@pytest.mark.skipif(shutil.which("sbatch") is None, reason="No slurm available.")
+def test_job_collection_remote():
+    test_job = Job(
+        input_id="test_id",
+        all_keys=["key1", "key2"],
+        working_dir="test_dir",
+        charge=0,
+        multiplicity=1,
+    )
+    test_job.slurm_id_per_key = {
+        "key1": 12486228,
+        "key2": 12486234,
+    }
+
+    collection_format_arguments = [
+        "jobid",
+        "jobname",
+        "exitcode",
+        "NCPUS",
+        "cputimeraw",
+        "elapsedraw",
+        "timelimitraw",
+        "consumedenergyraw",
+        "MaxDiskRead",
+        "MaxDiskWrite",
+        "MaxVMSize",
+        "reqmem",
+        "MaxRSS",
+    ]
+    ouput_sacct = subprocess.run(
+        [
+            shutil.which("sacct"),
+            "-j",
+            str(12486228),
+            "--format",
+            ",".join(collection_format_arguments),
+            "-p",
+        ],
+        shell=False,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    print(ouput_sacct.stdout)
+    # test_job.collect_efficiency_data()
+
+    # eff_data = test_job.efficiency_data
+
+    # print(eff_data)
+    1 / 0
