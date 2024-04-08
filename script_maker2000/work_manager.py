@@ -66,13 +66,15 @@ class WorkManager:
     # loop
     # check if all jobs are done
 
-    def check_job_status(self):
+    def check_job_status(self, ignore_overlapping_jobs=True):
         """Go over all jobs and check their status for this work manager."""
 
         current_job_dict = defaultdict(list)
         current_key = self.config_key
         for job_id, job in self.job_dict.items():
-            status_result = job.check_status_for_key(current_key)
+            status_result = job.check_status_for_key(
+                current_key, ignore_overlapping_jobs=ignore_overlapping_jobs
+            )
             if status_result == "not_assigned":
                 # this job is not assigned to this work manager
                 # and will be skipped
@@ -109,17 +111,42 @@ class WorkManager:
 
     def submit_jobs(self, not_started_jobs):
 
+        # check if the total number of submitted jobs is below the maximum
+        total_running_jobs = 0
+        max_jobs = self.main_config["main_config"]["max_n_jobs"]
+        for job in self.job_dict.values():
+            if job.current_status == "submitted":
+                total_running_jobs += 1
+
+        started_jobs = []
+        overlapping_jobs = []
         for job in not_started_jobs:
             if job.current_status == "not_started":
+                if total_running_jobs >= max_jobs:
+                    continue
 
                 process = self.workModule.run_job(job.current_dirs["input"])
                 job_id = int(process.stdout.split("job ")[1])
                 job.slurm_id_per_key[self.config_key] = job_id
                 job.current_status = "submitted"
+                total_running_jobs += 1
+                started_jobs.append(job)
                 time.sleep(0.2)
+            elif job.current_status == "submitted_overlapping_job":
+                overlapping_jobs.append(job)
 
-        self.log.info(f"Submitted {len(not_started_jobs)} new jobs.")
-        return not_started_jobs
+        self.log.info(
+            f"Submitted {len(started_jobs)} new jobs with {len(overlapping_jobs)} overlapping jobs."
+        )
+
+        if len(started_jobs) != len(not_started_jobs):
+            self.log.info(
+                f"Only {len(started_jobs)} (+{len(overlapping_jobs)} overlapping jobs) out of {len(not_started_jobs)} "
+                + "jobs were submitted due to max job limit of {max_jobs}."
+            )
+
+        total_started_jobs = started_jobs + overlapping_jobs
+        return total_started_jobs
 
     def _get_slurm_sacct_output(self, slurm_ids, sacct_format_keys):
 

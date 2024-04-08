@@ -213,7 +213,10 @@ def collect_input(config, output, tar_name):
     click.echo(
         "To start the batch processing on the remote server, run the following command:"
     )
-    click.echo("python script_maker2000.py start --tar <tar_path>")
+    click.echo(
+        "After installing the script_maker2000 package on the remote server run:"
+    )
+    click.echo(f"script_maker2000 start_tar -t {tar_path.name}")
     click.echo(
         "The tar ball will be automatically extracted and the batch processing will start."
     )

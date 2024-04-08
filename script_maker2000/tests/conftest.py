@@ -223,6 +223,13 @@ def job_dict(clean_tmp_dir):
 
 
 @pytest.fixture
+def job_dict_multilayer(multilayer_tmp_dir):
+    main_config_path = multilayer_tmp_dir / "example_config.json"
+    batch_manager = BatchManager(main_config_path)
+    return batch_manager.job_dict
+
+
+@pytest.fixture
 def all_job_ids(pre_config_tmp_dir):
     example_dir = pre_config_tmp_dir / "example_xyz"
     file_filst = list(example_dir.glob("*.xyz"))
@@ -382,7 +389,6 @@ def fake_slurm_function():
             job_names = []
 
             for id_trio in id_list:
-                # needs to be int to compare to the job slurm id
                 pure_id = int(id_trio[0])
 
                 for job in job_dict_.values():
@@ -414,14 +420,3 @@ def fake_slurm_function():
         return FakeOutput(fake_output_str)
 
     return _fake_slurm_function
-
-
-#   def mock_run_job(args, **kw):
-#         class TestClass:
-#             def __init__(self, args, **kw):
-#                 self.args = args
-#                 self.kw = kw
-#                 self.stdout = f"COMPLETED job {np.random.randint(100)}"
-
-#         test = TestClass(args, **kw)
-#         return test

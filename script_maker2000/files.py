@@ -453,12 +453,10 @@ def collect_input_files(config_path, preparation_dir, config_name=None, tar_name
     if tar_name is None:
         tar_path = preparation_dir / "test.tar.gz"
     else:
-        if tar_name.endswith(".tar.gz"):
-            tar_path = preparation_dir / tar_name
-        else:
+        if not tar_name.endswith(".tar.gz"):
             tar_name = tar_name + ".tar.gz"
 
-            tar_path = preparation_dir / tar_name
+        tar_path = preparation_dir / tar_name
 
     with tarfile.open(tar_path, "w:gz") as tar:
         for file in found_files:

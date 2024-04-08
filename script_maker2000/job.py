@@ -121,8 +121,14 @@ class Job:
 
     @current_status.setter
     def current_status(self, value):
+        self._current_status = value
+        self.status_per_key[self.current_key] = value
 
+        # set status for all overlapping jobs
         if value in ["submitted", "finished", "failed"]:
+
+            if value == "submitted":
+                value = "submitted_overlapping_job"
             for overlapping_job in self.overlapping_jobs:
                 if (
                     overlapping_job.current_key == self.current_key
@@ -133,9 +139,6 @@ class Job:
                     overlapping_job.slurm_id_per_key[self.current_key] = (
                         self.slurm_id_per_key[self.current_key]
                     )
-
-        self._current_status = value
-        self.status_per_key[self.current_key] = value
 
     @property
     def failed_reason(self):
@@ -156,7 +159,7 @@ class Job:
     def overlapping_jobs(self, value):
         self._overlapping_jobs = value
 
-    def check_status_for_key(self, key):
+    def check_status_for_key(self, key, ignore_overlapping_jobs=True):
         """Check the status of the job for the given key.
 
         Possible outputs are:
@@ -165,6 +168,7 @@ class Job:
         - already_finished
         - found
         - submitted
+        - submitted_overlapping_job
         - returned
         - failed
         - finished
@@ -187,7 +191,11 @@ class Job:
             return "already_finished"
 
         if key in self.status_per_key:
-
+            if (
+                self.status_per_key[key] == "submitted_overlapping_job"
+                and ignore_overlapping_jobs
+            ):
+                return "submitted"
             return self.status_per_key[key]
 
         else:
