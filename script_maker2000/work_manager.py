@@ -1,14 +1,24 @@
 import logging
 import asyncio
 from collections import defaultdict
-from script_maker2000.job import Job
 import time
 import subprocess
 import shutil
-import re
+
+import pandas as pd
+from io import StringIO
+from pint import UnitRegistry
+
+from script_maker2000.job import Job
 
 
 class WorkManager:
+    """This class is used to manage the work of a WorkModule.
+    For this it will check if new files are available,
+      if so submit them to the server while keeping below the maximum number of jobs.
+    It will also check if jobs are finished and handle the output files.
+    Failed jobs will be collected and logged.
+    """
 
     def __init__(self, WorkModule, job_dict: Job) -> None:
         """
@@ -26,6 +36,8 @@ class WorkManager:
         self.main_config = WorkModule.main_config
         self.workModule = WorkModule
         self.job_dict = job_dict
+
+        self.ureg = UnitRegistry(cache_folder=":auto:")
 
         self.config_key = self.workModule.config_key
         self.module_config = WorkModule.internal_config
@@ -129,52 +141,45 @@ class WorkManager:
             text=True,
         )
 
-        ouput_sacct = ouput_sacct.stdout.strip().replace("\n", "")
-        ouput_sacct_split = ouput_sacct.split("|")
+        data_io = StringIO(ouput_sacct.stdout.strip())
+        df = pd.read_csv(data_io, sep="|", index_col=False)
 
-        # split at first digit to seperate header from data
-        header = re.split(r"(\d)", ouput_sacct, 1)[0]
-
-        # number of header is number of | -1
-        header_names = header.split("|")[:-1]
-
-        data = {}
-
-        for i, header_name in enumerate(header_names):
-
-            output_split = ouput_sacct_split[i :: len(header_names)][1:]
-
-            if i == 0:
-                output_split = output_split[:-1]
-
-            if header_name == "JobID":
-                data[header_name] = output_split
-            elif header_name in ["MaxRSS"]:
-
-                data["maxRamUsage"] = output_split
-
-            else:
-                data[header_name] = output_split
-
-        filtered_data = self._filter_data(data)
-        print(filtered_data)
-
-    # self.efficiency_data[slurm_key] = filtered_data
+        return df
 
     def check_submitted_jobs(self, submitted_jobs):
         """find new jobs in output dir and check if they have returned."""
 
-        # job_slurm_ids = [
-        #     job.slurm_id_per_key[self.config_key] for job in submitted_jobs
-        # ]
-        # sacct_format_keys = ["JobID", "State"]
+        job_slurm_ids = {
+            job.slurm_id_per_key[self.config_key]: job for job in submitted_jobs
+        }
+
+        # select which columns to collect
+        sacct_format_keys = ["JobID", "JobName", "State"]
         finished_jobs = []
 
-        for job in submitted_jobs:
-            if job.check_status_for_key(self.config_key) in ["returned", "failed"]:
+        if not job_slurm_ids:
+            return finished_jobs
+
+        slurm_df = self._get_slurm_sacct_output(job_slurm_ids.keys(), sacct_format_keys)
+        self.log.debug(slurm_df)
+
+        # remove lines with batch and extern
+        slurm_df = slurm_df[~slurm_df["JobName"].str.contains("batch|extern")]
+        for slurm_id, job in job_slurm_ids.items():
+            slurm_job = slurm_df[slurm_df["JobID"].astype(int) == int(slurm_id)]
+            if slurm_job.empty:
+                continue
+
+            slurm_job = slurm_job.iloc[0]
+            slurm_state = slurm_job["State"]
+
+            if slurm_state in ["COMPLETED", "TIMEOUT", "FAILED", "CANCELLED"]:
+                job.current_status = "returned"
                 finished_jobs.append(job)
 
-        self.log.info(f"Collected {len(finished_jobs)} returned jobs.")
+        self.log.info(
+            f"Collected {len(finished_jobs)} returned jobs from {len(submitted_jobs)} submitted jobs."
+        )
 
         return finished_jobs
 
@@ -203,8 +208,8 @@ class WorkManager:
 
             return_status_dict[work_module_status] += 1
             job.manage_return(work_module_status)
-        for job in non_existing_output:
-            returned_jobs.remove(job)
+            for job in non_existing_output:
+                returned_jobs.remove(job)
 
         self.log.info(
             f"Skipped {len(overlapping_jobs_info)} overlapping jobs as they are already done."
@@ -223,10 +228,52 @@ class WorkManager:
             [f"{key}: {value}" for key, value in return_status_dict.items()]
         )
 
-        self.log.info(f"Managed {len(returned_jobs)} returned jobs.\n\t" + output_info)
+        self.log.warning(
+            f"Managed {len(returned_jobs)} returned jobs.\n\t" + output_info
+        )
+        return returned_jobs
 
     def manage_finished_jobs(self, finished_jobs):
-        pass
+
+        job_slurm_ids = {}
+
+        for job in finished_jobs:
+            # skip job if already collected.
+            # This shouln't happen but is a safety measure
+            if self.config_key in job.efficiency_data.keys():
+                continue
+
+            job_slurm_ids[job.slurm_id_per_key[self.config_key]] = job
+
+        collection_format_arguments = [
+            "JobID",
+            "JobName",
+            "ExitCode",
+            "NCPUS",
+            "CPUTimeRAW",
+            "ElapsedRaw",
+            "TimelimitRaw",
+            "ConsumedEnergyRaw",
+            "MaxDiskRead",
+            "MaxDiskWrite",
+            "MaxVMSize",
+            "ReqMem",
+            "MaxRSS",
+        ]
+        if not job_slurm_ids:
+            return
+
+        slurm_df = self._get_slurm_sacct_output(
+            job_slurm_ids.keys(), collection_format_arguments
+        )
+
+        for slurm_id, job in job_slurm_ids.items():
+            slurm_job = slurm_df[slurm_df["JobID"] == slurm_id]
+            if slurm_job.empty:
+                continue
+
+            slurm_job_dict = slurm_job.to_dict(orient="list")
+            job.efficiency_data[self.config_key] = self._filter_data(slurm_job_dict)
 
     async def loop(self):
         """
@@ -291,10 +338,11 @@ class WorkManager:
             )
 
             # manage finished jobs
-            self.manage_returned_jobs(current_job_dict["returned"])
+            fresh_finished = self.manage_returned_jobs(current_job_dict["returned"])
+            current_job_dict["finished"].extend(fresh_finished)
 
-            # # check on finished jobs job status
-            self.manage_finished_jobs(current_job_dict["finished"])
+            # check on newly finished jobs to collect efficiency data
+            self.manage_finished_jobs(fresh_finished)
 
             if all_jobs_done(current_job_dict):
                 break
@@ -310,3 +358,78 @@ class WorkManager:
         self.log.info(f"All jobs done after {n_loops}.")
         self.is_finished = True
         return f"All jobs done after {n_loops}."
+
+    def _convert_order_of_magnitude(self, value):
+
+        if isinstance(value, float):
+            return value
+        if isinstance(value, int):
+            return float(value)
+
+        if "K" in value:
+            scaling = 1000
+        elif "M" in value:
+            scaling = 1000000
+        elif "G" in value:
+            scaling = 1000000000
+        elif "T" in value:
+            scaling = 1000000000000
+        elif "P" in value:
+            scaling = 1000000000000000
+        else:
+            scaling = 1
+
+        try:
+            new_value = float(value[:-1]) * scaling
+        except ValueError:
+            if int(value) == 0:
+                new_value = 0.0
+        return new_value
+
+    def _filter_data(self, data):
+
+        ureg = self.ureg
+        filtered_data = {}
+
+        for key, value in data.items():
+            if value[0] == [""] and value[1] == [""]:
+                filtered_data[key] = "Missing"
+                continue
+
+            if key == "JobID":
+                filtered_data[key] = value[0]
+            elif key == "JobName":
+                filtered_data[key] = value[0]
+            elif key == "ExitCode":
+                filtered_data[key] = value[0]
+            elif key == "NCPUS":
+                filtered_data[key] = value[0]
+            elif key == "CPUTimeRAW":
+                filtered_data[key] = float(value[0]) * ureg.second
+            elif key == "ElapsedRaw":
+                filtered_data[key] = float(value[0]) * ureg.second
+            elif key == "TimelimitRaw":
+                filtered_data[key] = float(value[0]) * ureg.minute
+            elif key == "ConsumedEnergyRaw":
+                filtered_data[key] = float(value[1]) * ureg.joule
+            elif key == "MaxDiskRead":
+                filtered_data[key] = (
+                    self._convert_order_of_magnitude(value[1]) * ureg.byte
+                )
+            elif key == "MaxDiskWrite":
+                filtered_data[key] = (
+                    self._convert_order_of_magnitude(value[1]) * ureg.byte
+                )
+            elif key == "MaxVMSize":
+                filtered_data[key] = (
+                    self._convert_order_of_magnitude(value[1]) * ureg.byte
+                )
+            elif key == "ReqMem":
+                filtered_data[key] = (
+                    self._convert_order_of_magnitude(value[0]) * ureg.byte
+                )
+            elif key == "maxRamUsage":
+                filtered_data[key] = (
+                    self._convert_order_of_magnitude(value[1]) * ureg.byte
+                )
+        return filtered_data

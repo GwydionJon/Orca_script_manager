@@ -411,7 +411,8 @@ class BatchManager:
             exit_code = 1
             self.log.error("Jobs have failed, please check log. Exiting with code 1.")
             raise RuntimeError(
-                "Jobs have failed, please check log. Exiting with code 1."
+                "Jobs have failed, please check status overview in log. "
+                + "See job_backup.json for more detailed information per job. Exiting with code 1. "
             )
         else:
             self.log.info(f"Batch processing loop finished with exit code {exit_code}.")

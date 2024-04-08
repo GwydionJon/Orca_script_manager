@@ -6,6 +6,7 @@ import copy
 import pytest
 from pathlib import Path
 import pandas as pd
+import numpy as np
 from script_maker2000.files import read_config, create_working_dir_structure
 from script_maker2000.batch_manager import BatchManager
 
@@ -313,3 +314,114 @@ def expected_df_second_log_jobs(expected_df_first_log_jobs):
         "cancelled",
     ]
     return expected_df_second_log_jobs
+
+
+@pytest.fixture
+def fake_slurm_function():
+
+    def _fake_slurm_function(args, monkey_patch_test, cache_list=[], **kwargs):
+
+        # 12486234|PBEh3c_freq_16cores_sp_PBEh_3c_opt__PBEh3c_freq_16cores_sp___C24H3I13N2O3Si|TIMEOUT|
+        # 12486234.batch|batch|CANCELLED|
+        # 12486234.extern|extern|COMPLETED|
+
+        class FakeOutput:
+            def __init__(self, stdout):
+                self.stdout = stdout
+
+        if "sbatch" == args[0]:
+            new_id = np.random.randint(100)
+            if new_id in cache_list:
+                new_id = max(cache_list) + 1
+            cache_list.append(new_id)
+            fake_output_str = f"job {new_id}"
+
+        if "sacct" in args[0]:
+            # get id list
+
+            id_list = [
+                [
+                    str(i),
+                    f"{i}.batch",
+                    f"{i}.extern",
+                ]
+                for i in args[2].split(",")
+            ]
+
+            format_option_dict = {
+                "ExitCode": "0:0",
+                "NCPUS": "16",
+                "CPUTimeRAW": "656",
+                "ElapsedRaw": "41",
+                "TimelimitRaw": "2",
+                "ConsumedEnergyRaw": "11000",
+                "MaxDiskRead": "1723M",
+                "MaxDiskWrite": "423M",
+                "MaxVMSize": "22753K",
+                "ReqMem": "56000M",
+                "MaxRSS": "1035K",
+                "State": "COMPLETED",
+            }
+
+            # get format options
+            format_options = args[4].split(",")
+
+            fake_output_str = ""
+
+            header_line = "|".join(format_options) + "\n"
+            fake_output_str += header_line
+            # get job name and corresponding slumr id
+
+            job_dict_ = monkey_patch_test
+            # job_slurm_names = {}
+            # for job in job_dict_.values():
+            #     current_key = job.current_key
+            #     job_slurm_id = job.slurm_id_per_key[current_key]
+            #     job_slurm_names[job_slurm_id] = job.current_step_id
+
+            job_names = []
+
+            for id_trio in id_list:
+                # needs to be int to compare to the job slurm id
+                pure_id = int(id_trio[0])
+
+                for job in job_dict_.values():
+                    for value in job.slurm_id_per_key.values():
+                        if value == pure_id:
+                            job_names.append(job.current_step_id)
+                            break
+            for id_trio, job_name in zip(id_list, job_names):
+                # no type conversion needed as its compared to itself.
+                pure_id = id_trio[0]
+
+                for id_ in id_trio:
+                    new_line = ""
+                    for format_option in format_options:
+                        if format_option == "JobID":
+                            new_line += str(pure_id) + "|"
+                        elif format_option == "JobName":
+                            if id_ == pure_id:
+                                new_line += job_name + "|"
+                            elif "batch" in id_:
+                                new_line += "batch" + "|"
+                            elif "extern" in id_:
+                                new_line += "extern" + "|"
+                        else:
+                            new_line += format_option_dict[format_option] + "|"
+
+                    fake_output_str += new_line + "\n"
+
+        return FakeOutput(fake_output_str)
+
+    return _fake_slurm_function
+
+
+#   def mock_run_job(args, **kw):
+#         class TestClass:
+#             def __init__(self, args, **kw):
+#                 self.args = args
+#                 self.kw = kw
+#                 self.stdout = f"COMPLETED job {np.random.randint(100)}"
+
+#         test = TestClass(args, **kw)
+#         return test
