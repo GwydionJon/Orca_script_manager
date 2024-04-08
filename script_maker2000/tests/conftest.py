@@ -382,16 +382,17 @@ def fake_slurm_function():
             job_names = []
 
             for id_trio in id_list:
+                # needs to be int to compare to the job slurm id
                 pure_id = int(id_trio[0])
 
                 for job in job_dict_.values():
                     for value in job.slurm_id_per_key.values():
                         if value == pure_id:
-                            job_names.append(job.current_key)
+                            job_names.append(job.current_step_id)
                             break
-
             for id_trio, job_name in zip(id_list, job_names):
-                pure_id = int(id_trio[0])
+                # no type conversion needed as its compared to itself.
+                pure_id = id_trio[0]
 
                 for id_ in id_trio:
                     new_line = ""
