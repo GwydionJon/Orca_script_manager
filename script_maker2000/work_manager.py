@@ -109,16 +109,36 @@ class WorkManager:
 
     def submit_jobs(self, not_started_jobs):
 
+        # check if the total number of submitted jobs is below the maximum
+        total_running_jobs = 0
+        max_jobs = self.main_config["main_config"]["max_n_jobs"]
+        for job in self.job_dict.values():
+            if job.current_status == "submitted":
+                total_running_jobs += 1
+
+        started_jobs = []
+
         for job in not_started_jobs:
             if job.current_status == "not_started":
+                if total_running_jobs >= max_jobs:
+                    break
 
                 process = self.workModule.run_job(job.current_dirs["input"])
                 job_id = int(process.stdout.split("job ")[1])
                 job.slurm_id_per_key[self.config_key] = job_id
                 job.current_status = "submitted"
+                total_running_jobs += 1
+                started_jobs.append(job)
                 time.sleep(0.2)
 
-        self.log.info(f"Submitted {len(not_started_jobs)} new jobs.")
+        self.log.info(f"Submitted {len(started_jobs)} new jobs.")
+
+        if len(started_jobs) != len(not_started_jobs):
+            self.log.info(
+                f"Only {len(started_jobs)} out of {len(not_started_jobs)} "
+                + "jobs were submitted due to max job limit."
+            )
+
         return not_started_jobs
 
     def _get_slurm_sacct_output(self, slurm_ids, sacct_format_keys):
