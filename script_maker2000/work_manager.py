@@ -134,7 +134,6 @@ class WorkManager:
                 time.sleep(0.2)
             elif job.current_status == "submitted_overlapping_job":
                 overlapping_jobs.append(job)
-                started_jobs.append(job)
 
         self.log.info(
             f"Submitted {len(started_jobs)} new jobs with {len(overlapping_jobs)} overlapping jobs."
@@ -146,7 +145,8 @@ class WorkManager:
                 + "jobs were submitted due to max job limit of {max_jobs}."
             )
 
-        return started_jobs
+        total_started_jobs = started_jobs + overlapping_jobs
+        return total_started_jobs
 
     def _get_slurm_sacct_output(self, slurm_ids, sacct_format_keys):
 
