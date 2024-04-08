@@ -223,6 +223,13 @@ def job_dict(clean_tmp_dir):
 
 
 @pytest.fixture
+def job_dict_multilayer(multilayer_tmp_dir):
+    main_config_path = multilayer_tmp_dir / "example_config.json"
+    batch_manager = BatchManager(main_config_path)
+    return batch_manager.job_dict
+
+
+@pytest.fixture
 def all_job_ids(pre_config_tmp_dir):
     example_dir = pre_config_tmp_dir / "example_xyz"
     file_filst = list(example_dir.glob("*.xyz"))

@@ -93,6 +93,136 @@ def test_workmanager(clean_tmp_dir, job_dict, monkeypatch, fake_slurm_function):
     assert len(current_job_dict["returned"]) == 0
 
 
+def test_submit_file_limit(clean_tmp_dir, job_dict, monkeypatch, fake_slurm_function):
+
+    def move_files():
+
+        # move output files to output dir
+        example_output_files = Path(__file__).parent / "test_data" / "example_outputs"
+        if len(list((orca_test.working_dir / "output").glob("*"))) == 0:
+            shutil.copytree(
+                example_output_files,
+                orca_test.working_dir / "output",
+                dirs_exist_ok=True,
+            )
+            for dir in (orca_test.working_dir / "output").glob("*"):
+                new_dir = str(dir).replace("START_", "opt_config___")
+                new_dir = Path(new_dir)
+                new_dir.mkdir()
+                for file in dir.glob("*"):
+                    new_file = str(file.name).replace("START_", "opt_config___")
+                    file.rename(Path(new_dir) / new_file)
+                shutil.rmtree(dir)
+
+    def new_fake_slurm_function(*args, monkey_patch_test=job_dict, **kwargs):
+        move_files()
+        return fake_slurm_function(*args, monkey_patch_test=monkey_patch_test, **kwargs)
+
+    monkeypatch.setattr("subprocess.run", new_fake_slurm_function)
+    monkeypatch.setattr("shutil.which", lambda x: x)
+
+    config_path = clean_tmp_dir / "example_config.json"
+
+    orca_test = OrcaModule(config_path, "opt_config")
+    work_manager = WorkManager(orca_test, job_dict)
+    # no files present for sp_config yet
+    current_job_dict = work_manager.check_job_status()
+    assert len(current_job_dict["found"]) == 11
+
+    # prepare jobs
+    current_job_dict["not_started"].extend(
+        work_manager.prepare_jobs(current_job_dict["found"])
+    )
+
+    # change the max number of jobs to submit
+    work_manager.main_config["main_config"]["max_n_jobs"] = 5
+    current_job_dict["submitted"].extend(
+        work_manager.submit_jobs(current_job_dict["not_started"])
+    )
+    assert len(current_job_dict["submitted"]) == 5
+
+    current_job_dict["returned"].extend(
+        work_manager.check_submitted_jobs(current_job_dict["submitted"])
+    )
+    returned_jobs = work_manager.manage_returned_jobs(current_job_dict["returned"])
+
+    for job in returned_jobs:
+        if job.current_status == "finished":
+            print(job)
+            job.advance_to_next_key()
+
+    work_manager.main_config["main_config"]["max_n_jobs"] = 2
+    current_job_dict = work_manager.check_job_status()
+
+    new_submissions = work_manager.submit_jobs(current_job_dict["not_started"])
+    assert len(new_submissions) == 2
+
+    # now see if second work manager runs into the same limitation
+    orca_test = OrcaModule(config_path, "sp_config")
+    work_manager2 = WorkManager(orca_test, job_dict)
+
+    work_manager2.main_config["main_config"]["max_n_jobs"] = 2
+    current_job_dict2 = work_manager2.check_job_status()
+    current_job_dict2["not_started"].extend(
+        work_manager.prepare_jobs(current_job_dict2["found"])
+    )
+    current_job_dict2["submitted"].extend(
+        work_manager.submit_jobs(current_job_dict2["not_started"])
+    )
+    assert len(current_job_dict2["submitted"]) == 0
+
+
+def test_submit_file_limit_multi_layer(
+    multilayer_tmp_dir, job_dict_multilayer, monkeypatch, fake_slurm_function
+):
+
+    def move_files():
+
+        # move output files to output dir
+        example_output_files = Path(__file__).parent / "test_data" / "example_outputs"
+        if len(list((orca_test.working_dir / "output").glob("*"))) == 0:
+            shutil.copytree(
+                example_output_files,
+                orca_test.working_dir / "output",
+                dirs_exist_ok=True,
+            )
+            for dir in (orca_test.working_dir / "output").glob("*"):
+                new_dir = str(dir).replace("START_", "opt_config___")
+                new_dir = Path(new_dir)
+                new_dir.mkdir()
+                for file in dir.glob("*"):
+                    new_file = str(file.name).replace("START_", "opt_config___")
+                    file.rename(Path(new_dir) / new_file)
+                shutil.rmtree(dir)
+
+    def new_fake_slurm_function(*args, monkey_patch_test=job_dict_multilayer, **kwargs):
+        move_files()
+        return fake_slurm_function(*args, monkey_patch_test=monkey_patch_test, **kwargs)
+
+    monkeypatch.setattr("subprocess.run", new_fake_slurm_function)
+    monkeypatch.setattr("shutil.which", lambda x: x)
+
+    config_path = multilayer_tmp_dir / "example_config.json"
+
+    orca_test = OrcaModule(config_path, "opt_config1")
+    work_manager = WorkManager(orca_test, job_dict_multilayer)
+    # no files present for sp_config yet
+    current_job_dict = work_manager.check_job_status()
+    assert len(current_job_dict["found"]) == 22
+
+    # prepare jobs
+    current_job_dict["not_started"].extend(
+        work_manager.prepare_jobs(current_job_dict["found"])
+    )
+
+    # change the max number of jobs to submit
+    work_manager.main_config["main_config"]["max_n_jobs"] = 5
+    current_job_dict["submitted"].extend(
+        work_manager.submit_jobs(current_job_dict["not_started"])
+    )
+    assert len(current_job_dict["submitted"]) == 10
+
+
 def test_workmanager_loop(clean_tmp_dir, job_dict, monkeypatch, fake_slurm_function):
     def move_files():
 
