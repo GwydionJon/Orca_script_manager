@@ -296,13 +296,11 @@ class Job:
                             shutil.copy(input_file, new_file)
                         else:
                             return "file_exists"
-                    # self.tqdm.update()
                     return "success"
 
             elif self.current_status == "failed":
                 if current_key not in self.finished_keys:
                     self.finished_keys.append(current_key)
-                    # self.tqdm.update()
 
                 self.wrap_up_combined()
 
@@ -323,25 +321,6 @@ class Job:
                 return_str = "not_finished"
 
             return return_str
-            # if self.current_status == "finished":
-            #     if current_key not in self.finished_keys:
-
-            #         self.finished_keys.append(current_key)
-
-            #         self.wrap_up()
-            #     # self.tqdm.update()
-            #     return "finalized"
-
-            # elif self.current_status == "failed":
-            #     if current_key not in self.finished_keys:
-            #         self.finished_keys.append(current_key)
-            #         # self.tqdm.update()
-
-            #     self.wrap_up_failed()
-
-            #     return self.failed_reason
-            # else:
-            #     return self.current_status
 
     def _clean_up(self):
         """Clean up the input and output directories.
@@ -412,7 +391,6 @@ class Job:
 
             self.final_dirs[key] = target_dir
 
-        # self.collect_efficiency_data()
         self._clean_up()
         return wrap_up_return_str
 
@@ -511,9 +489,6 @@ class Job:
         new_job.status_per_key = input_dict["status_per_key"]
         new_job.finished_keys = input_dict["finished_keys"]
 
-        # new_job.efficiency_data = cls.import_efficiency_data(
-        #     input_dict["efficiency_data"]
-        # )
         new_job.efficiency_data = {
             int(key): value for key, value in input_dict["efficiency_data"].items()
         }
