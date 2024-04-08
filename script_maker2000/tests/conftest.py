@@ -387,11 +387,11 @@ def fake_slurm_function():
                 for job in job_dict_.values():
                     for value in job.slurm_id_per_key.values():
                         if value == pure_id:
-                            job_names.append(job.current_key)
+                            job_names.append(job.current_step_id)
                             break
-
             for id_trio, job_name in zip(id_list, job_names):
-                pure_id = int(id_trio[0])
+                # no type conversion needed as its compared to itself.
+                pure_id = id_trio[0]
 
                 for id_ in id_trio:
                     new_line = ""
@@ -413,14 +413,3 @@ def fake_slurm_function():
         return FakeOutput(fake_output_str)
 
     return _fake_slurm_function
-
-
-#   def mock_run_job(args, **kw):
-#         class TestClass:
-#             def __init__(self, args, **kw):
-#                 self.args = args
-#                 self.kw = kw
-#                 self.stdout = f"COMPLETED job {np.random.randint(100)}"
-
-#         test = TestClass(args, **kw)
-#         return test
