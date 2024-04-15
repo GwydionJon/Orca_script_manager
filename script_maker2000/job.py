@@ -320,8 +320,8 @@ class Job:
         else:
             # if the current key is the last key, the job is finished
             if self.current_status in ["finished", "failed"]:
-                self.finished_keys.append(current_key)
-                # self.tqdm.update()
+                if current_key not in self.finished_keys:
+                    self.finished_keys.append(current_key)
 
                 return_str = self.wrap_up_combined()
 
