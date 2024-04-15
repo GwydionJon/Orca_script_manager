@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 from tqdm import tqdm
 import traceback
+import tarfile
 
 
 from script_maker2000.files import read_config, create_working_dir_structure
@@ -366,6 +367,14 @@ class BatchManager:
         task_results = asyncio.run(self.batch_processing_loop())
         result_dict = self.collect_result_overview()
 
+        # create a tar ball of the output directory
+
+        output_filename = self.working_dir / f"{self.working_dir.stem}.tar.gz"
+        source_dir = self.working_dir
+
+        with tarfile.open(output_filename, "w:gz") as tar:
+            tar.add(source_dir, arcname=source_dir)
+
         # check tasks for errors:
         exit_code = 0
         all_errors = []
@@ -416,4 +425,5 @@ class BatchManager:
             )
         else:
             self.log.info(f"Batch processing loop finished with exit code {exit_code}.")
+
         return exit_code, task_results
