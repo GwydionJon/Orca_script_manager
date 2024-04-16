@@ -5,6 +5,7 @@ import pytest
 import logging
 import time
 from script_maker2000.batch_manager import BatchManager
+import json
 
 
 def test_batch_manager(clean_tmp_dir, monkeypatch, fake_slurm_function):
@@ -316,26 +317,22 @@ def test_parallel_steps(multilayer_tmp_dir, monkeypatch, fake_slurm_function):
         batch_manager.working_dir.glob("finished/raw_results/*/[!failed]*")
     )
 
-    # for list_, name in zip(
-    #     [all_results, failed, not_failed], ["all", "failed", "not_failed"]
-    # ):
-    #     print(name)
-    #     for value in list_:
-    #         if name == "failed":
-    #             print(
-    #                 value.parent.parent.name,
-    #                 value.parent.parent.name,
-    #                 value.parent.name,
-    #                 value.name,
-    #             )
-    #         else:
-    #             print(value.parent.name, value.name)
-
-    #     print()
-
     assert len(all_results) == 11
     assert len(failed) == 15
     assert len(not_failed) == 23
+
+    # assert tar exists
+    tar_file = batch_manager.working_dir / "output.tar.gz"
+    assert tar_file.exists()
+
+    # check the job_dict
+
+    with open(batch_manager.working_dir / "job_backup.json", "r") as f:
+        job_backup = json.load(f)
+
+    for job in job_backup.values():
+
+        assert len(job["finished_keys"]) <= len(job["all_keys"])
 
 
 def copy_output(target_dirs, succesful_output_dirs):

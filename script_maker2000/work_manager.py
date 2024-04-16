@@ -295,7 +295,11 @@ class WorkManager:
         )
 
         for slurm_id, job in job_slurm_ids.items():
-            slurm_job = slurm_df[slurm_df["JobID"] == slurm_id]
+            slurm_job = slurm_df[
+                slurm_df["JobID"]
+                .astype(str)
+                .str.contains(f"{slurm_id}|{slurm_id}.batch|{slurm_id}.extern")
+            ]
             if slurm_job.empty:
                 continue
 

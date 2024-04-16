@@ -174,3 +174,7 @@ script_maker2000/notebooks/benchmark/
 
 benchmarks/
 prof/
+cpu_benchmark/benchmark_molecules.csv
+cpu_benchmark/cpu_benchmark_config.json
+cpu_benchmark/cpu_benchmark_full_run.tar.gz
+cpu_benchmark/cpu_benchmark_job_backup.json
