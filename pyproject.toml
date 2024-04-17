@@ -36,6 +36,7 @@ dependencies = [
     "pint",
     "pint_pandas",
     "molmass",
+    "mip",
 ]
 
 
