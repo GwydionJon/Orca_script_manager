@@ -41,8 +41,8 @@ def clean_tmp_dir():
     for key in mol_dict.keys():
         for new_file in (tmp_dir / "example_xyz").glob("*"):
             if new_file.stem in str(mol_dict[key]["path"]):
+                print(new_file)
                 mol_dict[key]["path"] = str(new_file)
-
     with open(tmp_dir / "example_xyz" / "example_molecules.json", "w") as f:
         json.dump(mol_dict, f)
 

@@ -91,7 +91,7 @@ def read_mol_input_json(input_json):
 
     with open(input_json, "r", encoding="utf-8") as f:
         mol_input = json.load(f)
-
+    print(input_json)
     for key, entry in mol_input.items():
         # check that given values are consistent with filename scheme
         file_path = pathlib.Path(entry["path"])
