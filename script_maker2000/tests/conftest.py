@@ -41,15 +41,14 @@ def clean_tmp_dir():
     for key in mol_dict.keys():
         for new_file in (tmp_dir / "example_xyz").glob("*"):
             if new_file.stem in str(mol_dict[key]["path"]):
-                print(new_file)
                 mol_dict[key]["path"] = str(new_file)
+
     with open(tmp_dir / "example_xyz" / "example_molecules.json", "w") as f:
         json.dump(mol_dict, f)
 
     main_dict["main_config"]["input_file_path"] = str(
-        Path(example_mol_dir) / "example_molecules.json"
+        tmp_dir / "example_xyz" / "example_molecules.json"
     )
-
     with open(tmp_dir / "example_config.json", "w") as json_file:
         json.dump(main_dict, json_file)
 
@@ -117,10 +116,10 @@ def pre_config_tmp_dir():
 
     example_mol_dir = (current_path / ".." / ".." / "data" / "example_xyz").resolve()
 
-    example_xyz = shutil.copytree(str(example_mol_dir), str(tmp_dir / "example_xyz"))
+    shutil.copytree(str(example_mol_dir), str(tmp_dir / "example_xyz"))
 
     main_dict["main_config"]["input_file_path"] = str(
-        Path(example_xyz) / "example_molecules.json"
+        tmp_dir / "example_xyz" / "example_molecules.json"
     )
 
     with open(tmp_dir / "example_xyz" / "example_molecules.json", "r") as f:
@@ -171,7 +170,7 @@ def multilayer_tmp_dir():
 
     example_mol_dir = (current_path / ".." / ".." / "data" / "example_xyz").resolve()
 
-    example_xyz = shutil.copytree(str(example_mol_dir), str(tmp_dir / "example_xyz"))
+    shutil.copytree(str(example_mol_dir), str(tmp_dir / "example_xyz"))
     # copy input files to module working space
 
     # change xyz file locations in .json
@@ -187,7 +186,7 @@ def multilayer_tmp_dir():
         json.dump(mol_dict, f)
 
     main_dict["main_config"]["input_file_path"] = str(
-        Path(example_xyz) / "example_molecules.json"
+        tmp_dir / "example_xyz" / "example_molecules.json"
     )
 
     with open(tmp_dir / "example_config.json", "w") as json_file:
