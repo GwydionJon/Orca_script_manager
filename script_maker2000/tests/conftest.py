@@ -40,7 +40,7 @@ def clean_tmp_dir():
 
     print(list((tmp_dir / "example_xyz").glob("*")))
     for key, value in mol_dict.items():
-        file_path = Path(mol_dict[key]["path"]).resolve()
+        file_path = Path(mol_dict[key]["path"])
         file_name = file_path.name
         print("file name:")
         print(file_path)
