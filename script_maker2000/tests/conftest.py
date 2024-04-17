@@ -37,10 +37,11 @@ def clean_tmp_dir():
     # open example_molecules.json and change path to absolute path
     with open(tmp_dir / "example_xyz" / "example_molecules.json", "r") as f:
         mol_dict = json.load(f)
-
+    print(list((tmp_dir / "example_xyz").glob()))
     for key, value in mol_dict.items():
         path = Path(mol_dict[key]["path"]).resolve()
         file_name = path.name
+        print(file_name)
         new_file_name = list((tmp_dir / "example_xyz").glob(file_name))[0]
         mol_dict[key]["path"] = str(new_file_name)
 
