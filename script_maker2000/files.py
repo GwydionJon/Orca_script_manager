@@ -3,9 +3,9 @@ import logging
 import pathlib
 import shutil
 from collections import OrderedDict
-import pandas as pd
 import tarfile
 import os
+import copy
 
 script_maker_log = logging.getLogger("Script_maker_log")
 script_maker_error = logging.getLogger("Script_maker_error")
@@ -59,48 +59,94 @@ def create_working_dir_structure(
 
     # save input csv in output folder
 
-    new_file_names, found_files, input_df = prepare_xyz_files(input_path)
-    script_maker_log.info(found_files)
+    job_input = read_mol_input_json(input_path)
+    found_files = [pathlib.Path(job_setup["path"]) for job_setup in job_input.values()]
+
+    if len(found_files) < 20:
+        script_maker_log.info(found_files)
+    else:
+        script_maker_log.info(f"Found {len(found_files)} files.")
 
     new_input_path = output_dir / "start_input_files"
     new_input_path.mkdir(parents=True, exist_ok=True)
-    for orig_file, new_name in zip(found_files, new_file_names):
+    # for orig_file in found_files:
+    for key, entry in job_input.items():
+        orig_file = pathlib.Path(entry["path"])
         script_maker_log.info(orig_file)
-        mol_id = new_name.split("___")[1]
-        input_df.loc[input_df["key"] == mol_id, "path"] = orig_file
-        shutil.copy(orig_file, new_input_path / new_name)
+        new_file_path = new_input_path / orig_file.name
+        shutil.copy(orig_file, new_file_path)
+        job_input[key]["path"] = str(new_file_path)
 
-    new_csv_file = output_dir / "input.csv"
-    input_df.to_csv(new_csv_file)
+    new_json_file = output_dir / input_path.name
+
+    with open(new_json_file, "w", encoding="utf-8") as json_file:
+        json.dump(job_input, json_file)
 
     # copy files to output folder
 
-    return output_dir, new_input_path, new_csv_file
+    return output_dir, new_input_path, new_json_file
 
 
-def prepare_xyz_files(input_csv):
+def read_mol_input_json(input_json):
 
-    found_files, input_df = _check_input_csv(input_csv)
+    with open(input_json, "r", encoding="utf-8") as f:
+        mol_input = json.load(f)
 
-    new_file_names = []
-    for file in found_files:
+    for key, entry in mol_input.items():
+        # check that given values are consistent with filename scheme
+        file_path = pathlib.Path(entry["path"])
+        # split charge and multiplicity from file name
+        charge_mult = file_path.stem.split("__")[-1]
+        charge_with_c, mul = charge_mult.split("m")
+        charge = charge_with_c.split("c")[1]
+        charge = int(charge)
+        mul = int(mul)
 
-        if file.stem.startswith("START_") is False:
-            new_file_name = "START___" + file.name
+        if "charge" not in entry.keys():
+            entry["charge"] = charge
+        if "multiplicity" not in entry.keys():
+            entry["multiplicity"] = mul
 
-        elif file.stem.startswith("START___") is True:
-            new_file_name = file.name
-        elif file.stem.startswith("START_") is True:
-            new_file_name = file.name.replace("START_", "START___")
+        for entry_key, value in entry.items():
 
-        else:
-            raise ValueError(
-                "File name does not match any expected pattern. "
-                + "Please rename the file according to the following pattern: START_molIdentifier.xyz"
-            )
-        new_file_names.append(new_file_name)
+            if entry_key == "path":
+                if not pathlib.Path(value).exists():
+                    raise FileNotFoundError(f"Can't find file {value}")
+                if pathlib.Path(value).suffix != ".xyz":
+                    raise ValueError(
+                        f"Input files must be in xyz format. The following files are not: {value}"
+                    )
 
-    return new_file_names, found_files, input_df
+            if entry_key == "key":
+                if key not in file_path.stem:
+                    raise ValueError(
+                        "Key in input file does not match the key in the file name. "
+                        + f"Please rename the file according to the following pattern: {key}_cXmX.xyz"
+                    )
+
+            if entry_key == "charge":
+                if not isinstance(value, int):
+                    raise ValueError(
+                        f"Charge must be an integer. Found {value} of type {type(value)}"
+                    )
+                if int(value) != charge:
+                    raise ValueError(
+                        "Charge in input file does not match the charge in the file name. "
+                        + f"Please rename the file according to the following pattern: {key}_cXmX.xyz"
+                    )
+
+            if entry_key == "multiplicity":
+                if not isinstance(value, int):
+                    raise ValueError(
+                        f"Multiplicity must be an integer. Found {value} of type {type(value)}"
+                    )
+                if int(value) != mul:
+                    raise ValueError(
+                        "Multiplicity in input file does not match the multiplicity in the file name. "
+                        + f"Please rename the file according to the following pattern: {key}_cXmX.xyz"
+                    )
+
+    return mol_input
 
 
 def check_config(main_config, skip_file_check=False, override_continue_job=False):
@@ -312,15 +358,6 @@ def read_config(config_file, perform_validation=True, override_continue_job=Fals
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # check if input file/folder is present
-    input_path = pathlib.Path(main_config["main_config"]["input_file_path"])
-    # manage relativ input file
-    if input_path.is_absolute() is False:
-        input_path = pathlib.Path(config_file).parent / input_path
-
-    input_path = input_path.resolve()
-    main_config["main_config"]["input_file_path"] = str(input_path)
-
     # remove previous handlers from logging
     # this is mainly relevant for the tests
 
@@ -349,55 +386,8 @@ def read_config(config_file, perform_validation=True, override_continue_job=Fals
     return main_config
 
 
-def _check_input_csv(input_csv, xyz_dir=None):
-    input_df = pd.read_csv(input_csv)
-    all_input_files = input_df["path"].values
-    file_not_found_list = []
-    file_suffix_error_list = []
-
-    found_files = []
-
-    for file in all_input_files:
-        if isinstance(file, str):
-            file = pathlib.Path(file)
-
-        if file.is_absolute() is False:
-            if xyz_dir is None:
-                raise FileNotFoundError(
-                    "Please provide the full path or the xyz dir name."
-                )
-            file = list(pathlib.Path(xyz_dir).glob(file))
-            if len(file) == 0:
-                file_not_found_list.append(file)
-            if len(file) > 1:
-                raise ValueError(
-                    f"Found multiple files for {file}. Please provide the full path."
-                )
-            file = file[0]
-
-        if not file.exists():
-            file_not_found_list.append(file)
-
-        elif file.suffix != ".xyz":
-            file_suffix_error_list.append(file)
-
-        else:
-            found_files.append(file)
-
-    if len(file_not_found_list) > 0:
-        raise FileNotFoundError(
-            f"Can't find the following input files: {file_not_found_list}"
-        )
-    if len(file_suffix_error_list) > 0:
-        raise ValueError(
-            f"Input files must be in xyz format. The following files are not: {file_suffix_error_list}"
-        )
-
-    return found_files, input_df
-
-
 def collect_input_files(config_path, preparation_dir, config_name=None, tar_name=None):
-    """This function collects all input files (xyz, config, csv) and
+    """This function collects all input files (xyz, config, csv) and puts them into a single tar ball.
 
     Args:
         config_path (str): Path to the config file
@@ -407,25 +397,28 @@ def collect_input_files(config_path, preparation_dir, config_name=None, tar_name
     # check if config is valid
     main_config = read_config(config_path, perform_validation=True)
 
-    input_csv = pathlib.Path(main_config["main_config"]["input_file_path"])
+    input_json = pathlib.Path(main_config["main_config"]["input_file_path"])
     if main_config["main_config"]["xyz_path"]:
         xyz_dir = pathlib.Path(main_config["main_config"]["xyz_path"])
     else:
         xyz_dir = None
 
     # check if input_csv contains valid file paths
-    found_files, input_df = _check_input_csv(input_csv, xyz_dir)
+    # found_files, input_df = _check_input_csv(input_csv, xyz_dir)
+    mol_input = read_mol_input_json(input_json)
+    mol_input_new = copy.deepcopy(mol_input)
 
-    # replace path in input_df with new path
-    for i, file in enumerate(found_files):
-        file = pathlib.Path(file)
+    for job_key, job_setup in mol_input.items():
+        # replace path in input_df with new path
+
+        file = pathlib.Path(job_setup["path"])
         if file.is_absolute() is False:
             file_path = str(pathlib.Path(xyz_dir.name) / file.name)
         else:
             file_path = str(file)
-        input_df.loc[i, "path"] = file_path
+        mol_input_new[job_key]["path"] = str(file_path)
 
-    main_config["main_config"]["input_file_path"] = str(input_csv.name)
+    main_config["main_config"]["input_file_path"] = str(input_json.name)
     if xyz_dir is not None:
         main_config["main_config"]["xyz_path"] = str(xyz_dir.name)
     else:
@@ -439,9 +432,11 @@ def collect_input_files(config_path, preparation_dir, config_name=None, tar_name
     preparation_dir.mkdir(parents=True, exist_ok=True)
 
     # write new input csv and config to preparation dir
-    new_csv_name = preparation_dir / input_csv.name
+    new_json_name = preparation_dir / input_json.name
 
-    input_df.to_csv(new_csv_name)
+    with open(new_json_name, "w", encoding="utf-8") as json_file:
+        json.dump(mol_input_new, json_file)
+
     if config_name is None:
         new_config_name = preparation_dir / config_path.name
     else:
@@ -459,10 +454,13 @@ def collect_input_files(config_path, preparation_dir, config_name=None, tar_name
         tar_path = preparation_dir / tar_name
 
     with tarfile.open(tar_path, "w:gz") as tar:
-        for file in found_files:
-            tar.add(file, arcname="extracted_xyz/" + pathlib.Path(file).name)
-        tar.add(new_csv_name, arcname=new_csv_name.name)
+
+        tar.add(new_json_name, arcname=new_json_name.name)
         tar.add(new_config_name, arcname=new_config_name.name)
+
+        for job_setup in mol_input.values():
+            file = pathlib.Path(job_setup["path"])
+            tar.add(file, arcname="extracted_xyz/" + pathlib.Path(file).name)
 
     tar_path = pathlib.Path(tar_path)
 

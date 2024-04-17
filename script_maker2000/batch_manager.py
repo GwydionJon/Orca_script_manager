@@ -1,6 +1,5 @@
 from collections import defaultdict
 import asyncio
-import pandas as pd
 import time
 import logging
 import itertools
@@ -11,7 +10,11 @@ import traceback
 import tarfile
 
 
-from script_maker2000.files import read_config, create_working_dir_structure
+from script_maker2000.files import (
+    read_config,
+    create_working_dir_structure,
+    read_mol_input_json,
+)
 from script_maker2000.work_manager import WorkManager
 from script_maker2000.orca import OrcaModule
 from script_maker2000.job import Job
@@ -32,17 +35,15 @@ class BatchManager:
         )
 
         if self.main_config["main_config"]["continue_previous_run"] is False:
+            # this is the default start of a new batch run
             (
                 self.working_dir,
                 self.new_input_path,
-                self.input_job_ids,
-                self.new_csv_file,
+                self.new_json_file,
                 self.all_input_files,
             ) = self.initialize_files()
 
-            self.input_df = pd.read_csv(self.new_csv_file, index_col=0)
-            self.input_df.set_index("key", inplace=True)
-            self.job_dict = self._jobs_from_csv(self.input_df)
+            self.job_dict = self._jobs_from_initial_json(self.new_json_file)
 
             self.work_managers = self.setup_work_modules_manager()
             self.copy_input_files_to_first_work_manager()
@@ -50,7 +51,7 @@ class BatchManager:
         else:
             self.working_dir = Path(self.main_config["main_config"]["output_dir"])
             self.new_input_path = self.working_dir / "start_input_files"
-            self.new_csv_file = self.working_dir / "new_input.csv"
+            self.new_json_file = self.working_dir / "new_input.csv"
             input_json_file = self.working_dir / "job_backup.json"
             self.job_dict = self._jobs_from_backup_json(input_json_file)
 
@@ -99,27 +100,25 @@ class BatchManager:
             tuple: A tuple containing the working directory path, the new input path,
             the input job IDs, the new CSV file path, and a list of all input files.
         """
-        working_dir, new_input_path, new_csv_file = create_working_dir_structure(
+        working_dir, new_input_path, new_json_file = create_working_dir_structure(
             self.main_config
         )
         all_input_files = list(new_input_path.glob("*[!csv]"))
 
-        input_job_ids = [file.stem.split("START___")[1] for file in all_input_files]
-        return working_dir, new_input_path, input_job_ids, new_csv_file, all_input_files
+        return working_dir, new_input_path, new_json_file, all_input_files
 
-    def _jobs_from_csv(self, input_df):
+    def _jobs_from_initial_json(self, json_file_path):
         """
-        Creates job objects from the input CSV file.
+        Creates job objects from an initial JSON file.
 
         Args:
-            input_df (DataFrame): The input DataFrame.
+            json_file_path (str): The path to the initial JSON file.
 
         Returns:
             dict: A dictionary of job objects, where the keys are the unique job IDs.
         """
-        input_job_ids = self.input_job_ids
+        input_mol_dict = read_mol_input_json(json_file_path)
 
-        # get all stages and their config keys from the main config
         config_keys = list(self.main_config["loop_config"].keys())
         config_stages = defaultdict(list)
         for key in config_keys:
@@ -130,17 +129,16 @@ class BatchManager:
         # Generate all combinations
         combinations = list(itertools.product(*values))
 
-        # create a job for each combination of keys and input files
         jobs = []
         for combination in combinations:
-            for job_id in input_job_ids:
-                charge = input_df.loc[job_id, "charge"]
-                multiplicity = input_df.loc[job_id, "multiplicity"]
+            for job_id, job_entry in input_mol_dict.items():
+
+                charge = job_entry["charge"]
+                multiplicity = job_entry["multiplicity"]
 
                 job = Job(job_id, combination, self.working_dir, charge, multiplicity)
                 jobs.append(job)
         # search for jobs that have the same steps.
-        #
 
         if self.main_config["main_config"]["parallel_layer_run"]:
             for job1 in jobs:
