@@ -12,7 +12,10 @@ def test_config_check(clean_tmp_dir, monkeypatch):
     main_config_path = str(main_config_path)
 
     runner = CliRunner()
-    result = runner.invoke(config_check, ["--config", main_config_path])
+    result = runner.invoke(
+        config_check, ["--config", main_config_path], catch_exceptions=False
+    )
+
     assert result.exit_code == 0
 
     # create a bad config file by removing some keys
@@ -140,7 +143,7 @@ def test_collect_files(clean_tmp_dir):
     with tarfile.open(tar_path, "r:gz") as tar:
         tar.extractall(path=extract_path, filter="fully_trusted")
 
-    expected_files = ["extracted_xyz", "example_config.json", "example_molecules.csv"]
+    expected_files = ["extracted_xyz", "example_config.json", "example_molecules.json"]
     for file in expected_files:
         assert (extract_path / file).exists()
     assert len(list(extract_path.glob("*/*"))) == 11
@@ -159,7 +162,7 @@ def test_collect_files(clean_tmp_dir):
     with tarfile.open(new_tar_path, "r:gz") as tar:
         tar.extractall(path=new_tar_dir, filter="fully_trusted")
 
-    expected_files = ["extracted_xyz", "example_config.json", "example_molecules.csv"]
+    expected_files = ["extracted_xyz", "example_config.json", "example_molecules.json"]
     for file in expected_files:
         assert (new_tar_dir / file).exists()
 

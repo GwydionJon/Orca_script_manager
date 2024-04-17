@@ -2,7 +2,9 @@ from script_maker2000.files import (
     read_config,
     create_working_dir_structure,
     collect_input_files,
+    read_mol_input_json,
 )
+
 
 import logging
 import pathlib
@@ -80,3 +82,15 @@ def test_collect_input_files(clean_tmp_dir):
 
     assert len(list(extract_path.glob("*"))) == 3
     assert len(list(extract_path.glob("*/*"))) == 11
+
+
+def test_read_mol_input_json(clean_tmp_dir):
+
+    import pandas as pd
+
+    print(clean_tmp_dir)
+    json_path = clean_tmp_dir / "example_xyz" / "example_molecules.json"
+    example_mol_dict = read_mol_input_json(json_path)
+
+    df = pd.DataFrame(example_mol_dict)
+    print(df)
