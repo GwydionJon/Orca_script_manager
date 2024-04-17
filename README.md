@@ -11,6 +11,15 @@ the config contains all the calculation setups while the csv file contains the f
 #### Installation: 
 `pip install git+pip install git+https://github.com/GwydionJon/AC-Forschi`
 
+
+
+#### Prepare your files
+
+For this program to work you need to include the charge and multiplicity information in your xyz filename.
+To do this add "__cXmX.xyz" at the end of your file name, where the 'X' needs to replaced by the actual number. 
+
+
+
 #### Create config
 
 First open a terminal where you want to create your new config file.
@@ -42,3 +51,4 @@ The EXTRACT_PATH is the location where you want to start your calculation and wh
 The `--remove_extracted` flag at the end means that the extracted data will be deleted after starting the workflow, this will reduce unused file overhead. More useful for large datasets.
 
 Now just wait for the program to finish. 
+

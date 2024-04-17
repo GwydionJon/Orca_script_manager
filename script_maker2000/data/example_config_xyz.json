@@ -6,7 +6,7 @@
         "max_nodes": 50,
         "output_dir": "output",
         "max_run_time": "60:00:00",
-        "input_file_path": "example_xyz/example_molecules.csv",
+        "input_file_path": "example_xyz/example_molecules.json",
         "xyz_path": "example_xyz",
         "input_type": "xyz",
         "parallel_layer_run": false,

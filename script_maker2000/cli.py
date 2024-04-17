@@ -2,7 +2,6 @@ import click
 from pathlib import Path
 import tarfile
 import shutil
-import pandas as pd
 import json
 
 import cProfile
@@ -10,7 +9,11 @@ import cProfile
 import atexit
 
 from script_maker2000.config_maker import app, add_main_config
-from script_maker2000.files import check_config, collect_input_files
+from script_maker2000.files import (
+    check_config,
+    collect_input_files,
+    read_mol_input_json,
+)
 from script_maker2000 import BatchManager
 
 
@@ -130,7 +133,34 @@ def start_tar(tar, extract_path, remove_extracted, profile: bool):
         tar.extractall(path=extract_path, filter="data")
 
     click.echo(f"Tarball extracted at {extract_path}")
-    config_path = list(Path(extract_path).glob("*.json"))[0]
+
+    json_files = list(Path(extract_path).glob("*.json"))
+    if len(json_files) == 0:
+        click.echo("No json files found in the extracted folder.")
+        return 1
+
+    if len(json_files) > 2:
+        click.echo("More than two json files found in the extracted folder.")
+        return 1
+
+    config_path = None
+    mol_json_path = None
+
+    for file in json_files:
+        with open(file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            if "main_config" in data:
+                config_path = file
+            else:
+                mol_json_path = file
+
+    if config_path is None:
+        click.echo("No config file found in the extracted folder.")
+        return 1
+
+    if mol_json_path is None:
+        click.echo("No molecule json file found in the extracted folder.")
+        return 1
 
     # load config file and replace output path
 
@@ -141,26 +171,26 @@ def start_tar(tar, extract_path, remove_extracted, profile: bool):
     config["main_config"]["output_dir"] = str(
         extract_path.parents[0] / current_output_path
     )
+
     with open(config_path, "w", encoding="utf-8") as f:
         json.dump(config, f)
 
     click.echo(f"Config file found at {config_path}")
-    # search for new xyz files and update the csv file
-    csv_file = list(Path(extract_path).glob("*.csv"))[0]
-    click.echo(f"CSV file found at {csv_file}")
+    click.echo(f"Molecule json file found at {mol_json_path}")
 
-    df_mol = pd.read_csv(csv_file)
+    mol_json = read_mol_input_json(mol_json_path)
 
-    for xyz_id in df_mol["key"]:
-
-        xyz_path = list(extract_path.glob(f"**/*{xyz_id}.xyz"))[0]
+    for xyz_id in mol_json.keys():
+        print(xyz_id)
+        xyz_path = list(extract_path.glob(f"**/*{xyz_id}*.xyz"))[0]
         if xyz_path.exists():
-            df_mol.loc[df_mol["key"] == xyz_id, "path"] = str(xyz_path)
+            mol_json[xyz_id]["path"] = str(xyz_path)
 
-    df_mol.to_csv(csv_file, index=False)
+    with open(mol_json_path, "w", encoding="utf-8") as f:
+        json.dump(mol_json, f)
 
     click.echo("Updated the path to the xyz files in the csv file.")
-    click.echo(f"Found {len(df_mol)} molecules to calculate.")
+    click.echo(f"Found {len(mol_json)} molecules to calculate.")
 
     batch_manager = BatchManager(config_path)
 

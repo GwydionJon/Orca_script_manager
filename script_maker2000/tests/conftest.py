@@ -32,21 +32,23 @@ def clean_tmp_dir():
 
     example_mol_dir = (current_path / ".." / ".." / "data" / "example_xyz").resolve()
 
-    example_xyz = shutil.copytree(str(example_mol_dir), str(tmp_dir / "example_xyz"))
-    # copy input files to module working space
+    shutil.copytree(str(example_mol_dir), str(tmp_dir / "example_xyz"))
 
-    # change xyz file locations in .csv
-    df = pd.read_csv(tmp_dir / "example_xyz" / "example_molecules.csv")
-    df["path"] = [
-        path.resolve() for path in list((tmp_dir / "example_xyz").glob("*.xyz"))
-    ]
+    # open example_molecules.json and change path to absolute path
+    with open(tmp_dir / "example_xyz" / "example_molecules.json", "r") as f:
+        mol_dict = json.load(f)
 
-    df.to_csv(tmp_dir / "example_xyz" / "example_molecules.csv", index=False)
+    for key in mol_dict.keys():
+        for new_file in (tmp_dir / "example_xyz").glob("*"):
+            if new_file.stem in str(mol_dict[key]["path"]):
+                mol_dict[key]["path"] = str(new_file)
+
+    with open(tmp_dir / "example_xyz" / "example_molecules.json", "w") as f:
+        json.dump(mol_dict, f)
 
     main_dict["main_config"]["input_file_path"] = str(
-        Path(example_xyz) / "example_molecules.csv"
+        tmp_dir / "example_xyz" / "example_molecules.json"
     )
-
     with open(tmp_dir / "example_config.json", "w") as json_file:
         json.dump(main_dict, json_file)
 
@@ -114,18 +116,22 @@ def pre_config_tmp_dir():
 
     example_mol_dir = (current_path / ".." / ".." / "data" / "example_xyz").resolve()
 
-    example_xyz = shutil.copytree(str(example_mol_dir), str(tmp_dir / "example_xyz"))
+    shutil.copytree(str(example_mol_dir), str(tmp_dir / "example_xyz"))
 
     main_dict["main_config"]["input_file_path"] = str(
-        Path(example_xyz) / "example_molecules.csv"
+        tmp_dir / "example_xyz" / "example_molecules.json"
     )
 
-    # change xyz file locations in .csv
-    df = pd.read_csv(tmp_dir / "example_xyz" / "example_molecules.csv")
-    df["path"] = [
-        path.resolve() for path in list((tmp_dir / "example_xyz").glob("*.xyz"))
-    ]
-    df.to_csv(tmp_dir / "example_xyz" / "example_molecules.csv", index=False)
+    with open(tmp_dir / "example_xyz" / "example_molecules.json", "r") as f:
+        mol_dict = json.load(f)
+
+    for key in mol_dict.keys():
+        for new_file in (tmp_dir / "example_xyz").glob("*"):
+            if new_file.stem in str(mol_dict[key]["path"]):
+                mol_dict[key]["path"] = str(new_file)
+
+    with open(tmp_dir / "example_xyz" / "example_molecules.json", "w") as f:
+        json.dump(mol_dict, f)
 
     with open(tmp_dir / "example_config.json", "w") as json_file:
         json.dump(main_dict, json_file)
@@ -139,7 +145,7 @@ def pre_config_tmp_dir():
         tmp_dir / "example_xyz",
         tmp_dir / "example_xyz_output" / "sp_config" / "input",
         dirs_exist_ok=True,
-        ignore=shutil.ignore_patterns("*.csv"),
+        ignore=shutil.ignore_patterns("*.json"),
     )
     return tmp_dir
 
@@ -164,18 +170,23 @@ def multilayer_tmp_dir():
 
     example_mol_dir = (current_path / ".." / ".." / "data" / "example_xyz").resolve()
 
-    example_xyz = shutil.copytree(str(example_mol_dir), str(tmp_dir / "example_xyz"))
+    shutil.copytree(str(example_mol_dir), str(tmp_dir / "example_xyz"))
     # copy input files to module working space
 
-    # change xyz file locations in .csv
-    df = pd.read_csv(tmp_dir / "example_xyz" / "example_molecules.csv")
-    df["path"] = [
-        path.resolve() for path in list((tmp_dir / "example_xyz").glob("*.xyz"))
-    ]
-    df.to_csv(tmp_dir / "example_xyz" / "example_molecules.csv", index=False)
+    # change xyz file locations in .json
+    with open(tmp_dir / "example_xyz" / "example_molecules.json", "r") as f:
+        mol_dict = json.load(f)
+
+    for key in mol_dict.keys():
+        for new_file in (tmp_dir / "example_xyz").glob("*"):
+            if new_file.stem in str(mol_dict[key]["path"]):
+                mol_dict[key]["path"] = str(new_file)
+
+    with open(tmp_dir / "example_xyz" / "example_molecules.json", "w") as f:
+        json.dump(mol_dict, f)
 
     main_dict["main_config"]["input_file_path"] = str(
-        Path(example_xyz) / "example_molecules.csv"
+        tmp_dir / "example_xyz" / "example_molecules.json"
     )
 
     with open(tmp_dir / "example_config.json", "w") as json_file:
