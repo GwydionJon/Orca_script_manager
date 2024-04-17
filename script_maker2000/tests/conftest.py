@@ -38,17 +38,10 @@ def clean_tmp_dir():
     with open(tmp_dir / "example_xyz" / "example_molecules.json", "r") as f:
         mol_dict = json.load(f)
 
-    print(list((tmp_dir / "example_xyz").glob("*")))
-    for key, value in mol_dict.items():
-        file_path = Path(mol_dict[key]["path"])
-        file_name = file_path.name
-        print("file name:")
-        print(file_path)
-        print(file_name)
-        print(file_path.stem)
-        print("")
-        new_file_name = list((tmp_dir / "example_xyz").glob(file_name))[0]
-        mol_dict[key]["path"] = str(new_file_name)
+    for key in mol_dict.keys():
+        for new_file in (tmp_dir / "example_xyz").glob("*"):
+            if new_file.stem in str(mol_dict[key]["path"]):
+                mol_dict[key]["path"] = str(new_file)
 
     with open(tmp_dir / "example_xyz" / "example_molecules.json", "w") as f:
         json.dump(mol_dict, f)
@@ -133,11 +126,10 @@ def pre_config_tmp_dir():
     with open(tmp_dir / "example_xyz" / "example_molecules.json", "r") as f:
         mol_dict = json.load(f)
 
-    for key, value in mol_dict.items():
-        path = Path(mol_dict[key]["path"]).resolve()
-        file_name = path.name
-        new_file_name = list((tmp_dir / "example_xyz").glob(file_name))[0]
-        mol_dict[key]["path"] = str(new_file_name)
+    for key in mol_dict.keys():
+        for new_file in (tmp_dir / "example_xyz").glob("*"):
+            if new_file.stem in str(mol_dict[key]["path"]):
+                mol_dict[key]["path"] = str(new_file)
 
     with open(tmp_dir / "example_xyz" / "example_molecules.json", "w") as f:
         json.dump(mol_dict, f)
@@ -186,11 +178,10 @@ def multilayer_tmp_dir():
     with open(tmp_dir / "example_xyz" / "example_molecules.json", "r") as f:
         mol_dict = json.load(f)
 
-    for key, value in mol_dict.items():
-        path = Path(mol_dict[key]["path"]).resolve()
-        file_name = path.name
-        new_file_name = list((tmp_dir / "example_xyz").glob(file_name))[0]
-        mol_dict[key]["path"] = str(new_file_name)
+    for key in mol_dict.keys():
+        for new_file in (tmp_dir / "example_xyz").glob("*"):
+            if new_file.stem in str(mol_dict[key]["path"]):
+                mol_dict[key]["path"] = str(new_file)
 
     with open(tmp_dir / "example_xyz" / "example_molecules.json", "w") as f:
         json.dump(mol_dict, f)
