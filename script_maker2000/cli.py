@@ -8,7 +8,7 @@ import cProfile
 
 import atexit
 
-from script_maker2000.config_maker import app, add_main_config
+from script_maker2000.dash_ui.dash_main_gui import create_main_app
 from script_maker2000.files import (
     check_config,
     collect_input_files,
@@ -25,9 +25,20 @@ def script_maker_cli():
 @script_maker_cli.command()
 @click.help_option("--help", "-h", help="Show this message and exit")
 @click.option("--port", "-p", default=8050, help="Port to run the dash server on.")
-def config_creator(port):
+@click.option(
+    "--config",
+    "-c",
+    default=None,
+    help="Path to the config file. If the file does not exist a new file will be created.",
+)
+def config_creator(port, config):
     """ "This tool is used to create a new config file for the script_maker2000" """
-    add_main_config(app)
+
+    if config is None:
+        # by default read the empty config from data
+        config = Path(__file__).parent / "data" / "empty_config.json"
+
+    app = create_main_app(config)
     app.run_server(debug=True, port=port)
 
 
