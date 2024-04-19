@@ -87,7 +87,7 @@ def create_working_dir_structure(
     return output_dir, new_input_path, new_json_file
 
 
-def read_mol_input_json(input_json):
+def read_mol_input_json(input_json, skip_file_check=False):
 
     with open(input_json, "r", encoding="utf-8") as f:
         mol_input = json.load(f)
@@ -106,6 +106,9 @@ def read_mol_input_json(input_json):
             entry["charge"] = charge
         if "multiplicity" not in entry.keys():
             entry["multiplicity"] = mul
+
+        if skip_file_check:
+            return mol_input
 
         for entry_key, value in entry.items():
 
@@ -412,11 +415,7 @@ def collect_input_files(config_path, preparation_dir, config_name=None, tar_name
         # replace path in input_df with new path
 
         file = pathlib.Path(job_setup["path"])
-        if file.is_absolute() is False:
-            file_path = str(pathlib.Path(xyz_dir.name) / file.name)
-        else:
-            file_path = str(file)
-        mol_input_new[job_key]["path"] = str(file_path)
+        mol_input_new[job_key]["path"] = "extracted_xyz/" + file.name
 
     main_config["main_config"]["input_file_path"] = str(input_json.name)
     if xyz_dir is not None:
@@ -432,11 +431,12 @@ def collect_input_files(config_path, preparation_dir, config_name=None, tar_name
     preparation_dir.mkdir(parents=True, exist_ok=True)
 
     # write new input csv and config to preparation dir
-    new_json_name = preparation_dir / input_json.name
+    new_molecule_json_name = preparation_dir / input_json.name
 
-    with open(new_json_name, "w", encoding="utf-8") as json_file:
+    with open(new_molecule_json_name, "w", encoding="utf-8") as json_file:
         json.dump(mol_input_new, json_file)
 
+    # rename and save config file
     if config_name is None:
         new_config_name = preparation_dir / config_path.name
     else:
@@ -455,7 +455,7 @@ def collect_input_files(config_path, preparation_dir, config_name=None, tar_name
 
     with tarfile.open(tar_path, "w:gz") as tar:
 
-        tar.add(new_json_name, arcname=new_json_name.name)
+        tar.add(new_molecule_json_name, arcname=new_molecule_json_name.name)
         tar.add(new_config_name, arcname=new_config_name.name)
 
         for job_setup in mol_input.values():

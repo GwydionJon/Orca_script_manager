@@ -206,16 +206,21 @@ def start_tar(tar, extract_path, remove_extracted, profile: bool):
     click.echo(f"Config file found at {config_path}")
     click.echo(f"Molecule json file found at {mol_json_path}")
 
-    mol_json = read_mol_input_json(mol_json_path)
-
+    # skip file check as the extracted config has only vaguely correct file paths
+    mol_json = read_mol_input_json(mol_json_path, True)
+    # find the xyz files in the extracted folder
     for xyz_id in mol_json.keys():
-        print(xyz_id)
+        click.echo(xyz_id)
         xyz_path = list(extract_path.glob(f"**/*{xyz_id}*.xyz"))[0]
+        click.echo(xyz_path)
         if xyz_path.exists():
             mol_json[xyz_id]["path"] = str(xyz_path)
 
     with open(mol_json_path, "w", encoding="utf-8") as f:
         json.dump(mol_json, f)
+
+    # now check the new config file
+    mol_json = read_mol_input_json(mol_json_path)
 
     click.echo("Updated the path to the xyz files in the csv file.")
     click.echo(f"Found {len(mol_json)} molecules to calculate.")
