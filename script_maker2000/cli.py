@@ -141,6 +141,7 @@ def start_tar(tar, extract_path, remove_extracted, profile: bool):
 
     extract_path = Path(extract_path)
     extract_path = extract_path.resolve()
+    extract_path = extract_path / "extracted_data"
     extract_path.mkdir(exist_ok=True, parents=True)
 
     if profile:
