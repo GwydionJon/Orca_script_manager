@@ -177,12 +177,14 @@ def create_cyto_graph_layout() -> dbc.Col:
     return cyto_col
 
 
-def create_new_intput(key: str, value: str, id_=None) -> dbc.Row:
+def create_new_intput(
+    key: str, value: str, id_=None, placeholder=None, readonly=False
+) -> dbc.Row:
 
     if id_ is None:
         id_ = f"{key}_input"
+
     if isinstance(value, str):
-        placeholder = None
 
         if value == "":
             value = None
@@ -203,6 +205,7 @@ def create_new_intput(key: str, value: str, id_=None) -> dbc.Row:
                     value=value,
                     type="text",
                     placeholder=placeholder,
+                    readonly=readonly,
                 ),
             ],
             style=default_style,

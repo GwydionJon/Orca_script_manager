@@ -3,9 +3,7 @@ from pathlib import Path
 import tarfile
 import shutil
 import json
-
 import cProfile
-
 import atexit
 
 from script_maker2000.dash_ui.dash_main_gui import create_main_app
@@ -15,6 +13,7 @@ from script_maker2000.files import (
     read_mol_input_json,
 )
 from script_maker2000 import BatchManager
+from script_maker2000.remote_connection import RemoteConnection
 
 
 @click.group()
@@ -31,15 +30,33 @@ def script_maker_cli():
     default=None,
     help="Path to the config file. If the file does not exist a new file will be created.",
 )
-def config_creator(port, config):
+@click.option(
+    "--hostname",
+    "-h",
+    default="justus2.uni-ulm.de",
+    help="Hostname of the remote server.",
+)
+# Add the username option and prompt the user for the username
+@click.option("--username", "-u", help="Username of the remote server.", prompt=True)
+@click.option(
+    "--password",
+    "-pw",
+    help="Password of the remote server.",
+    prompt=True,
+    hide_input=True,
+)
+def config_creator(port, config, hostname, username, password):
     """ "This tool is used to create a new config file for the script_maker2000" """
 
     if config is None:
         # by default read the empty config from data
         config = Path(__file__).parent / "data" / "empty_config.json"
 
-    app = create_main_app(config)
-    app.run_server(debug=True, port=port)
+    remote_connection_obj = RemoteConnection()
+    remote_connection = remote_connection_obj.connect(username, hostname, password)
+
+    app = create_main_app(config, remote_connection)
+    app.run_server(debug=True, port=port, use_reloader=False)
 
 
 @script_maker_cli.command()
