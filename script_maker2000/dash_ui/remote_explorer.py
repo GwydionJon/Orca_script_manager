@@ -10,6 +10,7 @@ from script_maker2000.dash_ui.remote_explorer_calls import (
     check_local_tar_file,
     get_local_paths,
 )
+import time
 
 default_style = {"margin": "10px", "width": "100%"}
 
@@ -39,7 +40,7 @@ def create_manager_layout():
                 children=[
                     submission_layout,
                 ],
-                width=3,
+                width=5,
                 style={"padding-left": "10px"},
             ),
         ]
@@ -106,7 +107,8 @@ def create_remote_explorer_layout(mode):
 
 
 def create_job_submission_layout():
-    placeholder = "Select files to submit."
+    placeholder_local = "Select files to submit."
+    placeholder_remote = "Select a parent dir  (Use / to add a sub directory.)"
 
     layout = dbc.Row(
         children=[
@@ -126,27 +128,35 @@ def create_job_submission_layout():
                 "Select the tar file of your calculation. (See Config tab)",
                 "",
                 "valid_input_file",
-                placeholder,
+                placeholder_local,
                 True,
             ),
             create_new_intput(
-                "Select the parent dir for your calculation. (Use / to add a new dir)",
+                "Select the parent dir for your calculation.",
                 "",
                 "valid_target_dir",
-                placeholder,
+                placeholder_remote,
                 False,
             ),
             html.P(
-                "If these are correct, press the submit button to start a new calculation.",
+                [
+                    "If these are correct, press the submit button to start a new calculation.",
+                    html.Br(),
+                    "After starting a job you need to select a new tar file for the button to be enabled again.",
+                    html.Br(),
+                    "Please note that submitting the same job twice will most likely cause something to fail.",
+                ],
                 style=default_style,
             ),
             dbc.Button(
                 "Submit job", id="submit_new_job", style=default_style, disabled=True
             ),
-            dbc.Textarea(
-                id="job_output",
-                style={"margin": "10px", "width": "100%", "height": "400px"},
-                readOnly=True,
+            dcc.Loading(
+                dbc.Textarea(
+                    id="job_output",
+                    style={"margin": "10px", "width": "100%", "height": "400px"},
+                    readOnly=True,
+                ),
             ),
         ]
     )
@@ -173,50 +183,91 @@ def add_callbacks_remote_explorer(app, remote_connection):
         return {"title": cwd, "key": cwd, "children": output}
 
     def submit_job(n_clicks, input_file, target_dir):
+        def prepare_submission(input_file, target_dir):
+            if input_file is None or target_dir is None:
+                return "No job submitted yet."
 
-        print("starting job")
-        if input_file is None or target_dir is None:
-            return "No job submitted yet."
+            # use batch to check is the target dir exists, and if not recursivly create it.
+            remote_connection.run(
+                f"test -d {target_dir} || mkdir -p {target_dir}",
+                hide=True,
+            )
 
-        # use batch to check is the target dir exists, and if not recursivly create it.
-        remote_connection.run(
-            f"test -d {target_dir} || mkdir -p {target_dir}",
-            hide=True,
+            result = remote_connection.put(input_file, target_dir)
+
+            # check if the script manager has already been installed by the user, if not do so.
+            result_installed_check = remote_connection.run(
+                r"command -v script_maker_cli >/dev/null 2>&1 && echo 'The orca script manager is installed.' ||"
+                + " { echo >&2 'The Script maker package is not installed. Installing now:.'; "
+                + "ml devel/python/3.11.4; echo 'Unsetting pip'; unset PIP_TARGET; "
+                + "pip install git+https://github.com/GwydionJon/Orca_script_manager; }",
+                timeout=300,
+                hide=True,
+            ).stdout
+
+            output_text = f"{Path(input_file).name} uploaded to {result.remote}.\n"
+            output_text += (
+                f"Check if script manager is installed: \n{result_installed_check}\n\n"
+            )
+            return output_text
+
+        output_text = prepare_submission(input_file, target_dir)
+
+        input_file = Path(
+            "/lustre/home/hd/hd_hd/hd_uo452/test_dir/test/input_files.tar.gz"
         )
+        target_dir = "test_dir/test"
 
-        result = remote_connection.put(input_file, target_dir)
+        # the pathllib library does not like creating unix paths on a windows machine
+        # if this script is ever run on a windows server someone needs to find a better solution
+        file_to_extract = target_dir + "/" + input_file.name
 
-        # check if the script manager has already been installed by the user, if not do so.
-        result_installed_check = remote_connection.run(
-            r"command -v script_maker_cli >/dev/null 2>&1 && echo 'The orca script manager is installed.' ||"
-            + " { echo >&2 'The Script maker package is not installed. Installing now:.'; "
-            + "ml devel/python/3.11.4; echo 'Unsetting pip'; unset PIP_TARGET; "
-            + "pip install git+https://github.com/GwydionJon/Orca_script_manager; }",
-            timeout=210,
-            hide=True,
-        ).stdout
+        # create a new screen session to run the program in.
 
-        output_text = f"{Path(input_file).name} uploaded to {result.remote}.\n"
-        output_text += (
-            f"Check if script manager is installed: \n{result_installed_check}\n\n"
-        )
+        screen_check = remote_connection.run("screen -ls", warn=True, hide=True)
+
+        if Path(input_file).stem not in screen_check.stdout:
+            remote_connection.run(f"screen -dmS {Path(input_file).stem}")
 
         # start the calculation using nohup
         result = remote_connection.run(
-            f"nohup script_maker_cli start-tar --tar {Path(input_file).name} &",
-            hide=True,
+            f'screen -S {Path(input_file).stem} -X stuff "ml devel/python/3.11.4 ; '
+            + f" script_maker_cli start-tar --tar {str(file_to_extract)} -e {target_dir} --hide_job_status "
+            + f'> {target_dir}/check_shell_output.out \n"',
+            hide=False,
+            warn=True,
         )
-        output_text += f"{result.stdout}\n\n"
-        output_text += "Job started in background. Check the log file for progress.\n"
 
-        return output_text
+        time.sleep(5)
+        # check if job was started correctly
+        if result.exited != 0:
+            output_text += f"Error starting job: \n {result.stderr}\n\n"
+            return output_text, False
+
+        connection_start_result = remote_connection.run(
+            f"less  {target_dir}/check_shell_output.out", hide=True
+        )
+
+        if "Error" in connection_start_result.stdout:
+            error_line = connection_start_result.stdout.split("\n")[-2]
+            output_text += f"Error in connection_start_result: {error_line}"
+            return output_text, False
+        if "Starting the batch processing:" in connection_start_result.stdout:
+
+            output_text += f"{connection_start_result.stdout}\n\n"
+            output_text += (
+                "Job started in background. Check the log file for progress.\n"
+            )
+
+        return output_text, True
 
     app.callback(
         Output("job_output", "value"),
+        Output("submit_new_job", "disabled", allow_duplicate=True),
         Input("submit_new_job", "n_clicks"),
         State("valid_input_file", "value"),
         State("valid_target_dir", "value"),
-        prevent_initial_call=False,
+        prevent_initial_call=True,
     )(submit_job)
 
     app.callback(
@@ -260,7 +311,7 @@ def add_callbacks_remote_explorer(app, remote_connection):
     app.callback(
         Output("valid_input_file", "valid"),
         Output("valid_input_file", "invalid"),
-        Output("submit_new_job", "disabled"),
+        Output("submit_new_job", "disabled", allow_duplicate=True),
         Input("valid_input_file", "value"),
         prevent_initial_call=True,
     )(check_local_tar_file)
