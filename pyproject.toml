@@ -48,4 +48,4 @@ dependencies = [
 [project.scripts]
 script_maker_cli = "script_maker2000.cli:script_maker_cli"
 [tool.setuptools]
-packages = ["script_maker2000", "script_maker2000.data"]
+packages = ["script_maker2000", "script_maker2000.data", "script_maker2000.dash_ui"]
