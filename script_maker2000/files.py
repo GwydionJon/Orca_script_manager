@@ -7,8 +7,7 @@ import tarfile
 import os
 import copy
 
-script_maker_log = logging.getLogger("Script_maker_log")
-script_maker_error = logging.getLogger("Script_maker_error")
+batchLogger = logging.getLogger("BatchManager")
 
 
 def create_working_dir_structure(
@@ -31,7 +30,7 @@ def create_working_dir_structure(
 
     # create desired folder structure
     sub_dir_names = [pathlib.Path(key) for key in main_config["loop_config"]]
-    script_maker_log.info(f"creating subfolders: {sub_dir_names} ")
+    batchLogger.info(f"creating subfolders: {sub_dir_names} ")
 
     for subfolder in sub_dir_names:
         if main_config["main_config"]["continue_previous_run"] is False:
@@ -63,16 +62,16 @@ def create_working_dir_structure(
     found_files = [pathlib.Path(job_setup["path"]) for job_setup in job_input.values()]
 
     if len(found_files) < 20:
-        script_maker_log.info(found_files)
+        batchLogger.info(found_files)
     else:
-        script_maker_log.info(f"Found {len(found_files)} files.")
+        batchLogger.info(f"Found {len(found_files)} files.")
 
     new_input_path = output_dir / "start_input_files"
     new_input_path.mkdir(parents=True, exist_ok=True)
     # for orig_file in found_files:
     for key, entry in job_input.items():
         orig_file = pathlib.Path(entry["path"])
-        script_maker_log.info(orig_file)
+        batchLogger.info(orig_file)
         new_file_path = new_input_path / orig_file.name
         shutil.copy(orig_file, new_file_path)
         job_input[key]["path"] = str(new_file_path)
@@ -91,7 +90,6 @@ def read_mol_input_json(input_json, skip_file_check=False):
 
     with open(input_json, "r", encoding="utf-8") as f:
         mol_input = json.load(f)
-    print(input_json)
     for key, entry in mol_input.items():
         # check that given values are consistent with filename scheme
         file_path = pathlib.Path(entry["path"])
@@ -122,6 +120,10 @@ def read_mol_input_json(input_json, skip_file_check=False):
 
             if entry_key == "key":
                 if key not in file_path.stem:
+                    batchLogger.error(
+                        "Key in input file does not match the key in the file name. "
+                        + f"Please rename the file according to the following pattern: {key}_cXmX.xyz"
+                    )
                     raise ValueError(
                         "Key in input file does not match the key in the file name. "
                         + f"Please rename the file according to the following pattern: {key}_cXmX.xyz"
@@ -129,10 +131,17 @@ def read_mol_input_json(input_json, skip_file_check=False):
 
             if entry_key == "charge":
                 if not isinstance(value, int):
+                    batchLogger.error(
+                        f"Charge must be an integer. Found {value} of type {type(value)}"
+                    )
                     raise ValueError(
                         f"Charge must be an integer. Found {value} of type {type(value)}"
                     )
                 if int(value) != charge:
+                    batchLogger.error(
+                        "Charge in input file does not match the charge in the file name. "
+                        + f"Please rename the file according to the following pattern: {key}_cXmX.xyz"
+                    )
                     raise ValueError(
                         "Charge in input file does not match the charge in the file name. "
                         + f"Please rename the file according to the following pattern: {key}_cXmX.xyz"
@@ -140,10 +149,17 @@ def read_mol_input_json(input_json, skip_file_check=False):
 
             if entry_key == "multiplicity":
                 if not isinstance(value, int):
+                    batchLogger.error(
+                        f"Multiplicity must be an integer. Found {value} of type {type(value)}"
+                    )
                     raise ValueError(
                         f"Multiplicity must be an integer. Found {value} of type {type(value)}"
                     )
                 if int(value) != mul:
+                    batchLogger.error(
+                        "Multiplicity in input file does not match the multiplicity in the file name. "
+                        + f"Please rename the file according to the following pattern: {key}_cXmX.xyz"
+                    )
                     raise ValueError(
                         "Multiplicity in input file does not match the multiplicity in the file name. "
                         + f"Please rename the file according to the following pattern: {key}_cXmX.xyz"
@@ -170,11 +186,22 @@ def check_config(main_config, skip_file_check=False, override_continue_job=False
 
     for sub_dir in sub_dir_names:
 
+        print(sub_dir)
+        print(output_dir / "working" / sub_dir)
+        print((output_dir / "working" / sub_dir).exists())
+        print(main_config["main_config"]["continue_previous_run"])
+        print(override_continue_job)
+        print()
         if (
-            (output_dir / sub_dir).exists()
+            (output_dir / "working" / sub_dir).exists()
             and main_config["main_config"]["continue_previous_run"] is False
             and override_continue_job is False
         ):
+            batchLogger.error(
+                f"The directory {output_dir} already has subfolders setup. "
+                + "If you want to continue a previous run please change the "
+                + "'continue_previous_run'-option in the main config"
+            )
             raise FileExistsError(
                 f"The directory {output_dir} already has subfolders setup. "
                 + "If you want to continue a previous run please change the "
@@ -357,34 +384,9 @@ def read_config(config_file, perform_validation=True, override_continue_job=Fals
     if perform_validation is True:
         check_config(main_config)
     else:
-        script_maker_log.info("Skipping config validation.")
+        batchLogger.info("Skipping config validation.")
 
     output_dir.mkdir(parents=True, exist_ok=True)
-
-    # remove previous handlers from logging
-    # this is mainly relevant for the tests
-
-    for handler in script_maker_log.handlers:
-        script_maker_log.removeHandler(handler)
-    for handler in script_maker_error.handlers:
-        script_maker_error.removeHandler(handler)
-
-    # add log file to loggers
-    file_handler_log = logging.FileHandler(output_dir / "log.log")
-    file_handler_failed = logging.FileHandler(output_dir / "failed.log")
-
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-
-    file_handler_log.setFormatter(formatter)
-    file_handler_failed.setFormatter(formatter)
-
-    script_maker_log.addHandler(file_handler_log)
-    script_maker_error.addHandler(file_handler_failed)
-
-    script_maker_log.setLevel("DEBUG")
-    file_handler_failed.setLevel("DEBUG")
 
     return main_config
 
