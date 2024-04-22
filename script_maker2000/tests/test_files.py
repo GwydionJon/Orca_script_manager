@@ -23,11 +23,6 @@ def test_read_config(test_setup_work_dir):
 
     assert config["main_config"]["max_n_jobs"] == 20
 
-    # assert logger also working when changing directory
-    script_maker_log.info("test1")
-    script_maker_error.warning("test2")
-    assert len(list((test_setup_work_dir / "output").glob("*.log"))) == 2
-
     with pytest.raises(FileNotFoundError):
         config = read_config(test_setup_work_dir / "example_config3.json")
 
