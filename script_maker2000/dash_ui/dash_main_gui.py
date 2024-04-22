@@ -36,5 +36,10 @@ def create_main_app(file_path: str, remote_connection):
 
     app.layout = html.Div(id="main_div", children=[tabs], style={"padding": "20px"})
     app = add_callbacks(app)
+
+    # this is only for tests
+    if remote_connection is None:
+        return app
+
     app = add_callbacks_remote_explorer(app, remote_connection)
     return app
