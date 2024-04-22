@@ -132,11 +132,21 @@ def start_config(config, continue_run, profile: bool):
     help="If the extracted files should be removed initilization of the calculation.",
 )
 @click.option(
+    "--hide_job_status",
+    is_flag=True,
+    flag_value=True,
+    type=click.BOOL,
+    default=False,
+    help="If the job status should be hidden in the output.",
+)
+@click.option(
     "--profile",
     is_flag=True,
     help="If the code should be profiled. Will create a '.prof' file",
 )
-def start_tar(tar, extract_path, remove_extracted, profile: bool):
+def start_tar(
+    tar, extract_path, remove_extracted, profile: bool, hide_job_status: bool = False
+):
     """Start the batch processing with the given tarball."""
 
     extract_path = Path(extract_path)
@@ -226,7 +236,9 @@ def start_tar(tar, extract_path, remove_extracted, profile: bool):
     click.echo("Updated the path to the xyz files in the csv file.")
     click.echo(f"Found {len(mol_json)} molecules to calculate.")
 
-    batch_manager = BatchManager(config_path)
+    batch_manager = BatchManager(
+        config_path, show_current_job_status=not hide_job_status
+    )
 
     if remove_extracted:
         click.echo("Removing the extracted files.")

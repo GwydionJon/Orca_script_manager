@@ -186,12 +186,6 @@ def check_config(main_config, skip_file_check=False, override_continue_job=False
 
     for sub_dir in sub_dir_names:
 
-        print(sub_dir)
-        print(output_dir / "working" / sub_dir)
-        print((output_dir / "working" / sub_dir).exists())
-        print(main_config["main_config"]["continue_previous_run"])
-        print(override_continue_job)
-        print()
         if (
             (output_dir / "working" / sub_dir).exists()
             and main_config["main_config"]["continue_previous_run"] is False
