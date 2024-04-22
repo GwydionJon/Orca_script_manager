@@ -25,7 +25,12 @@ class BatchManager:
     organizing the file structure and starting the work managers.
     """
 
-    def __init__(self, main_config_path, override_continue_job=False) -> None:
+    def __init__(
+        self,
+        main_config_path,
+        override_continue_job=False,
+        show_current_job_status=True,
+    ) -> None:
 
         if Path(main_config_path).is_dir():
             main_config_path = Path(main_config_path) / "example_config.json"
@@ -60,6 +65,7 @@ class BatchManager:
         # parameter for loop
         self.wait_time = self.main_config["main_config"]["wait_for_results_time"]
         self.max_loop = -1  # -1 means infinite loop until all jobs are done
+        self.show_current_job_status = show_current_job_status
 
         # set up logging for this module
         self.log = logging.getLogger("BatchManager")
@@ -240,11 +246,7 @@ class BatchManager:
         advancement_dict = defaultdict(lambda: 0)
         for job in self.job_dict.values():
             advancement_output = job.advance_to_next_key()
-
             advancement_dict[advancement_output] += 1
-
-            # if advancement_output != "not_finished":
-            #     self.job_tqdm.update(1)
 
         log_message = "Advancement dict: "
         for key, value in advancement_dict.items():
@@ -311,7 +313,8 @@ class BatchManager:
                 break
 
             await asyncio.sleep(self.wait_time)
-            self.collect_current_job_status()
+            if self.show_current_job_status:
+                self.collect_current_job_status()
         return manager_tasks
 
     def collect_current_job_status(self):
@@ -326,8 +329,10 @@ class BatchManager:
                     status_dict[status] += 1
 
         progress_msg = "Current jobs status: "
-        for status, num in status_dict.items():
-            progress_msg += f"{status}: {num}, "
+        # possible states are: submitted, failed, finished
+        for status in ["submitted", "failed", "finished"]:
+            num = status_dict.get(status, 0)
+            progress_msg += f"{status}: {num:06d}, "
 
         print(progress_msg, end="\r", flush=True)
 

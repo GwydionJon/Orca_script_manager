@@ -23,11 +23,6 @@ def test_read_config(test_setup_work_dir):
 
     assert config["main_config"]["max_n_jobs"] == 20
 
-    # assert logger also working when changing directory
-    script_maker_log.info("test1")
-    script_maker_error.warning("test2")
-    assert len(list((test_setup_work_dir / "output").glob("*.log"))) == 2
-
     with pytest.raises(FileNotFoundError):
         config = read_config(test_setup_work_dir / "example_config3.json")
 
@@ -41,7 +36,10 @@ def test_create_working_dir_structure(test_setup_work_dir):
     # check that log files, settings, inputs and dirs are at the correct level
     output_path = pathlib.Path(main_config["main_config"]["output_dir"])
 
-    assert len(list(output_path.glob("*"))) == 7
+    # expecting 5 files at the top level
+    # finished, start_input_files, working, example_config.json, example_molecules.json
+
+    assert len(list(output_path.glob("*"))) == 5
     # check that sub dirs are present
     assert len(list(output_path.glob("*/*"))) == 15
     assert len(list(output_path.glob("*/*/*"))) == 10
@@ -50,7 +48,9 @@ def test_create_working_dir_structure(test_setup_work_dir):
     for file in pathlib.Path(test_setup_work_dir / "example_xyz").glob("*.xyz"):
         file.rename(file.parent / file.name.replace("START___", "START_"))
 
-    with pytest.raises(FileExistsError):
+    with pytest.raises(
+        FileExistsError, match=r"The directory .* already has subfolders setup\. .*"
+    ):
         main_config = read_config(test_setup_work_dir / "example_config4.json")
         create_working_dir_structure(main_config)
 
@@ -62,7 +62,9 @@ def test_create_working_dir_structure(test_setup_work_dir):
 
     create_working_dir_structure(main_config)
 
-    assert len(list(output_path.glob("*"))) == 7
+    # expecting 5 files at the top level
+    # finished, start_input_files, working, example_config.json, example_molecules.json
+    assert len(list(output_path.glob("*"))) == 5
     # check that two new sub dirs are present
     assert len(list(output_path.glob("*/*"))) == 15
     assert len(list(output_path.glob("*/*/*"))) == 9

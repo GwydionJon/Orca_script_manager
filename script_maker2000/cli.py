@@ -3,9 +3,7 @@ from pathlib import Path
 import tarfile
 import shutil
 import json
-
 import cProfile
-
 import atexit
 
 from script_maker2000.dash_ui.dash_main_gui import create_main_app
@@ -15,6 +13,7 @@ from script_maker2000.files import (
     read_mol_input_json,
 )
 from script_maker2000 import BatchManager
+from script_maker2000.remote_connection import RemoteConnection
 
 
 @click.group()
@@ -31,15 +30,33 @@ def script_maker_cli():
     default=None,
     help="Path to the config file. If the file does not exist a new file will be created.",
 )
-def config_creator(port, config):
+@click.option(
+    "--hostname",
+    "-h",
+    default="justus2.uni-ulm.de",
+    help="Hostname of the remote server.",
+)
+# Add the username option and prompt the user for the username
+@click.option("--username", "-u", help="Username of the remote server.", prompt=True)
+@click.option(
+    "--password",
+    "-pw",
+    help="Password of the remote server.",
+    prompt=True,
+    hide_input=True,
+)
+def config_creator(port, config, hostname, username, password):
     """ "This tool is used to create a new config file for the script_maker2000" """
 
     if config is None:
         # by default read the empty config from data
         config = Path(__file__).parent / "data" / "empty_config.json"
 
-    app = create_main_app(config)
-    app.run_server(debug=True, port=port)
+    remote_connection_obj = RemoteConnection()
+    remote_connection = remote_connection_obj.connect(username, hostname, password)
+
+    app = create_main_app(config, remote_connection)
+    app.run_server(debug=True, port=port, use_reloader=False)
 
 
 @script_maker_cli.command()
@@ -97,6 +114,107 @@ def start_config(config, continue_run, profile: bool):
     batch_manager.run_batch_processing()
 
 
+# additional functions for start_tar
+
+
+def enable_profiling(extract_path):
+    click.echo("Profiling the code")
+    pr = cProfile.Profile()
+    pr.enable()
+
+    def exit_():
+        pr.disable()
+        click.echo("Profiling completed")
+
+        pr.dump_stats(extract_path / "profiling_run.prof")
+
+    atexit.register(exit_)
+
+
+def prepare_extract_path(extract_path: str):
+    extract_path = Path(extract_path)
+    extract_path = extract_path.resolve()
+    extract_path = extract_path / "extracted_data"
+    extract_path.mkdir(exist_ok=True, parents=True)
+
+    return extract_path
+
+
+def extract_tarball(tar: str, extract_path: Path):
+    click.echo(f"Starting the batch processing with the tarball at {tar}.")
+    with tarfile.open(tar, "r:gz") as tar:
+        tar.extractall(path=extract_path, filter="data")
+    click.echo(f"Tarball extracted at {extract_path}")
+
+
+def find_json_files(extract_path: Path):
+    json_files = list(Path(extract_path).glob("*.json"))
+    if len(json_files) == 0:
+        click.echo("No json files found in the extracted folder.")
+        return None, None, 1
+
+    if len(json_files) > 2:
+        click.echo("More than two json files found in the extracted folder.")
+        return None, None, 1
+
+    config_path = None
+    mol_json_path = None
+
+    for file in json_files:
+        with open(file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            if "main_config" in data:
+                config_path = file
+            else:
+                mol_json_path = file
+
+    if config_path is None:
+        click.echo("No config file found in the extracted folder.")
+        return None, None, 1
+
+    if mol_json_path is None:
+        click.echo("No molecule json file found in the extracted folder.")
+        return None, None, 1
+
+    return config_path, mol_json_path, 0
+
+
+def load_and_update_config(config_path: Path, extract_path: Path):
+    with open(config_path, "r", encoding="utf-8") as f:
+        config = json.load(f)
+
+    current_output_path = config["main_config"]["output_dir"]
+    config["main_config"]["output_dir"] = str(
+        extract_path.parents[0] / current_output_path
+    )
+
+    with open(config_path, "w", encoding="utf-8") as f:
+        json.dump(config, f)
+
+    return config
+
+
+def update_mol_json(mol_json_path: Path, extract_path: Path):
+    try:
+        mol_json = read_mol_input_json(mol_json_path, True)
+    except Exception as e:
+        click.echo(f"Error reading the molecule json file: {e}")
+        raise e
+
+    # find the xyz files in the extracted folder
+    for xyz_id in mol_json.keys():
+        click.echo(xyz_id)
+        xyz_path = list(extract_path.glob(f"**/*{xyz_id}*.xyz"))[0]
+        click.echo(xyz_path)
+        if xyz_path.exists():
+            mol_json[xyz_id]["path"] = str(xyz_path)
+
+    with open(mol_json_path, "w", encoding="utf-8") as f:
+        json.dump(mol_json, f)
+
+    return mol_json
+
+
 @script_maker_cli.command()
 @click.option("--tar", "-t", help="Path to the tarball with the input files.")
 @click.option(
@@ -115,95 +233,56 @@ def start_config(config, continue_run, profile: bool):
     help="If the extracted files should be removed initilization of the calculation.",
 )
 @click.option(
+    "--hide_job_status",
+    is_flag=True,
+    flag_value=True,
+    type=click.BOOL,
+    default=False,
+    help="If the job status should be hidden in the output.",
+)
+@click.option(
     "--profile",
     is_flag=True,
     help="If the code should be profiled. Will create a '.prof' file",
 )
-def start_tar(tar, extract_path, remove_extracted, profile: bool):
+def start_tar(
+    tar, extract_path, remove_extracted, profile: bool, hide_job_status: bool = False
+):
     """Start the batch processing with the given tarball."""
 
-    extract_path = Path(extract_path)
-    extract_path = extract_path.resolve()
-    extract_path.mkdir(exist_ok=True, parents=True)
-
     if profile:
-        print("Profiling the code")
-        pr = cProfile.Profile()
-        pr.enable()
+        enable_profiling(extract_path)
 
-        def exit_():
-            pr.disable()
-            print("Profiling completed")
+    extract_path = prepare_extract_path(extract_path)
+    extract_tarball(tar, extract_path)
 
-            pr.dump_stats(extract_path / "profiling_run.prof")
+    config_path, mol_json_path, error_code = find_json_files(extract_path)
+    if error_code != 0:
+        return error_code
 
-        atexit.register(exit_)
-
-    click.echo(f"Starting the batch processing with the tarball at {tar}.")
-    with tarfile.open(tar, "r:gz") as tar:
-        tar.extractall(path=extract_path, filter="data")
-
-    click.echo(f"Tarball extracted at {extract_path}")
-
-    json_files = list(Path(extract_path).glob("*.json"))
-    if len(json_files) == 0:
-        click.echo("No json files found in the extracted folder.")
-        return 1
-
-    if len(json_files) > 2:
-        click.echo("More than two json files found in the extracted folder.")
-        return 1
-
-    config_path = None
-    mol_json_path = None
-
-    for file in json_files:
-        with open(file, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            if "main_config" in data:
-                config_path = file
-            else:
-                mol_json_path = file
-
-    if config_path is None:
-        click.echo("No config file found in the extracted folder.")
-        return 1
-
-    if mol_json_path is None:
-        click.echo("No molecule json file found in the extracted folder.")
-        return 1
-
-    # load config file and replace output path
-
-    with open(config_path, "r", encoding="utf-8") as f:
-        config = json.load(f)
-
-    current_output_path = config["main_config"]["output_dir"]
-    config["main_config"]["output_dir"] = str(
-        extract_path.parents[0] / current_output_path
-    )
-
-    with open(config_path, "w", encoding="utf-8") as f:
-        json.dump(config, f)
+    config = load_and_update_config(config_path, extract_path)
+    mol_json = update_mol_json(mol_json_path, extract_path)
 
     click.echo(f"Config file found at {config_path}")
     click.echo(f"Molecule json file found at {mol_json_path}")
 
-    mol_json = read_mol_input_json(mol_json_path)
-
-    for xyz_id in mol_json.keys():
-        print(xyz_id)
-        xyz_path = list(extract_path.glob(f"**/*{xyz_id}*.xyz"))[0]
-        if xyz_path.exists():
-            mol_json[xyz_id]["path"] = str(xyz_path)
-
-    with open(mol_json_path, "w", encoding="utf-8") as f:
-        json.dump(mol_json, f)
+    # now check the new config file
+    try:
+        mol_json = read_mol_input_json(mol_json_path)
+    except Exception as e:
+        click.echo(f"Error reading the molecule json file: {e}")
+        raise e
 
     click.echo("Updated the path to the xyz files in the csv file.")
     click.echo(f"Found {len(mol_json)} molecules to calculate.")
 
-    batch_manager = BatchManager(config_path)
+    try:
+        batch_manager = BatchManager(
+            config_path, show_current_job_status=not hide_job_status
+        )
+    except Exception as e:
+        click.echo(f"Error creating the batch manager: {e}")
+        raise e
 
     if remove_extracted:
         click.echo("Removing the extracted files.")
@@ -219,6 +298,8 @@ def start_tar(tar, extract_path, remove_extracted, profile: bool):
     click.echo("Task results:")
     for task in task_results:
         click.echo(task)
+
+    return exit_code
 
 
 @script_maker_cli.command()

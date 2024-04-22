@@ -166,6 +166,13 @@ def test_collect_files(clean_tmp_dir):
     for file in expected_files:
         assert (new_tar_dir / file).exists()
 
+    # read new example_molecules file and verify that the new filepath is accurate
+    #  and points to the new extracted xyz dir
+    with open(new_tar_dir / "example_molecules.json", "r") as f:
+        molecules_dict = json.load(f)
+    for molecule in molecules_dict.values():
+        assert "extracted_xyz" in molecule["path"]
+
 
 @pytest.mark.skipif(
     shutil.which("sbatch") is not None,
@@ -204,7 +211,6 @@ def test_start_tar_local(clean_tmp_dir, monkeypatch):
     result = runner.invoke(
         start_tar, ["--tar", tar_path, "-e", str(prep_path)], catch_exceptions=True
     )
-
     assert "The slurm commands can't be run inside this test" in str(result.exception)
     assert result.exit_code == 1
     BatchManager.__init__ = original_init

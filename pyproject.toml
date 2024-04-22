@@ -37,6 +37,10 @@ dependencies = [
     "pint_pandas",
     "molmass",
     "mip",
+    "dash_treeview_antd",
+    "paramiko",
+    "fabric",
+    
 ]
 
 
