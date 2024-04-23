@@ -463,11 +463,14 @@ def collect_input_files(config_path, preparation_dir, config_name=None, tar_name
     return tar_path
 
 
-def collect_results_(output_dir, exclude_patterns):
+def collect_results_(output_dir, exclude_patterns=None):
 
     output_dir = pathlib.Path(output_dir)
 
     tar_path = output_dir / output_dir.name + ".tar.gz"
+
+    if exclude_patterns is None:
+        exclude_patterns = []
 
     with tarfile.open(tar_path, "w:gz") as tar:
         for file in output_dir.glob("**/*"):
