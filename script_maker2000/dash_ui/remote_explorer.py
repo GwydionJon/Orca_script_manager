@@ -257,9 +257,7 @@ def add_callbacks_remote_explorer(app, remote_connection):
 
         prepare_submission(input_file, target_dir, output_tracking_file)
 
-        input_file = Path(
-            "/lustre/home/hd/hd_hd/hd_uo452/test_dir/test/input_files.tar.gz"
-        )
+        input_file = Path(input_file)
 
         # the pathllib library does not like creating unix paths on a windows machine
         # if this script is ever run on a windows server someone needs to find a better solution
