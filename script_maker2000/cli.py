@@ -6,6 +6,9 @@ import json
 import cProfile
 import atexit
 
+from platformdirs import PlatformDirs
+import os
+
 from script_maker2000.dash_ui.dash_main_gui import create_main_app
 from script_maker2000.files import (
     check_config,
@@ -344,3 +347,25 @@ def collect_input(config, output, tar_name):
     )
 
     return 0
+
+
+@script_maker_cli.command()
+@click.option(
+    "--as_json", is_flag=True, help="If the config should be returned as json."
+)
+def return_batch_config(as_json=False):
+    user_dirs = PlatformDirs(os.getlogin(), "Orca_Script_Maker")
+    user_config_dir = Path(user_dirs.user_config_dir)
+    user_config_dir.mkdir(parents=True, exist_ok=True)
+    config_file = user_config_dir / "available_jobs.json"
+
+    if not config_file.exists():
+        click.echo("No config file found.")
+        return 1
+
+    if as_json:
+        with open(config_file, "r", encoding="utf-8") as f:
+            config = json.load(f)
+            click.echo(json.dumps(config, indent=4))
+            return 0
+    click.echo(f"Config file found at: {config_file}")
