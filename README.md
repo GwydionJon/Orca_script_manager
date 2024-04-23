@@ -26,10 +26,10 @@ First open a terminal where you want to create your new config file.
 
 `script_maker_cli config-creator` 
 
-You may need to ctrl+click the short link showing up in your terminal now to open the web baed config creator.
+You may need to ctrl+click or copy the short link showing up in your terminal to open the web based config creator.
 
 Simply set the config however you want and follow the hints you are provided with when entering a wrong parameter.
-
+Choose a unique name and output directory for your config as the filename will be used to track the calculation
 
 #### Collect input files
 Afterwards you have exported your config you can use to collect all relevant files for you, so you only have to copy one archive to the server. (May change in the future)

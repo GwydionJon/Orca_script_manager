@@ -40,7 +40,7 @@ dependencies = [
     "dash_treeview_antd",
     "paramiko",
     "fabric",
-    
+    "PlatformDirs",
 ]
 
 

@@ -8,7 +8,8 @@ from pathlib import Path
 from tqdm import tqdm
 import traceback
 import tarfile
-
+from platformdirs import PlatformDirs
+import os
 
 from script_maker2000.files import (
     read_config,
@@ -34,6 +35,8 @@ class BatchManager:
 
         if Path(main_config_path).is_dir():
             main_config_path = Path(main_config_path) / "example_config.json"
+
+        self.config_name = Path(main_config_path).stem
 
         self.main_config = self.read_config(
             main_config_path, override_continue_job=override_continue_job
@@ -361,12 +364,65 @@ class BatchManager:
         self.log.info(log_message)
         return status_dict
 
+    def create_config_entry(self):
+        """Create a config entry for the current batch run."""
+
+        print("Creating config entry for current batch run.")
+        user_dirs = PlatformDirs(os.getlogin(), "Orca_Script_Maker")
+        user_config_dir = Path(user_dirs.user_config_dir)
+        user_config_dir.mkdir(parents=True, exist_ok=True)
+        config_file = user_config_dir / "available_jobs.json"
+
+        if config_file.exists():
+            with open(config_file, "r", encoding="utf-8") as json_file:
+                config_dict = json.load(json_file)
+        else:
+            config_dict = defaultdict(lambda: defaultdict(list))
+
+        if (
+            str(self.working_dir) not in config_dict[self.config_name]["running"]
+            and str(self.working_dir) not in config_dict[self.config_name]["finished"]
+        ):
+            config_dict[self.config_name]["running"].append(str(self.working_dir))
+
+        else:
+            error_msg = f"Working dir {self.working_dir} does already exists for config {self.config_name}.\n"
+            +" Please make sure to choose a unique combination."
+            self.log.error(error_msg)
+            raise ValueError(error_msg)
+
+        with open(config_file, "w", encoding="utf-8") as json_file:
+            json.dump(config_dict, json_file)
+
+    def finish_config_entry(self):
+        user_dirs = PlatformDirs(os.getlogin(), "Orca_Script_Maker")
+        user_config_dir = Path(user_dirs.user_config_dir)
+        user_config_dir.mkdir(parents=True, exist_ok=True)
+        config_file = user_config_dir / "available_jobs.json"
+
+        with open(config_file, "r", encoding="utf-8") as json_file:
+            config_dict = json.load(json_file)
+
+        config_dict.get(self.config_name, {}).get("running", []).remove(
+            str(self.working_dir)
+        )
+        config_dict.get(self.config_name, {}).get("finished", []).append(
+            str(self.working_dir)
+        )
+
+        with open(config_file, "w", encoding="utf-8") as json_file:
+            json.dump(config_dict, json_file)
+
     def run_batch_processing(self):
         """
         Starts the batch processing loop and returns the results.
         It will block until all tasks are done.
         This is the main working loop.
         """
+
+        # create config entry right before starting the loop
+        self.create_config_entry()
+
         task_results = asyncio.run(self.batch_processing_loop())
         result_dict = self.collect_result_overview()
 
@@ -406,6 +462,9 @@ class BatchManager:
                     all_errors.append(e)
                     all_error_traceback.append(traceback.format_exc())
                     all_error_tasks.append(task)
+
+        # finish config entry
+        self.finish_config_entry()
 
         if exit_code == 1:
             self.log.error(
