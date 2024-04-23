@@ -467,7 +467,7 @@ def collect_results_(output_dir, exclude_patterns=None):
 
     output_dir = pathlib.Path(output_dir)
 
-    tar_path = output_dir / output_dir.name + ".tar.gz"
+    tar_path = output_dir / (output_dir.name + ".tar.gz")
 
     if exclude_patterns is None:
         exclude_patterns = []
