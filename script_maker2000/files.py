@@ -461,3 +461,19 @@ def collect_input_files(config_path, preparation_dir, config_name=None, tar_name
     tar_path = pathlib.Path(tar_path)
 
     return tar_path
+
+
+def collect_results_(output_dir, exclude_patterns):
+
+    output_dir = pathlib.Path(output_dir)
+
+    tar_path = output_dir / output_dir.name + ".tar.gz"
+
+    with tarfile.open(tar_path, "w:gz") as tar:
+        for file in output_dir.glob("**/*"):
+            if file.is_file():
+                if any([pattern in str(file) for pattern in exclude_patterns]):
+                    continue
+            tar.add(file, arcname=file.relative_to(output_dir))
+
+    return tar_path

@@ -14,6 +14,7 @@ from script_maker2000.files import (
     check_config,
     collect_input_files,
     read_mol_input_json,
+    collect_results_,
 )
 from script_maker2000 import BatchManager
 from script_maker2000.remote_connection import RemoteConnection
@@ -369,3 +370,30 @@ def return_batch_config(as_json=False):
             click.echo(json.dumps(config, indent=4))
             return 0
     click.echo(f"Config file found at: {config_file}")
+
+
+@script_maker_cli.command()
+@click.option("--results_path", "-r", help="Path to the results folder.")
+@click.option(
+    "--exclude_patterns",
+    "-e",
+    default=None,
+    help="Comma seperated list of patterns to exclude from the tarball.",
+)
+def collect_results(results_path, exclude_patterns=None):
+
+    results_path = Path(results_path)
+    results_path = results_path.resolve()
+
+    if exclude_patterns is not None:
+        exclude_patterns = exclude_patterns.split(",")
+
+    if not results_path.exists():
+        click.echo(f"Results path not found at {results_path}")
+        return 1
+
+    result_tar = collect_results_(results_path, exclude_patterns)
+
+    click.echo(f"Tarball created at {result_tar}")
+
+    return 0
