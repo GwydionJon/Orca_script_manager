@@ -10,7 +10,6 @@ from script_maker2000.dash_ui.remote_explorer_calls import (
     check_local_tar_file,
     get_local_paths,
 )
-import time
 
 default_style = {"margin": "10px", "width": "100%"}
 
@@ -151,13 +150,19 @@ def create_job_submission_layout():
             dbc.Button(
                 "Submit job", id="submit_new_job", style=default_style, disabled=True
             ),
-            dcc.Loading(
-                dbc.Textarea(
-                    id="job_output",
-                    style={"margin": "10px", "width": "100%", "height": "400px"},
-                    readOnly=True,
-                ),
+            dcc.Interval(
+                id="job_status_interval",
+                max_intervals=0,
+                interval=1.5 * 1000,  # in milliseconds
             ),
+            html.Div(id="empty_div_explorer", style={"display": "none"}),
+            # dcc.Loading(
+            dbc.Textarea(
+                id="job_output",
+                style={"margin": "10px", "width": "100%", "height": "400px"},
+                readOnly=True,
+            ),
+            # ),
         ]
     )
     return layout
@@ -182,10 +187,50 @@ def add_callbacks_remote_explorer(app, remote_connection):
 
         return {"title": cwd, "key": cwd, "children": output}
 
+    def get_live_updates(n_intervals, target_dir):
+        """This function will check the output file for the job status and update the textarea.
+
+        Args:
+            n_intervals (int): Value of the button to trigger the function.
+            target_dir (str): Remote target dir for the calculation.
+        """
+        if n_intervals is None:
+            return "No job submitted yet."
+
+        output_tracking_file = target_dir + "/check_shell_output.out"
+        result = remote_connection.run(f"cat {output_tracking_file}", hide=True)
+
+        result_output = result.stdout
+
+        if "Error" in result_output:
+            return result_output, 0
+
+        if "Starting the batch processing:" in result_output:
+            return result_output, 0
+
+        return result.stdout, -1
+
+    def disable_button_start_interval(n_clicks):
+        return True, -1
+
     def submit_job(n_clicks, input_file, target_dir):
-        def prepare_submission(input_file, target_dir):
+        """This function will copy the input file to the target dir and start the calculation.
+        Will also start the interval for live updates.
+
+        Args:
+            n_clicks (int): Value of the button to trigger the function.
+            input_file (str): Local input file to copy to the target dir.
+            target_dir (str): Remote target dir for the calculation.
+        """
+
+        def prepare_submission(input_file, target_dir, output_tracking_file):
             if input_file is None or target_dir is None:
                 return "No job submitted yet."
+
+            # initiate the output file
+            remote_connection.run(
+                f"echo 'Starting the batch setup: ' > {output_tracking_file} "
+            )
 
             # use batch to check is the target dir exists, and if not recursivly create it.
             remote_connection.run(
@@ -194,24 +239,23 @@ def add_callbacks_remote_explorer(app, remote_connection):
             )
 
             result = remote_connection.put(input_file, target_dir)
+            remote_connection.run(
+                f"echo 'File copied to {result}'  >> {output_tracking_file} "
+            )
 
             # check if the script manager has already been installed by the user, if not do so.
-            result_installed_check = remote_connection.run(
-                r"command -v script_maker_cli >/dev/null 2>&1 && echo 'The orca script manager is installed.' ||"
-                + " { echo >&2 'The Script maker package is not installed. Installing now:.'; "
+            remote_connection.run(
+                r"command -v script_maker_cli >/dev/null 2>&1 && echo 'The orca script manager is installed. ' ||"
+                + f" {{ echo >&2 'The Script maker package is not installed. Installing now:.'>>{output_tracking_file};"
                 + "ml devel/python/3.11.4; echo 'Unsetting pip'; unset PIP_TARGET; "
-                + "pip install git+https://github.com/GwydionJon/Orca_script_manager; }",
-                timeout=300,
+                + f"pip install git+https://github.com/GwydionJon/Orca_script_manager >> {output_tracking_file}; }}",
+                timeout=600,
                 hide=True,
-            ).stdout
-
-            output_text = f"{Path(input_file).name} uploaded to {result.remote}.\n"
-            output_text += (
-                f"Check if script manager is installed: \n{result_installed_check}\n\n"
             )
-            return output_text
 
-        output_text = prepare_submission(input_file, target_dir)
+        output_tracking_file = target_dir + "/check_shell_output.out"
+
+        prepare_submission(input_file, target_dir, output_tracking_file)
 
         input_file = Path(
             "/lustre/home/hd/hd_hd/hd_uo452/test_dir/test/input_files.tar.gz"
@@ -233,37 +277,35 @@ def add_callbacks_remote_explorer(app, remote_connection):
         result = remote_connection.run(
             f'screen -S {Path(input_file).stem} -X stuff "ml devel/python/3.11.4 ; '
             + f" script_maker_cli start-tar --tar {str(file_to_extract)} -e {target_dir} --hide_job_status "
-            + f'> {target_dir}/check_shell_output.out \n"',
+            + f'>> {output_tracking_file} \n"',
             hide=False,
             warn=True,
         )
-
-        time.sleep(5)
         # check if job was started correctly
         if result.exited != 0:
-            output_text += f"Error starting job: \n {result.stderr}\n\n"
-            return output_text, False
+            raise Exception(f"Error starting job: \n {result.stderr}")
 
-        connection_start_result = remote_connection.run(
-            f"less  {target_dir}/check_shell_output.out", hide=True
-        )
-
-        if "Error" in connection_start_result.stdout:
-            error_line = connection_start_result.stdout.split("\n")[-2]
-            output_text += f"Error in connection_start_result: {error_line}"
-            return output_text, False
-        if "Starting the batch processing:" in connection_start_result.stdout:
-
-            output_text += f"{connection_start_result.stdout}\n\n"
-            output_text += (
-                "Job started in background. Check the log file for progress.\n"
-            )
-
-        return output_text, True
+        return None
 
     app.callback(
         Output("job_output", "value"),
+        Output("job_status_interval", "max_intervals", allow_duplicate=True),
+        Input("job_status_interval", "n_intervals"),
+        State("valid_target_dir", "value"),
+        prevent_initial_call=True,
+    )(get_live_updates)
+
+    app.callback(
         Output("submit_new_job", "disabled", allow_duplicate=True),
+        Output("job_status_interval", "n_intervals", allow_duplicate=True),
+        Input("submit_new_job", "n_clicks"),
+        prevent_initial_call=True,
+    )(disable_button_start_interval)
+
+    app.callback(
+        Output(
+            "empty_div_explorer", "children", allow_duplicate=True
+        ),  # start the interval for live updates
         Input("submit_new_job", "n_clicks"),
         State("valid_input_file", "value"),
         State("valid_target_dir", "value"),
