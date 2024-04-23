@@ -1,1 +1,5 @@
 include script_maker2000/data/empty_config.json
+include script_maker2000/data/crest_template.sbatch
+include script_maker2000/data/example_config_xyz.json
+include script_maker2000/data/orca_template.in
+include script_maker2000/data/orca_template.sbatch
