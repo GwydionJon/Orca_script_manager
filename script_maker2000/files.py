@@ -470,6 +470,13 @@ def collect_results_(output_dir, exclude_patterns=None):
     if exclude_patterns is None:
         exclude_patterns = []
 
+    if ".zip" not in exclude_patterns:
+        exclude_patterns.append(".zip")
+    if ".tar" not in exclude_patterns:
+        exclude_patterns.append(".tar")
+    if ".tar.gz" not in exclude_patterns:
+        exclude_patterns.append(".tar.gz")
+
     zip_path = output_dir / (output_dir.name + ".zip")
     with zipfile.ZipFile(zip_path, "w") as zipf:
         for file in output_dir.glob("**/*"):

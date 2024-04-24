@@ -180,3 +180,4 @@ cpu_benchmark/cpu_benchmark_full_run.tar.gz
 cpu_benchmark/cpu_benchmark_job_backup.json
 profiling_run.prof
 script_maker2000/notebooks/test.py
+output_results/
