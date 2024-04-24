@@ -502,7 +502,8 @@ def read_batch_config_file(mode):
         raise ValueError(f"Mode must be either 'path' or 'dict' but is {mode}.")
 
     user_dirs = PlatformDirs(os.getlogin(), "Orca_Script_Maker")
-    user_config_dir = pathlib.Path(user_dirs)
+    print(user_dirs)
+    user_config_dir = pathlib.Path(user_dirs.user_config_dir)
     config_file = user_config_dir / "available_jobs.json"
 
     if not config_file.exists():
