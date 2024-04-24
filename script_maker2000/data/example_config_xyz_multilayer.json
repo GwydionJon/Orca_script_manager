@@ -1,5 +1,6 @@
 {
     "main_config": {
+        "config_name": "multilayer_test",
         "continue_previous_run": false,
         "max_n_jobs": 20,
         "max_ram_per_core": 2500,
