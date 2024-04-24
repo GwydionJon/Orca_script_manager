@@ -502,7 +502,6 @@ def read_batch_config_file(mode):
         raise ValueError(f"Mode must be either 'path' or 'dict' but is {mode}.")
 
     user_dirs = PlatformDirs(os.getlogin(), "Orca_Script_Maker")
-    print(user_dirs)
     user_config_dir = pathlib.Path(user_dirs.user_config_dir)
     config_file = user_config_dir / "available_jobs.json"
 
@@ -513,18 +512,22 @@ def read_batch_config_file(mode):
         dict_config = json.load(f)
 
     removed_keys = []
-    for key, dir_list in dict_config.items():
-        for dir_path in dir_list:
-            if not pathlib.Path(dir_path).exists():
-                dict_config[key].remove(dir_path)
-                removed_keys.append(dir_path)
-    print(
-        "Removed the following paths from the global config as they are no longer valid:"
-    )
-    for key in removed_keys:
-        print(key)
+    for key, dir_values in dict_config.items():
+        for dir_list in dir_values.values():
+            for dir_path in dir_list:
+                if not pathlib.Path(dir_path).exists():
+                    print(dict_config[key])
+                    dict_config[key].remove(dir_path)
+                    removed_keys.append(dir_path)
+    if len(removed_keys) > 0:
+        print(
+            "Ignoring the following paths from the global config as they are no longer valid:"
+        )
+        for key in removed_keys:
+            print(key)
 
     if mode == "path":
         return config_file
-    elif mode == "dict":
+
+    if mode == "dict":
         return dict_config
