@@ -477,4 +477,4 @@ def collect_results_(output_dir, exclude_patterns=None):
                 continue
         zipf.write(file, arcname=str(file.relative_to(output_dir)))
 
-    return zipfile
+    return zip_path
