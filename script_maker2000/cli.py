@@ -385,8 +385,20 @@ def collect_results(results_path, exclude_patterns=None):
     results_path = Path(results_path)
     results_path = results_path.resolve()
 
-    if exclude_patterns is not None:
+    if exclude_patterns is None:
+        exclude_patterns = []
+
+    elif exclude_patterns == "":
+        exclude_patterns = []
+
+    if isinstance(exclude_patterns, str):
+        if exclude_patterns[-1] == ",":
+            exclude_patterns = exclude_patterns[:-1]
+
         exclude_patterns = exclude_patterns.split(",")
+        exclude_patterns = [pattern.strip() for pattern in exclude_patterns]
+
+    print(exclude_patterns)
 
     if not results_path.exists():
         click.echo(f"Results path not found at {results_path}")
