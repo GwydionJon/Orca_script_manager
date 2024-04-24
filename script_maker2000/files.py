@@ -4,6 +4,7 @@ import pathlib
 import shutil
 from collections import OrderedDict
 import tarfile
+import zipfile
 import os
 import copy
 
@@ -464,19 +465,16 @@ def collect_input_files(config_path, preparation_dir, config_name=None, tar_name
 
 
 def collect_results_(output_dir, exclude_patterns=None):
-
+    # for some reason zip file is many times faster than tar and significantly smaller
     output_dir = pathlib.Path(output_dir)
 
-    tar_path = output_dir / (output_dir.name + ".tar.gz")
-
-    if exclude_patterns is None:
-        exclude_patterns = []
-
-    with tarfile.open(tar_path, "w:gz") as tar:
+    zip_path = output_dir / (output_dir.name + ".zip")
+    with zipfile.ZipFile(zip_path, "w") as zipf:
         for file in output_dir.glob("**/*"):
-            if file.is_file():
-                if any([pattern in str(file) for pattern in exclude_patterns]):
-                    continue
-            tar.add(file, arcname=file.relative_to(output_dir))
 
-    return tar_path
+            if any([pattern in str(file) for pattern in exclude_patterns]):
+
+                continue
+        zipf.write(file, arcname=str(file.relative_to(output_dir)))
+
+    return zipfile
