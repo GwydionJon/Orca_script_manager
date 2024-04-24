@@ -5,6 +5,7 @@ import shutil
 from collections import OrderedDict
 import tarfile
 import zipfile
+from platformdirs import PlatformDirs
 import os
 import copy
 
@@ -485,3 +486,44 @@ def collect_results_(output_dir, exclude_patterns=None):
             zipf.write(file, arcname=str(file.relative_to(output_dir)))
 
     return zip_path
+
+
+def read_batch_config_file(mode):
+    """Read the global config file and check if any paths are pointing to non-existing files.
+
+    Args:
+        mode (str): path or dict
+
+    Returns:
+        str|dict: either the config path or the config dict
+    """
+
+    if mode not in ["path", "dict"]:
+        raise ValueError(f"Mode must be either 'path' or 'dict' but is {mode}.")
+
+    user_dirs = PlatformDirs(os.getlogin(), "Orca_Script_Maker")
+    user_config_dir = pathlib.Path(user_dirs)
+    config_file = user_config_dir / "available_jobs.json"
+
+    if not config_file.exists():
+        raise FileNotFoundError("No config file found.")
+
+    with open(config_file, "r", encoding="utf-8") as f:
+        dict_config = json.load(f)
+
+    removed_keys = []
+    for key, dir_list in dict_config.items():
+        for dir_path in dir_list:
+            if not pathlib.Path(dir_path).exists():
+                dict_config[key].remove(dir_path)
+                removed_keys.append(dir_path)
+    print(
+        "Removed the following paths from the global config as they are no longer valid:"
+    )
+    for key in removed_keys:
+        print(key)
+
+    if mode == "path":
+        return config_file
+    elif mode == "dict":
+        return dict_config

@@ -6,8 +6,6 @@ import json
 import cProfile
 import atexit
 
-from platformdirs import PlatformDirs
-import os
 
 from script_maker2000.dash_ui.dash_main_gui import create_main_app
 from script_maker2000.files import (
@@ -15,6 +13,7 @@ from script_maker2000.files import (
     collect_input_files,
     read_mol_input_json,
     collect_results_,
+    read_batch_config_file,
 )
 from script_maker2000 import BatchManager
 from script_maker2000.remote_connection import RemoteConnection
@@ -355,21 +354,20 @@ def collect_input(config, output, tar_name):
     "--as_json", is_flag=True, help="If the config should be returned as json."
 )
 def return_batch_config(as_json=False):
-    user_dirs = PlatformDirs(os.getlogin(), "Orca_Script_Maker")
-    user_config_dir = Path(user_dirs.user_config_dir)
-    user_config_dir.mkdir(parents=True, exist_ok=True)
-    config_file = user_config_dir / "available_jobs.json"
-
-    if not config_file.exists():
-        click.echo("No config file found.")
-        return 1
 
     if as_json:
-        with open(config_file, "r", encoding="utf-8") as f:
-            config = json.load(f)
-            click.echo(json.dumps(config, indent=4))
-            return 0
-    click.echo(f"Config file found at: {config_file}")
+        try:
+            config_dict = read_batch_config_file(mode="dict")
+        except FileNotFoundError as e:
+            click.echo(f"Error reading the config file: {e}")
+            return 1
+
+        click.echo(json.dumps(config_dict, indent=4))
+        return 0
+
+    else:
+        config_file = read_batch_config_file(mode="path")
+        click.echo(f"Config file found at: {config_file}")
 
 
 @script_maker_cli.command()
