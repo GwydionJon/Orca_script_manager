@@ -467,14 +467,14 @@ def collect_input_files(config_path, preparation_dir, config_name=None, tar_name
 def collect_results_(output_dir, exclude_patterns=None):
     # for some reason zip file is many times faster than tar and significantly smaller
     output_dir = pathlib.Path(output_dir)
+    if exclude_patterns is None:
+        exclude_patterns = []
 
     zip_path = output_dir / (output_dir.name + ".zip")
     with zipfile.ZipFile(zip_path, "w") as zipf:
         for file in output_dir.glob("**/*"):
-
             if any([pattern in str(file) for pattern in exclude_patterns]):
-
                 continue
-        zipf.write(file, arcname=str(file.relative_to(output_dir)))
+            zipf.write(file, arcname=str(file.relative_to(output_dir)))
 
     return zip_path
