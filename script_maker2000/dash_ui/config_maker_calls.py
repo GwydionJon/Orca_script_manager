@@ -1,9 +1,9 @@
-import dash_bootstrap_components as dbc
 from collections import defaultdict
 import json
 from pathlib import Path
-from script_maker2000.files import check_config, collect_input_files
+import dash_bootstrap_components as dbc
 from dash import html
+from script_maker2000.files import check_config, collect_input_files
 
 
 def create_config_file(

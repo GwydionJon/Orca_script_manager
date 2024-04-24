@@ -178,7 +178,7 @@ def add_callbacks_remote_explorer(app, remote_connection):
         if path[-1] != "/":
             path = path + "/"
         output = remote_connection.run(
-            f"find {path} -not -path '*/\.*' -print", hide=True  # noqa
+            f"find {path} -not -path '*/\.*' -type d -print", hide=True  # noqa
         )
         output = output.stdout.split("\n")[:-1]
         output = convert_paths_to_dict(output, mode="remote")
@@ -198,7 +198,10 @@ def add_callbacks_remote_explorer(app, remote_connection):
             return "No job submitted yet."
 
         output_tracking_file = target_dir + "/check_shell_output.out"
-        result = remote_connection.run(f"cat {output_tracking_file}", hide=True)
+        result = remote_connection.run(
+            f"[ -f {output_tracking_file} ] && cat {output_tracking_file} || echo 'Output file not yet created'",
+            hide=True,
+        )
 
         result_output = result.stdout
 
@@ -227,15 +230,15 @@ def add_callbacks_remote_explorer(app, remote_connection):
             if input_file is None or target_dir is None:
                 return "No job submitted yet."
 
-            # initiate the output file
-            remote_connection.run(
-                f"echo 'Starting the batch setup: ' > {output_tracking_file} "
-            )
-
             # use batch to check is the target dir exists, and if not recursivly create it.
             remote_connection.run(
                 f"test -d {target_dir} || mkdir -p {target_dir}",
                 hide=True,
+            )
+
+            # initiate the output file
+            remote_connection.run(
+                f"echo 'Starting the batch setup: ' > {output_tracking_file} "
             )
 
             result = remote_connection.put(input_file, target_dir)
@@ -257,13 +260,9 @@ def add_callbacks_remote_explorer(app, remote_connection):
 
         prepare_submission(input_file, target_dir, output_tracking_file)
 
-        input_file = Path(
-            "/lustre/home/hd/hd_hd/hd_uo452/test_dir/test/input_files.tar.gz"
-        )
-        target_dir = "test_dir/test"
-
         # the pathllib library does not like creating unix paths on a windows machine
         # if this script is ever run on a windows server someone needs to find a better solution
+        input_file = Path(input_file)
         file_to_extract = target_dir + "/" + input_file.name
 
         # create a new screen session to run the program in.
