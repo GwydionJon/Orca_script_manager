@@ -41,6 +41,7 @@ dependencies = [
     "paramiko",
     "fabric",
     "PlatformDirs",
+    "cclib",
 ]
 
 

@@ -344,6 +344,17 @@ def test_parallel_steps(multilayer_tmp_dir, monkeypatch, fake_slurm_function):
 
         assert len(job["finished_keys"]) <= len(job["all_keys"])
 
+        # get json calc results file
+        if job.current_status == "finished":
+            job_final_dir = Path(job.final_dirs.values()[0])
+            json_file = job_final_dir / f"{job_final_dir.stem}_calc_results.json"
+            assert json_file.exists()
+            with open(json_file, "r") as f:
+                calc_results = json.load(f)
+
+            assert "atomcharges" in calc_results.keys()
+            assert calc_results["mult"] == 1
+
 
 def copy_output(target_dirs, succesful_output_dirs):
     for i in range(2):

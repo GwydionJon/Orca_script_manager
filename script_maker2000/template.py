@@ -88,7 +88,16 @@ class TemplateModule:
         raise NotImplementedError
 
     @classmethod
-    def check_job_status(single_experiment) -> bool:
+    def collect_results(cls, job) -> dict:
+        """Collect the results of the calculation and save in a {mol_id}_calc_result.json file in each subfolder.
+
+        Raises:
+            NotImplementedError: _description_
+        """
+        raise NotImplementedError
+
+    @classmethod
+    def check_job_status(cls, job) -> bool:
         """provide some method to verify if a single calculation was succesful.
         This should be handled indepentendly from the existence of this class object.
 

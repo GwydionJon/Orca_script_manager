@@ -1,10 +1,13 @@
 from pathlib import Path
 import copy
-from datetime import datetime
+import datetime
 import subprocess
 import shutil
 import re
+import cclib
 from typing import Union
+import json
+import numpy as np
 from script_maker2000.template import TemplateModule
 from script_maker2000.job import Job
 
@@ -77,7 +80,7 @@ class OrcaModule(TemplateModule):
         options = self.internal_config["options"]
         slurm_dict = {}
         # Get current date
-        current_date = datetime.now()
+        current_date = datetime.datetime.now()
 
         # Format date as a string with abbreviated year, hours, minutes, and seconds
         date_str = current_date.strftime("%dd_%mm_%yy-%Hh_%Mm_%Ss")
@@ -265,6 +268,61 @@ class OrcaModule(TemplateModule):
                 + " Please check your file name or provide the necessary files."
             )
         return process
+
+    @classmethod
+    def collect_results(cls, job, key) -> None:
+        """Use the cclib library to extract the results from the orca output file.
+
+
+
+        Args:
+            job (Job): current job object to collect results from.
+
+        Returns:
+            _type_: _description_
+        """
+
+        # prepare the cclib result dict for storage
+        def _convert_np_to_list(item):
+            if isinstance(item, dict):
+                return {k: _convert_np_to_list(v) for k, v in item.items()}
+            elif isinstance(item, list):
+                return [_convert_np_to_list(element) for element in item]
+            elif isinstance(item, np.ndarray):
+                return item.tolist()
+            elif isinstance(item, datetime.timedelta):
+                return str(item)
+            else:
+                return item
+
+        print(job.status_per_key[key])
+        # get the output file
+        if job.status_per_key[key] != "finished":
+            return None
+
+        output_file = job.current_dirs["finished"] / (
+            job.current_dirs["finished"].stem + ".out"
+        )
+        print(output_file)
+        print(str(output_file))
+        try:
+            cclib_results = cclib.io.ccread(str(output_file))
+        except Exception as e:
+            print(f"Error: {e}")  # cclib_results = cclib_results.parse()
+
+        cclib_attr = cclib_results.getattributes()
+
+        result_dict = _convert_np_to_list(cclib_attr)
+
+        # save the results in a json file
+        with open(
+            job.current_dirs["finished"]
+            / (job.current_dirs["finished"].stem + "_calc_result.json"),
+            "w",
+        ) as f:
+            json.dump(result_dict, f)
+
+        return result_dict
 
     @classmethod
     def check_job_status(cls, job: Job) -> int:
