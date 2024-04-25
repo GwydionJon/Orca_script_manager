@@ -485,8 +485,13 @@ def collect_results_(output_dir, exclude_patterns=None):
     zip_path = output_dir / (output_dir.name + ".zip")
     with zipfile.ZipFile(zip_path, "w") as zipf:
         for file in output_dir.glob("**/*"):
-            if any([pattern in str(file) for pattern in exclude_patterns]):
+
+            if "job_backup.json" in str(file):
+                zipf.write(file, arcname=str(file.relative_to(output_dir)))
+
+            elif any([pattern in str(file) for pattern in exclude_patterns]):
                 continue
+
             zipf.write(file, arcname=str(file.relative_to(output_dir)))
 
     return zip_path
