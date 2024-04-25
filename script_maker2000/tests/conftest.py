@@ -202,6 +202,17 @@ def pre_started_dir(multilayer_tmp_dir):
     shutil.copy(current_path / "test_data" / "output.tar.gz", multilayer_tmp_dir)
     shutil.unpack_archive(multilayer_tmp_dir / "output.tar.gz", multilayer_tmp_dir)
 
+    config_file_path = multilayer_tmp_dir / "output" / "example_config.json"
+
+    with open(config_file_path, "r") as f:
+        config = json.load(f)
+
+    config["main_config"]["xyz_path"] = str(multilayer_tmp_dir / "example_xyz")
+    config["main_config"]["config_name"] = "continue_run"
+
+    with open(multilayer_tmp_dir / "output" / "config__example_config.json", "w") as f:
+        json.dump(config, f)
+
     # src_dirs
     src_dirs = [
         multilayer_tmp_dir / "output" / "sp_config1",

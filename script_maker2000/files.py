@@ -505,8 +505,15 @@ def read_batch_config_file(mode):
     if mode not in ["path", "dict"]:
         raise ValueError(f"Mode must be either 'path' or 'dict' but is {mode}.")
 
-    user_dirs = PlatformDirs(os.getlogin(), "Orca_Script_Maker")
-    user_config_dir = pathlib.Path(user_dirs.user_config_dir)
+    try:
+        user_dirs = PlatformDirs(os.getlogin(), "Orca_Script_Maker")
+        user_config_dir = pathlib.Path(user_dirs.user_config_dir)
+    except OSError:
+        # this should only happen on  github actions
+        user_config_dir = pathlib.Path(".")
+
+    user_config_dir.mkdir(parents=True, exist_ok=True)
+
     config_file = user_config_dir / "available_jobs.json"
     if not config_file.exists():
         print("Can't find config file at", config_file, "creating new one.")
