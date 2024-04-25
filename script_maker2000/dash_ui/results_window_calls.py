@@ -103,6 +103,8 @@ def get_job_progress_dict_(
     if custom_calc_dir is not None and custom_calc_dir != "":
         calculation_dir = custom_calc_dir
 
+        add_dir_to_config(calculation_dir)
+
     if calculation_dir in ["running", "finished"]:
         return None
 
