@@ -9,11 +9,12 @@ from tqdm import tqdm
 import traceback
 import tarfile
 
-
 from script_maker2000.files import (
     read_config,
     create_working_dir_structure,
     read_mol_input_json,
+    add_dir_to_config,
+    change_entry_in_batch_config,
 )
 from script_maker2000.work_manager import WorkManager
 from script_maker2000.orca import OrcaModule
@@ -361,12 +362,38 @@ class BatchManager:
         self.log.info(log_message)
         return status_dict
 
+    def create_config_entry(self):
+        """Create a config entry for the current batch run."""
+
+        result_str = add_dir_to_config(
+            self.working_dir,
+        )
+
+        if "already exists" in result_str:
+            error_msg = f"Working dir {self.working_dir} does already exists for config {self.config_name}.\n"
+            +" Please make sure to choose a unique combination."
+
+            self.log.error(error_msg)
+            raise ValueError(error_msg)
+
+    def finish_config_entry(self):
+
+        change_entry_in_batch_config(
+            config_name=self.main_config["main_config"]["config_name"],
+            new_status="finished",
+            output_dir=self.working_dir,
+        )
+
     def run_batch_processing(self):
         """
         Starts the batch processing loop and returns the results.
         It will block until all tasks are done.
         This is the main working loop.
         """
+
+        # create config entry right before starting the loop
+        self.create_config_entry()
+
         task_results = asyncio.run(self.batch_processing_loop())
         result_dict = self.collect_result_overview()
 
@@ -406,6 +433,9 @@ class BatchManager:
                     all_errors.append(e)
                     all_error_traceback.append(traceback.format_exc())
                     all_error_tasks.append(task)
+
+        # finish config entry
+        self.finish_config_entry()
 
         if exit_code == 1:
             self.log.error(

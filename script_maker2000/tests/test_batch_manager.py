@@ -4,8 +4,10 @@ import asyncio
 import pytest
 import logging
 import time
-from script_maker2000.batch_manager import BatchManager
 import json
+
+from script_maker2000.batch_manager import BatchManager
+from script_maker2000.files import read_batch_config_file
 
 
 def test_batch_manager(clean_tmp_dir, monkeypatch, fake_slurm_function):
@@ -165,6 +167,14 @@ def test_batch_loop_with_files(clean_tmp_dir, monkeypatch, fake_slurm_function):
     assert len(all_results) == 11
     assert len(failed) == 7
     assert len(not_failed) == 8
+
+    # make sure the global batch config is updated
+    config_name = batch_manager.main_config["main_config"]["config_name"]
+    batch_config = read_batch_config_file("dict")
+    working_dir = batch_manager.working_dir
+
+    assert str(working_dir) not in batch_config[config_name]["running"]
+    assert str(working_dir) in batch_config[config_name]["finished"]
 
 
 def test_parallel_steps(multilayer_tmp_dir, monkeypatch, fake_slurm_function):

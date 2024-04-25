@@ -178,7 +178,7 @@ def create_cyto_graph_layout() -> dbc.Col:
 
 
 def create_new_intput(
-    key: str, value: str, id_=None, placeholder=None, readonly=False
+    key: str, value: str, id_=None, placeholder=None, readonly=False, debounce=False
 ) -> dbc.Row:
 
     if id_ is None:
@@ -206,6 +206,7 @@ def create_new_intput(
                     type="text",
                     placeholder=placeholder,
                     readonly=readonly,
+                    debounce=debounce,
                 ),
             ],
             style=default_style,
@@ -509,6 +510,7 @@ def add_callbacks(app: Dash) -> Dash:
         inputs={
             "n_clicks": Input("create_config_file_button", "n_clicks"),
             "main_config_inputs": {
+                "config_name": State("Config Name_input", "value"),
                 "output_dir": State("output_dir_input", "value"),
                 "input_file_path": State("input_file_path_input", "value"),
                 "input_type": State("input_type_input", "value"),

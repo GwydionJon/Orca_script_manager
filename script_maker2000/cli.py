@@ -6,11 +6,14 @@ import json
 import cProfile
 import atexit
 
+
 from script_maker2000.dash_ui.dash_main_gui import create_main_app
 from script_maker2000.files import (
     check_config,
     collect_input_files,
     read_mol_input_json,
+    collect_results_,
+    read_batch_config_file,
 )
 from script_maker2000 import BatchManager
 from script_maker2000.remote_connection import RemoteConnection
@@ -348,5 +351,65 @@ def collect_input(config, output, tar_name):
     click.echo(
         "The tar ball will be automatically extracted and the batch processing will start."
     )
+
+    return 0
+
+
+@script_maker_cli.command()
+@click.option(
+    "--as_json", is_flag=True, help="If the config should be returned as json."
+)
+def return_batch_config(as_json=False):
+
+    if as_json:
+        try:
+            config_dict = read_batch_config_file(mode="dict")
+        except FileNotFoundError as e:
+            click.echo(f"Error reading the config file: {e}")
+            return 1
+
+        click.echo(json.dumps(config_dict, indent=4))
+        return 0
+
+    else:
+        config_file = read_batch_config_file(mode="path")
+        click.echo(f"Config file found at: {config_file}")
+
+
+@script_maker_cli.command()
+@click.option("--results_path", "-r", help="Path to the results folder.")
+@click.option(
+    "--exclude_patterns",
+    "-e",
+    default=None,
+    help="Comma seperated list of patterns to exclude from the tarball.",
+)
+def collect_results(results_path, exclude_patterns=None):
+
+    results_path = Path(results_path)
+    results_path = results_path.resolve()
+
+    if exclude_patterns is None:
+        exclude_patterns = []
+
+    elif exclude_patterns == "":
+        exclude_patterns = []
+
+    if isinstance(exclude_patterns, str):
+        if exclude_patterns[-1] == ",":
+            exclude_patterns = exclude_patterns[:-1]
+
+        exclude_patterns = exclude_patterns.split(",")
+        exclude_patterns = [pattern.strip() for pattern in exclude_patterns]
+
+    print(exclude_patterns)
+
+    if not results_path.exists():
+        click.echo(f"Results path not found at {results_path}")
+        return 1
+
+    result_tar = collect_results_(results_path, exclude_patterns)
+
+    click.echo(f"Tarball created at {result_tar}")
 
     return 0

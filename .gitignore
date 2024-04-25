@@ -178,5 +178,7 @@ cpu_benchmark/benchmark_molecules.csv
 cpu_benchmark/cpu_benchmark_config.json
 cpu_benchmark/cpu_benchmark_full_run.tar.gz
 cpu_benchmark/cpu_benchmark_job_backup.json
+cpu_benchmark_results/
 profiling_run.prof
 script_maker2000/notebooks/test.py
+output_results/

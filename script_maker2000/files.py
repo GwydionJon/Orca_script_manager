@@ -2,8 +2,10 @@ import json
 import logging
 import pathlib
 import shutil
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 import tarfile
+import zipfile
+from platformdirs import PlatformDirs
 import os
 import copy
 
@@ -53,8 +55,11 @@ def create_working_dir_structure(
 
     # move input files and main_settings in output folder
     # save config into working dir
-    with open(output_dir / "example_config.json", "w", encoding="utf-8") as json_file:
-        json.dump(main_config, json_file)
+
+    new_config_name = "config__" + main_config["main_config"]["config_name"] + ".json"
+
+    with open(output_dir / new_config_name, "w", encoding="utf-8") as json_file:
+        json.dump(main_config, json_file, indent=4)
 
     # save input csv in output folder
 
@@ -79,7 +84,7 @@ def create_working_dir_structure(
     new_json_file = output_dir / input_path.name
 
     with open(new_json_file, "w", encoding="utf-8") as json_file:
-        json.dump(job_input, json_file)
+        json.dump(job_input, json_file, indent=4)
 
     # copy files to output folder
 
@@ -249,6 +254,7 @@ def _check_config_keys(main_config):
 
     # main_config keys
     main_config_keys = [
+        "config_name",
         "continue_previous_run",
         "max_n_jobs",
         "max_ram_per_core",
@@ -430,7 +436,7 @@ def collect_input_files(config_path, preparation_dir, config_name=None, tar_name
     new_molecule_json_name = preparation_dir / input_json.name
 
     with open(new_molecule_json_name, "w", encoding="utf-8") as json_file:
-        json.dump(mol_input_new, json_file)
+        json.dump(mol_input_new, json_file, indent=4)
 
     # rename and save config file
     if config_name is None:
@@ -439,7 +445,7 @@ def collect_input_files(config_path, preparation_dir, config_name=None, tar_name
         new_config_name = preparation_dir / config_name
 
     with open(new_config_name, "w", encoding="utf-8") as json_file:
-        json.dump(main_config, json_file)
+        json.dump(main_config, json_file, indent=4)
 
     if tar_name is None:
         tar_path = preparation_dir / "test.tar.gz"
@@ -461,3 +467,228 @@ def collect_input_files(config_path, preparation_dir, config_name=None, tar_name
     tar_path = pathlib.Path(tar_path)
 
     return tar_path
+
+
+def collect_results_(output_dir, exclude_patterns=None):
+    # for some reason zip file is many times faster than tar and significantly smaller
+    output_dir = pathlib.Path(output_dir)
+    if exclude_patterns is None:
+        exclude_patterns = []
+
+    if ".zip" not in exclude_patterns:
+        exclude_patterns.append(".zip")
+    if ".tar" not in exclude_patterns:
+        exclude_patterns.append(".tar")
+    if ".tar.gz" not in exclude_patterns:
+        exclude_patterns.append(".tar.gz")
+
+    zip_path = output_dir / (output_dir.name + ".zip")
+    with zipfile.ZipFile(zip_path, "w") as zipf:
+        for file in output_dir.glob("**/*"):
+
+            if "job_backup.json" in str(file):
+                zipf.write(file, arcname=str(file.relative_to(output_dir)))
+
+            elif any([pattern in str(file) for pattern in exclude_patterns]):
+                continue
+
+            zipf.write(file, arcname=str(file.relative_to(output_dir)))
+
+    return zip_path
+
+
+def read_batch_config_file(mode):
+    """Read the global config file and check if any paths are pointing to non-existing files.
+
+    Args:
+        mode (str): path or dict
+
+    Returns:
+        str|dict: either the config path or the config dict
+    """
+
+    if mode not in ["path", "dict"]:
+        raise ValueError(f"Mode must be either 'path' or 'dict' but is {mode}.")
+
+    try:
+        user_dirs = PlatformDirs(os.getlogin(), "Orca_Script_Maker")
+        user_config_dir = pathlib.Path(user_dirs.user_config_dir)
+    except OSError:
+        # this should only happen on  github actions
+        user_config_dir = pathlib.Path(".")
+
+    user_config_dir.mkdir(parents=True, exist_ok=True)
+
+    config_file = user_config_dir / "available_jobs.json"
+    if not config_file.exists():
+        print("Can't find config file at", config_file, "creating new one.")
+        dict_config = {}
+
+    else:
+        with open(config_file, "r", encoding="utf-8") as f:
+            dict_config = json.load(f)
+
+    removed_keys_all = []
+    # these are the different config keys
+    for key, dir_values in dict_config.items():
+        removed_keys_per_config_key = []
+        # these are finished, running and deleted
+        for dir_key in ["running", "finished"]:
+            dir_list = dir_values.get(dir_key, [])
+            for dir_path in dir_list.copy():
+
+                if not pathlib.Path(dir_path).exists():
+                    dict_config[key][dir_key].remove(dir_path)
+                    removed_keys_all.append(dir_path)
+                    removed_keys_per_config_key.append(dir_path)
+
+        # add removed keys to deleted list
+        if len(removed_keys_per_config_key) > 0:
+            dict_config[key]["deleted"] = list(
+                set(dict_config[key].get("deleted", []) + removed_keys_per_config_key)
+            )
+
+    if len(removed_keys_all) > 0:
+        print(
+            "Found outdated paths in globel config, moving these paths to the deleted section:"
+        )
+        print("Note this will happen when you have removed or changed of files.")
+        for dir_ in removed_keys_all:
+            print(dir_)
+        print("If you want to remove or change these entries open the config at:")
+        print(config_file)
+
+    with open(config_file, "w", encoding="utf-8") as f:
+        json.dump(dict_config, f, indent=4)
+
+    if mode == "path":
+        return config_file
+
+    if mode == "dict":
+        return dict_config
+
+
+def change_entry_in_batch_config(config_name, new_status, output_dir):
+
+    batch_config = read_batch_config_file("dict")
+
+    if config_name not in batch_config.keys():
+        error_msg = f"Can't find config name {config_name} in the batch config.\n"
+        error_msg += "Available config names are:\n"
+        error_msg += "\n".join(batch_config.keys())
+
+        raise KeyError(error_msg)
+
+    if new_status not in ["running", "finished", "deleted"]:
+        raise ValueError(
+            f"New status must be either 'running', 'finished' or 'deleted' but is {new_status}."
+        )
+
+    for key, dir_values in batch_config.items():
+        for dir_key in ["running", "finished", "deleted"]:
+            if str(output_dir) in dir_values.get(dir_key, []):
+                batch_config[key][dir_key].remove(str(output_dir))
+
+        if new_status not in batch_config[key].keys():
+            batch_config[key][new_status] = [str(output_dir)]
+        else:
+            batch_config[key][new_status].append(str(output_dir))
+
+    batch_config_path = read_batch_config_file("path")
+    with open(batch_config_path, "w", encoding="utf-8") as f:
+        json.dump(batch_config, f, indent=4)
+
+    return "Changed entry in batch config."
+
+
+def check_dir_in_batch_config(output_dir):
+
+    batch_config = read_batch_config_file("dict")
+
+    for key, dir_values in batch_config.items():
+        for dir_key in ["running", "finished"]:
+            for dir_path in dir_values.get(dir_key, []):
+                if str(pathlib.Path(output_dir)) == str(pathlib.Path(dir_path)):
+                    return "Already in config."
+
+        # if already in deleted remove it from there and add as new
+        if output_dir in dir_values.get("deleted", []):
+            batch_config[key]["deleted"].remove(output_dir)
+
+    return False
+
+
+def add_dir_to_config(new_output_dir):
+
+    batch_config = read_batch_config_file("dict")
+
+    # check if the new output dir is already in the config
+    if check_dir_in_batch_config(new_output_dir):
+        return "Already in config."
+
+    # check if the output dir exists and has the necessary subfolders/files
+
+    new_output_dir = pathlib.Path(new_output_dir)
+    if not new_output_dir.exists():
+        raise FileNotFoundError(f"Can't find {new_output_dir}.")
+
+    if not (new_output_dir / "finished").exists():
+        raise FileNotFoundError(f"Can't find finished folder in {new_output_dir}.")
+
+    if not (new_output_dir / "finished" / "raw_results").exists():
+        raise FileNotFoundError(f"Can't find raw_results folder in {new_output_dir}.")
+
+    skipp_job_backup = False
+    # check job backup file only if at least one file is in the raw_results folder
+    if len(list((new_output_dir / "finished" / "raw_results").glob("*"))) > 0:
+        if not (new_output_dir / "job_backup.json").exists():
+            raise FileNotFoundError(f"Can't find job_backup.json in {new_output_dir}.")
+    else:
+        skipp_job_backup = True
+
+    # find the config file
+    config_file_list = list(new_output_dir.glob("config__*.json"))
+
+    if len(config_file_list) == 0:
+        raise FileNotFoundError(f"Can't find any config file in {new_output_dir}.")
+    if len(config_file_list) > 1:
+        raise FileNotFoundError(f"Found multiple config files in {new_output_dir}.")
+
+    config_file = config_file_list[0]
+
+    with open(config_file, "r", encoding="utf-8") as f:
+        main_config = json.load(f)
+
+    check_config(main_config, skip_file_check=True, override_continue_job=True)
+    # get config name
+    config_name = main_config["main_config"]["config_name"]
+    # check if job is finished
+    if not skipp_job_backup:
+        with open(new_output_dir / "job_backup.json", "r", encoding="utf-8") as f:
+            backup_dict = json.load(f)
+
+        status_dict = defaultdict(lambda: 0)
+        for unique_job in backup_dict.values():
+            current_status = unique_job["_current_status"]
+            status_dict[current_status] += 1
+
+        if all(key in {"finished", "failed"} for key in status_dict):
+            batch_status = "finished"
+        else:
+            batch_status = "running"
+    else:
+        batch_status = "running"
+
+    batch_config.get(config_name, {}).get(batch_status, []).append(str(new_output_dir))
+    if config_name not in batch_config.keys():
+        batch_config[config_name] = defaultdict(list)
+        batch_config[config_name][batch_status].append(str(new_output_dir))
+
+    if batch_status not in batch_config[config_name].keys():
+        batch_config[config_name][batch_status] = [str(new_output_dir)]
+
+    batch_config_path = read_batch_config_file("path")
+    with open(batch_config_path, "w", encoding="utf-8") as f:
+        json.dump(batch_config, f)
+
+    return "added to config."
