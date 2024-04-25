@@ -145,6 +145,12 @@ def prepare_extract_path(extract_path: str):
 
 def extract_tarball(tar: str, extract_path: Path):
     click.echo(f"Starting the batch processing with the tarball at {tar}.")
+
+    if not Path(tar).exists():
+        click.echo(f"Tarball not found at {tar}")
+        return 1
+    click.echo(f"Extracting the tarball to {extract_path}")
+
     with tarfile.open(tar, "r:gz") as tar:
         tar.extractall(path=extract_path, filter="data")
     click.echo(f"Tarball extracted at {extract_path}")
