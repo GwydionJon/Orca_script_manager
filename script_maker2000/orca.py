@@ -4,12 +4,10 @@ import datetime
 import subprocess
 import shutil
 import re
-import cclib
 from typing import Union
-import json
-import numpy as np
 from script_maker2000.template import TemplateModule
 from script_maker2000.job import Job
+from script_maker2000.analysis import extract_infos_from_results
 
 
 class OrcaModule(TemplateModule):
@@ -283,44 +281,12 @@ class OrcaModule(TemplateModule):
         """
 
         # prepare the cclib result dict for storage
-        def _convert_np_to_list(item):
-            if isinstance(item, dict):
-                return {k: _convert_np_to_list(v) for k, v in item.items()}
-            elif isinstance(item, list):
-                return [_convert_np_to_list(element) for element in item]
-            elif isinstance(item, np.ndarray):
-                return item.tolist()
-            elif isinstance(item, datetime.timedelta):
-                return str(item)
-            else:
-                return item
 
-        print(job.status_per_key[key])
         # get the output file
         if job.status_per_key[key] != "finished":
             return None
 
-        output_file = job.current_dirs["finished"] / (
-            job.current_dirs["finished"].stem + ".out"
-        )
-        print(output_file)
-        print(str(output_file))
-        try:
-            cclib_results = cclib.io.ccread(str(output_file))
-        except Exception as e:
-            print(f"Error: {e}")  # cclib_results = cclib_results.parse()
-
-        cclib_attr = cclib_results.getattributes()
-
-        result_dict = _convert_np_to_list(cclib_attr)
-
-        # save the results in a json file
-        with open(
-            job.current_dirs["finished"]
-            / (job.current_dirs["finished"].stem + "_calc_result.json"),
-            "w",
-        ) as f:
-            json.dump(result_dict, f)
+        result_dict = extract_infos_from_results(job.current_dirs["finished"])
 
         return result_dict
 

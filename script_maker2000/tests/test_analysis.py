@@ -1,4 +1,4 @@
-from script_maker2000.analysis import (
+from script_maker2000.cpu_benchmark_analysis import (
     load_job_backup,
     extract_efficency_dataframe,
     filter_dataframe,
