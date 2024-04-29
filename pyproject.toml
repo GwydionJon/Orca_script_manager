@@ -41,7 +41,7 @@ dependencies = [
     "paramiko",
     "fabric",
     "PlatformDirs",
-    "git+https://github.com/GwydionJon/cclib",
+    ""cclib @ git+https://github.com/GwydionJon/cclib#egg=cclib"",
 ]
 
 
