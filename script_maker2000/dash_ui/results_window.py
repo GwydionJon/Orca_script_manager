@@ -1,7 +1,7 @@
 import dash_bootstrap_components as dbc
-from dash import html, dcc, Input, Output, State
+from dash import html, dcc, Input, Output, State, dash_table
 
-# import dash_treeview_antd as dta
+import dash_treeview_antd as dta
 
 
 from script_maker2000.dash_ui.config_maker_ui import create_new_intput
@@ -13,6 +13,9 @@ from script_maker2000.dash_ui.results_window_calls import (
     download_results_,
     hide_download_column_when_local,
     update_results_folder_select,
+    create_results_file_tree,
+    update_table_values,
+    download_table_data,
 )
 
 default_style = {"margin": "10px", "width": "100%"}
@@ -21,22 +24,11 @@ default_style = {"margin": "10px", "width": "100%"}
 def create_results_layout():
 
     top_row_layout = create_top_row_layout()
-
+    results_table_row = create_results_table_row()
     layout = dbc.Col(
         [
             top_row_layout,
-            dbc.Row(
-                [
-                    dbc.Col(
-                        [
-                            html.H3("Results"),
-                            html.Div(id="results_div"),
-                        ],
-                        width=3,
-                    ),
-                ],
-                style=default_style,
-            ),
+            results_table_row,
         ],
         style=default_style,
     )
@@ -141,6 +133,155 @@ def create_top_row_layout():
     return layout
 
 
+def create_results_table():
+    table_row = [
+        dbc.Row([dcc.Store(id="complete_results_dict_store", data={})]),
+        dbc.Row(
+            [
+                dbc.Col(
+                    [
+                        dbc.Checklist(
+                            id="results_table_columns_checklist",
+                            options=[
+                                {
+                                    "label": "Molecular Informations",
+                                    "value": "mol_info",
+                                },
+                                {
+                                    "label": "Calculation Setup",
+                                    "value": "calc_setup",
+                                },
+                                {"label": "Energies", "value": "energies"},
+                                {
+                                    "label": "Thermodynamics",
+                                    "value": "thermo",
+                                },
+                            ],
+                            value=[
+                                "mol_info",
+                                "calc_setup",
+                                "energies",
+                                "thermo",
+                            ],
+                            inline=True,
+                        )
+                    ]
+                ),
+                dbc.Col(
+                    [
+                        dbc.Row(html.P("Energy Unit:")),
+                        dbc.Row(
+                            [
+                                dbc.Select(
+                                    id="energy_unit_select",
+                                    options=[
+                                        {"label": "eV", "value": "eV"},
+                                        {
+                                            "label": "Hartree",
+                                            "value": "hartree",
+                                        },
+                                        {
+                                            "label": "kcal/mol",
+                                            "value": "kcal/mol",
+                                        },
+                                        {
+                                            "label": "kJ/mol",
+                                            "value": "kJ/mol",
+                                        },
+                                    ],
+                                    value="kJ/mol",
+                                    style={"width": "50%"},
+                                )
+                            ]
+                        ),
+                    ]
+                ),
+            ]
+        ),
+        dbc.Row(
+            [
+                dbc.Button(
+                    id="download_table_button",
+                    style={"margin": "10px", "width": "30%"},
+                    children="Download Table",
+                )
+            ]
+        ),
+        dbc.Row(
+            [
+                dcc.Loading(
+                    dash_table.DataTable(
+                        id="results_table",
+                        columns=[],
+                        merge_duplicate_headers=True,
+                        filter_action="native",
+                        filter_options={"placeholder_text": "Filter column..."},
+                        sort_action="native",
+                        sort_mode="multi",
+                        row_selectable="single",
+                        style_table={
+                            "overflowX": "auto",
+                            "overflowY": "auto",
+                            "height": "500px",
+                        },
+                    ),
+                )
+            ]
+        ),
+    ]
+    return table_row
+
+
+def create_detailed_results_screen():
+    pass
+
+
+def create_results_table_row():
+
+    layout = dbc.Row(
+        [
+            html.H4("Results"),
+            html.P(
+                [
+                    "Only local files are shown here. Select files or folders as you see fit.",
+                    html.Br(),
+                    "This programm will only show finished calculations for further analysis.",
+                ]
+            ),
+            dbc.Col(
+                [
+                    dbc.Row(
+                        [
+                            create_new_intput(
+                                "Filter files",
+                                "",
+                                "results_file_filter_input",
+                                "seperate multiple filters by comma",
+                                debounce=True,
+                            ),
+                            dta.TreeView(
+                                id="results_treeview",
+                                multiple=False,
+                                checkable=True,
+                            ),  # noqa
+                        ]
+                    ),
+                ],
+                width=3,
+            ),
+            dbc.Col(
+                [
+                    dbc.Row(create_results_table()),
+                    dbc.Row(create_detailed_results_screen()),
+                ],
+                width=9,
+            ),
+        ],
+        style=default_style,
+    )
+    return layout
+
+
 def add_callbacks_results(app, remote_connection):
 
     def update_results_config(n_clicks, remote_local_switch, results_config_value):
@@ -182,7 +323,10 @@ def add_callbacks_results(app, remote_connection):
             exclude_pattern_value,
             remote_connection,
         )
-        return result_str
+        return (
+            result_str,
+            {},
+        )  # Reset the complete_results_dict_store when downloading a new output.
 
     app.callback(
         Output("results_config_select", "options"),
@@ -220,6 +364,7 @@ def add_callbacks_results(app, remote_connection):
 
     app.callback(
         Output("download_results_output", "value", allow_duplicate=True),
+        Output("complete_results_dict_store", "data", allow_duplicate=True),
         Input("download_results_button", "n_clicks"),
         State("results_folder_select", "value"),
         State("local_target_dir_input", "value"),
@@ -232,5 +377,29 @@ def add_callbacks_results(app, remote_connection):
         Input("lokal_remote_radio", "value"),
         prevent_initial_call=True,
     )(hide_download_column_when_local)
+
+    app.callback(
+        Output("results_treeview", "data"),
+        Input("results_file_filter_input", "value"),
+        prevent_initial_call=False,
+    )(create_results_file_tree)
+
+    app.callback(
+        Output("results_table", "data"),
+        Output("results_table", "columns"),
+        Output("complete_results_dict_store", "data", allow_duplicate=True),
+        Input("results_treeview", "checked"),
+        Input("results_table_columns_checklist", "value"),
+        Input("energy_unit_select", "value"),
+        State("complete_results_dict_store", "data"),
+        prevent_initial_call=True,
+    )(update_table_values)
+
+    app.callback(
+        Output("download_table_button", "children"),
+        Input("download_table_button", "n_clicks"),
+        State("results_table", "data"),
+        prevent_initial_call=True,
+    )(download_table_data)
 
     return app

@@ -1,24 +1,26 @@
 # import dash_treeview_antd as dta
 from pathlib import Path
 import json
-
+import pandas as pd
 from tempfile import mkdtemp
 from collections import defaultdict
 import zipfile
-
+import cclib
 
 from script_maker2000.files import (
     read_batch_config_file,
     check_dir_in_batch_config,
     add_dir_to_config,
 )
+from script_maker2000.analysis import extract_infos_from_results, parse_output_file
 
 new_tmpdir = mkdtemp()
 
 
 def update_results_folder_select(config_name, config_dict, results_folder_value):
-    if config_name is None:
-        return [], None
+
+    if config_name is None or config_dict is None:
+        return ["running", "finished"], "running", None
 
     sub_config = config_dict[config_name]
 
@@ -26,7 +28,7 @@ def update_results_folder_select(config_name, config_dict, results_folder_value)
     for type_ in ["running", "finished"]:
 
         options.append({"label": type_, "value": type_, "disabled": True})
-        entries_list = sub_config[type_]
+        entries_list = sub_config.get(type_, [])
 
         if len(entries_list) == 0:
             continue
@@ -84,6 +86,9 @@ def update_results_config_(
 
     options = [{"label": x, "value": x} for x in config_dict.keys()]
 
+    if len(options) == 0:
+        return ["No files found"], "No files found", None
+
     if results_config_value is None:
         results_config_value = options[0]["value"]
 
@@ -113,7 +118,7 @@ def get_job_progress_dict_(
 
         if not Path(result_location).exists():
             error_message = "Error: The job progress file was not found "
-            +f"at the specified location '{result_location}'."
+            error_message += f"at the specified location '{result_location}'."
 
             return {"ERROR": error_message}
 
@@ -126,7 +131,7 @@ def get_job_progress_dict_(
 
         except FileNotFoundError:
             error_message = "Error: The job progress file was not found "
-            +f"at the specified location '{progress_json}'.\n"
+            error_message += f"at the specified location '{progress_json}'.\n"
 
             if "\\" in calculation_dir and remote_local_switch == "remote":
                 error_message += (
@@ -260,3 +265,189 @@ def hide_download_column_when_local(remote_local_switch):
     if remote_local_switch == "local":
         return {"display": "none"}
     return {}
+
+
+def _get_all_mol_dirs_in_finished_dirs(config_dict):
+    # get all mol dirs in finished dirs
+    all_output_dict = defaultdict(lambda: defaultdict(list))
+
+    all_output_dict = {"title": "Calculation Overview:", "key": "all", "children": []}
+
+    for config_key in config_dict.keys():
+        finished_dirs = config_dict[config_key]["finished"]
+
+        tree_config_dict = {
+            "title": config_key,
+            "key": f"config_{config_key}",
+            "children": [],
+        }
+
+        for finished_dir in finished_dirs:
+            finished_dir = Path(finished_dir)
+            # find all folders within the raw_results_folder
+            for mol_main_dir in finished_dir.glob("**/raw_results/*"):
+
+                mol_main_dict = {
+                    "title": mol_main_dir.stem,
+                    "key": str(mol_main_dir),
+                    "children": [],
+                }
+
+                for mol_sub_dir in mol_main_dir.glob("*"):
+                    if "failed" in mol_sub_dir.stem:
+                        continue
+                    if not (
+                        mol_sub_dir / (mol_sub_dir.stem + "_calc_result.json")
+                    ).exists():
+                        parse_output_file(mol_sub_dir)
+
+                    mol_main_dict["children"].append(
+                        {
+                            "title": mol_sub_dir.stem,
+                            "key": str(mol_sub_dir),
+                            "children": [],
+                        }
+                    )
+
+                tree_config_dict["children"].append(mol_main_dict)
+        all_output_dict["children"].append(tree_config_dict)
+
+    return all_output_dict
+
+
+def create_results_file_tree(files_filter_value):
+
+    config_dict = read_batch_config_file(mode="dict")
+
+    if files_filter_value is None:
+        files_filter_value = []
+
+    # if the user has entered a comma separated list of files to filter
+    # split the string and remove any empty strings
+    else:
+        if "," in files_filter_value:
+            if "," == files_filter_value[-1]:
+                files_filter_value = files_filter_value[:-1]
+
+            files_filter_value = files_filter_value.split(",")
+        else:
+            files_filter_value = [files_filter_value]
+
+        for i, value_ in enumerate(files_filter_value.copy()):
+            value_ = value_.strip()
+            if value_ == "":
+                files_filter_value.pop(i)
+            else:
+                files_filter_value[i] = value_
+
+    raw_tree_dict = _get_all_mol_dirs_in_finished_dirs(config_dict)
+
+    return raw_tree_dict
+
+
+def update_table_values(
+    tree_dict_selected, table_column_input, energy_unit_select, complete_table_data
+):
+
+    selected_data = []
+    for selected_entry in tree_dict_selected:
+        if selected_entry == "all":
+            continue
+        if "config_" in selected_entry:
+            continue
+
+        selected_data.append(selected_entry)
+
+    table_data, corrections_list = extract_infos_from_results(selected_data)
+
+    if complete_table_data == {}:  # will be reset when downloading a new file.
+        complete_table_data = table_data
+
+    table_column_input
+
+    columns_mol_info = [
+        {"name": ["Molecular Informations", "Charge"], "id": "charge"},
+        {"name": ["Molecular Informations", "Multiplicity"], "id": "mult"},
+        {"name": ["Molecular Informations", "Atom Count"], "id": "natom"},
+        {"name": ["Molecular Informations", "Basisset count"], "id": "nbasis"},
+        {"name": ["Molecular Informations", "Mo count"], "id": "nmo"},
+    ]
+    columns_calc_info = [
+        {"name": ["Calculation Setup", "Package Info"], "id": "metadata_package"},
+        {"name": ["Calculation Setup", "Basisset"], "id": "metadata_basisset"},
+        {"name": ["Calculation Setup", "Functional"], "id": "metadata_functional"},
+        {"name": ["Calculation Setup", "Method"], "id": "metadata_method"},
+        {"name": ["Calculation Setup", "keywords"], "id": "metadata_keywords"},
+        {"name": ["Calculation Setup", "Opt done"], "id": "optdone"},
+    ]
+    columns_energies = [
+        {"name": ["Energies", "Final SP Energy"], "id": "final_sp_energy"},
+        {"name": ["Energies", "Final SCF Energy"], "id": "scfenergies"},
+        {"name": ["Energies", "Total Correction"], "id": "total_correction"},
+    ]
+
+    for correction_key in corrections_list:
+        columns_energies.append(
+            {
+                "name": ["Energies", correction_key.replace("_", " ").capitalize()],
+                "id": correction_key,
+            }
+        )
+
+    columns_thermo = [
+        {"name": ["Thermodynamics", "Enthalpy"], "id": "enthalpy"},
+        {"name": ["Thermodynamics", "Entropy"], "id": "entropy"},
+        {"name": ["Thermodynamics", "Free Energy"], "id": "freeenergy"},
+        {"name": ["Thermodynamics", "ZPVE"], "id": "zpve"},
+        {"name": ["Thermodynamics", "Temperature"], "id": "temperature"},
+        {"name": ["Thermodynamics", "Imaginary Frequencies"], "id": "imaginary_freq"},
+    ]
+
+    columns = [{"name": ["", "Molecule Identifier"], "id": "filename"}]
+
+    if "mol_info" in table_column_input:
+        columns.extend(columns_mol_info)
+    if "calc_setup" in table_column_input:
+        columns.extend(columns_calc_info)
+    if "energies" in table_column_input:
+        columns.extend(columns_energies)
+    if "thermo" in table_column_input:
+        columns.extend(columns_thermo)
+
+    table_df = pd.DataFrame(table_data).T
+
+    if energy_unit_select != "eV":
+        energy_keys = [
+            "final_sp_energy",
+            "scfenergies",
+            "total_correction",
+            "enthalpy",
+            "freeenergy",
+            "zpve",
+        ]
+        energy_keys.extend(corrections_list)
+        for energy_key in energy_keys:
+            if energy_key not in table_df.columns:
+                continue
+
+            table_df[energy_key] = table_df[energy_key].apply(
+                lambda x: cclib.parser.utils.convertor(x, "eV", energy_unit_select)
+            )
+
+    # columns = [{"name": i, "id": i} for i in table_data[0].keys()]
+
+    return table_df.to_dict("records"), columns, complete_table_data
+
+
+def download_table_data(
+    n_clicks,
+    table_data,
+):
+    target_dir = Path.cwd()
+
+    # Create an empty DataFrame
+    df = pd.DataFrame(table_data)
+
+    # Save the DataFrame to a CSV file
+    df.to_csv("table_data.csv", index=False)
+    return "Downloaded table data to " + str(target_dir)
