@@ -1,8 +1,10 @@
-from script_maker2000.analysis import (
+from script_maker2000.cpu_benchmark_analysis import (
     load_job_backup,
     extract_efficency_dataframe,
     filter_dataframe,
 )
+
+from script_maker2000.analysis import extract_infos_from_results, parse_output_file
 from pathlib import Path
 
 
@@ -20,3 +22,46 @@ def test_extract_efficency_dataframe():
 
     df_filtered = filter_dataframe(eff_df, "PBEh3c_freq")
     assert df_filtered.shape == (96, 11)
+
+
+def test_parse_and_extract(analysis_tmp_dir):
+
+    output_test_files = list(analysis_tmp_dir.glob("*.out"))
+
+    for file in output_test_files:
+        parse_output_file(file)
+
+    assert len(list(analysis_tmp_dir.glob("*.json"))) == 3
+
+    cc_file = list(analysis_tmp_dir.glob("dlpno_qz_calc_result.json"))[0]
+
+    result_dict, _ = extract_infos_from_results(cc_file)
+    result_dict = result_dict["dlpno_qz"]
+    assert "metadata_package" in result_dict.keys()
+    assert "ccenergies" in result_dict.keys()
+    assert "T1 Diagnostic" in result_dict.keys()
+
+    imag_freq_file = list(analysis_tmp_dir.glob("FREQ_Sb_5_M016973_calc_result.json"))[
+        0
+    ]
+    result_dict, _ = extract_infos_from_results(imag_freq_file)
+    result_dict = result_dict["FREQ_Sb_5_M016973"]
+    assert "metadata_package" in result_dict.keys()
+    assert "imaginary_freq" in result_dict.keys()
+    assert "freeenergy" in result_dict.keys()
+    assert "Dispersion_correction" in result_dict.keys()
+
+    assert result_dict["imaginary_freq"] is True
+
+    freq_file = list(
+        analysis_tmp_dir.glob(
+            "PBEh_3c_opt__PBEh3c_freq_2cores_sp___C3H9GeNOS_calc_result.json"
+        )
+    )[0]
+
+    result_dict, _ = extract_infos_from_results(freq_file)
+    result_dict = result_dict["PBEh_3c_opt__PBEh3c_freq_2cores_sp___C3H9GeNOS"]
+    assert "metadata_package" in result_dict.keys()
+    assert "Dispersion_correction" in result_dict.keys()
+
+    assert result_dict["imaginary_freq"] is False

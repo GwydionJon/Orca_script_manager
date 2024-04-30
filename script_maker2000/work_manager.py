@@ -262,6 +262,9 @@ class WorkManager:
 
     def manage_finished_jobs(self, finished_jobs):
 
+        if finished_jobs is None:
+            return
+
         job_slurm_ids = {}
 
         for job in finished_jobs:
@@ -271,6 +274,11 @@ class WorkManager:
                 continue
 
             job_slurm_ids[job.slurm_id_per_key[self.config_key]] = job
+
+        # collect the orca output data for all jobs
+
+        for job in finished_jobs:
+            self.workModule.collect_results(job, self.config_key)
 
         collection_format_arguments = [
             "JobID",

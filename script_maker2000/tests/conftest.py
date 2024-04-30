@@ -7,6 +7,7 @@ import pytest
 from pathlib import Path
 import pandas as pd
 import numpy as np
+import subprocess
 from script_maker2000.files import read_config, create_working_dir_structure
 from script_maker2000.batch_manager import BatchManager
 
@@ -345,6 +346,9 @@ def expected_df_second_log_jobs(expected_df_first_log_jobs):
     return expected_df_second_log_jobs
 
 
+original_subprocess_run = subprocess.run
+
+
 @pytest.fixture
 def fake_slurm_function():
 
@@ -358,14 +362,14 @@ def fake_slurm_function():
             def __init__(self, stdout):
                 self.stdout = stdout
 
-        if "sbatch" == args[0]:
+        if "sbatch" == str(args[0]):
             new_id = np.random.randint(100)
             if new_id in cache_list:
                 new_id = max(cache_list) + 1
             cache_list.append(new_id)
             fake_output_str = f"job {new_id}"
 
-        if "sacct" in args[0]:
+        elif "sacct" in args[0]:
             # get id list
 
             id_list = [
@@ -438,7 +442,26 @@ def fake_slurm_function():
                             new_line += format_option_dict[format_option] + "|"
 
                     fake_output_str += new_line + "\n"
+        else:
+            # return the original subprocess output
+            print(args, kwargs)
+            original_subprocess_run(args, **kwargs)
 
         return FakeOutput(fake_output_str)
 
     return _fake_slurm_function
+
+
+@pytest.fixture
+def analysis_tmp_dir():
+
+    current_path = pathlib.Path(__file__)
+    (current_path.parents[0] / "tests_dir").mkdir(exist_ok=True)
+    tmp_dir = pathlib.Path(mkdtemp(dir=(current_path.parents[0] / "tests_dir")))
+
+    for file in (current_path.parents[0] / "test_data" / "analysis_test_data").glob(
+        "*.out"
+    ):
+        shutil.copy(file, tmp_dir)
+
+    return tmp_dir

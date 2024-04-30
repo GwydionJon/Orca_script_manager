@@ -1,12 +1,13 @@
 from pathlib import Path
 import copy
-from datetime import datetime
+import datetime
 import subprocess
 import shutil
 import re
 from typing import Union
 from script_maker2000.template import TemplateModule
 from script_maker2000.job import Job
+from script_maker2000.analysis import extract_infos_from_results, parse_output_file
 
 
 class OrcaModule(TemplateModule):
@@ -77,7 +78,7 @@ class OrcaModule(TemplateModule):
         options = self.internal_config["options"]
         slurm_dict = {}
         # Get current date
-        current_date = datetime.now()
+        current_date = datetime.datetime.now()
 
         # Format date as a string with abbreviated year, hours, minutes, and seconds
         date_str = current_date.strftime("%dd_%mm_%yy-%Hh_%Mm_%Ss")
@@ -265,6 +266,33 @@ class OrcaModule(TemplateModule):
                 + " Please check your file name or provide the necessary files."
             )
         return process
+
+    @classmethod
+    def collect_results(cls, job, key) -> None:
+        """Use the cclib library to extract the results from the orca output file.
+
+
+
+        Args:
+            job (Job): current job object to collect results from.
+
+        Returns:
+            _type_: _description_
+        """
+
+        # prepare the cclib result dict for storage
+
+        # get the output file
+        if job.status_per_key[key] != "finished":
+            return None
+
+        # first parse the output file and get result json
+
+        parse_output_file(job.current_dirs["finished"])
+
+        result_dict = extract_infos_from_results(job.current_dirs["finished"])
+
+        return result_dict
 
     @classmethod
     def check_job_status(cls, job: Job) -> int:

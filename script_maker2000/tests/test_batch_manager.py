@@ -8,6 +8,7 @@ import json
 
 from script_maker2000.batch_manager import BatchManager
 from script_maker2000.files import read_batch_config_file
+from script_maker2000.analysis import extract_infos_from_results
 
 
 def test_batch_manager(clean_tmp_dir, monkeypatch, fake_slurm_function):
@@ -337,12 +338,37 @@ def test_parallel_steps(multilayer_tmp_dir, monkeypatch, fake_slurm_function):
 
     # check the job_dict
 
+    perform_checks(batch_manager)
+
+
+def perform_checks(batch_manager):
     with open(batch_manager.working_dir / "job_backup.json", "r") as f:
         job_backup = json.load(f)
 
     for job in job_backup.values():
 
         assert len(job["finished_keys"]) <= len(job["all_keys"])
+
+        # get json calc results file
+        if job["_current_status"] == "finished":
+            job_final_dir = Path(list(job["final_dirs"].values())[0])
+
+            json_file = job_final_dir / f"{job_final_dir.stem}_calc_result.json"
+            assert json_file.exists()
+            with open(json_file, "r") as f:
+                calc_results = json.load(f)
+
+            assert "atomcharges" in calc_results.keys()
+            assert calc_results["mult"] == 1
+
+    test_dict, _ = extract_infos_from_results(
+        batch_manager.working_dir / "finished/raw_results"
+    )
+
+    for key in test_dict.keys():
+        assert "dirname" in test_dict[key].keys()
+        assert "mult" in test_dict[key].keys()
+        assert "charge" in test_dict[key].keys()
 
 
 def copy_output(target_dirs, succesful_output_dirs):
