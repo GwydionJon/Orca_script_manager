@@ -267,7 +267,7 @@ def hide_download_column_when_local(remote_local_switch):
     return {}
 
 
-def _get_all_mol_dirs_in_finished_dirs(config_dict):
+def _get_all_mol_dirs_in_finished_dirs(config_dict, files_filter_value):
     # get all mol dirs in finished dirs
     all_output_dict = defaultdict(lambda: defaultdict(list))
 
@@ -289,7 +289,7 @@ def _get_all_mol_dirs_in_finished_dirs(config_dict):
 
                 mol_main_dict = {
                     "title": mol_main_dir.stem,
-                    "key": str(mol_main_dir),
+                    "key": f"main_{str(mol_main_dir)}",
                     "children": [],
                 }
 
@@ -301,6 +301,23 @@ def _get_all_mol_dirs_in_finished_dirs(config_dict):
                     ).exists():
                         parse_output_file(mol_sub_dir)
 
+                    # check if the file should be skipped
+                    # if the user has not entered any files to filter
+                    # then skip_file is False
+                    # if the user has entered a comma separated list of files to filter
+                    # then skip_file is True if the file is in the list
+                    if len(files_filter_value) == 0:
+                        skip_file = False
+                    else:
+                        skip_file = True
+
+                        for filter in files_filter_value:
+                            if filter in mol_sub_dir.stem:
+                                skip_file = False
+
+                    if skip_file:
+                        continue
+
                     mol_main_dict["children"].append(
                         {
                             "title": mol_sub_dir.stem,
@@ -309,7 +326,12 @@ def _get_all_mol_dirs_in_finished_dirs(config_dict):
                         }
                     )
 
+                if len(mol_main_dict["children"]) == 0:
+                    continue
                 tree_config_dict["children"].append(mol_main_dict)
+
+        if len(tree_config_dict["children"]) == 0:
+            continue
         all_output_dict["children"].append(tree_config_dict)
 
     return all_output_dict
@@ -340,7 +362,7 @@ def create_results_file_tree(files_filter_value):
             else:
                 files_filter_value[i] = value_
 
-    raw_tree_dict = _get_all_mol_dirs_in_finished_dirs(config_dict)
+    raw_tree_dict = _get_all_mol_dirs_in_finished_dirs(config_dict, files_filter_value)
 
     return raw_tree_dict
 
@@ -355,15 +377,17 @@ def update_table_values(
             continue
         if "config_" in selected_entry:
             continue
+        if "main_" in selected_entry:
+            continue
 
         selected_data.append(selected_entry)
-
+    print(selected_data)
+    print(len(selected_data))
+    print("")
     table_data, corrections_list = extract_infos_from_results(selected_data)
 
     if complete_table_data == {}:  # will be reset when downloading a new file.
         complete_table_data = table_data
-
-    table_column_input
 
     columns_mol_info = [
         {"name": ["Molecular Informations", "Charge"], "id": "charge"},
