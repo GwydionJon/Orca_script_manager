@@ -450,3 +450,18 @@ def fake_slurm_function():
         return FakeOutput(fake_output_str)
 
     return _fake_slurm_function
+
+
+@pytest.fixture
+def analysis_tmp_dir():
+
+    current_path = pathlib.Path(__file__)
+    (current_path.parents[0] / "tests_dir").mkdir(exist_ok=True)
+    tmp_dir = pathlib.Path(mkdtemp(dir=(current_path.parents[0] / "tests_dir")))
+
+    for file in (current_path.parents[0] / "test_data" / "analysis_test_data").glob(
+        "*.out"
+    ):
+        shutil.copy(file, tmp_dir)
+
+    return tmp_dir

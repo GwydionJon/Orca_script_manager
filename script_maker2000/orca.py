@@ -7,7 +7,7 @@ import re
 from typing import Union
 from script_maker2000.template import TemplateModule
 from script_maker2000.job import Job
-from script_maker2000.analysis import extract_infos_from_results
+from script_maker2000.analysis import extract_infos_from_results, parse_output_file
 
 
 class OrcaModule(TemplateModule):
@@ -285,6 +285,10 @@ class OrcaModule(TemplateModule):
         # get the output file
         if job.status_per_key[key] != "finished":
             return None
+
+        # first parse the output file and get result json
+
+        parse_output_file(job.current_dirs["finished"])
 
         result_dict = extract_infos_from_results(job.current_dirs["finished"])
 

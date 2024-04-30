@@ -352,6 +352,7 @@ def perform_checks(batch_manager):
         # get json calc results file
         if job["_current_status"] == "finished":
             job_final_dir = Path(list(job["final_dirs"].values())[0])
+
             json_file = job_final_dir / f"{job_final_dir.stem}_calc_result.json"
             assert json_file.exists()
             with open(json_file, "r") as f:
@@ -360,7 +361,7 @@ def perform_checks(batch_manager):
             assert "atomcharges" in calc_results.keys()
             assert calc_results["mult"] == 1
 
-    test_dict = extract_infos_from_results(
+    test_dict, _ = extract_infos_from_results(
         batch_manager.working_dir / "finished/raw_results"
     )
 

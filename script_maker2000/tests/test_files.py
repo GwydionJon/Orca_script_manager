@@ -10,6 +10,7 @@ import logging
 import pathlib
 import pytest
 import tarfile
+import pandas as pd
 
 script_maker_log = logging.getLogger("Script_maker_log")
 script_maker_error = logging.getLogger("Script_maker_error")
@@ -88,11 +89,14 @@ def test_collect_input_files(clean_tmp_dir):
 
 def test_read_mol_input_json(clean_tmp_dir):
 
-    import pandas as pd
-
-    print(clean_tmp_dir)
     json_path = clean_tmp_dir / "example_xyz" / "example_molecules.json"
     example_mol_dict = read_mol_input_json(json_path)
 
-    df = pd.DataFrame(example_mol_dict)
-    print(df)
+    assert isinstance(example_mol_dict, dict)
+
+    df = pd.DataFrame(example_mol_dict).T
+
+    assert "path" in df.columns
+    assert "key" in df.columns
+    assert "multiplicity" in df.columns
+    assert "charge" in df.columns
