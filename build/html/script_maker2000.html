@@ -55,6 +55,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#script_maker2000.cli.update_mol_json"><code class="docutils literal notranslate"><span class="pre">update_mol_json()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#script_maker2000.orca.OrcaModule"><code class="docutils literal notranslate"><span class="pre">OrcaModule</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.OrcaModule.check_job_status"><code class="docutils literal notranslate"><span class="pre">OrcaModule.check_job_status()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.OrcaModule.collect_results"><code class="docutils literal notranslate"><span class="pre">OrcaModule.collect_results()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.OrcaModule.create_orca_input_files"><code class="docutils literal notranslate"><span class="pre">OrcaModule.create_orca_input_files()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.OrcaModule.create_slurm_scripts"><code class="docutils literal notranslate"><span class="pre">OrcaModule.create_slurm_scripts()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.OrcaModule.prepare_jobs"><code class="docutils literal notranslate"><span class="pre">OrcaModule.prepare_jobs()</span></code></a></li>
@@ -167,6 +168,18 @@ config_key (str): _description_</p>
 <em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">check_job_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">job</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Job</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#script_maker2000.orca.OrcaModule.check_job_status" title="Link to this definition"></a></dt>
 <dd><p>provide some method to verify if a single calculation was succesful.
 This should be handled indepentendly from the existence of this class object.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="script_maker2000.orca.OrcaModule.collect_results">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">collect_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">job</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#script_maker2000.orca.OrcaModule.collect_results" title="Link to this definition"></a></dt>
+<dd><p>Use the cclib library to extract the results from the orca output file.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>job (Job): current job object to collect results from.</p>
+</dd>
+<dt>Returns:</dt><dd><p>_type_: _description_</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
