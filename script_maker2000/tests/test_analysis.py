@@ -31,7 +31,7 @@ def test_parse_and_extract(analysis_tmp_dir):
     for file in output_test_files:
         parse_output_file(file)
 
-    assert len(list(analysis_tmp_dir.glob("*.json"))) == 3
+    assert len(list(analysis_tmp_dir.glob("*.json"))) == 4
 
     cc_file = list(analysis_tmp_dir.glob("dlpno_qz_calc_result.json"))[0]
 
