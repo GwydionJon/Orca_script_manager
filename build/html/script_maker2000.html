@@ -47,12 +47,6 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">Modules</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">script_maker2000</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.cli.enable_profiling"><code class="docutils literal notranslate"><span class="pre">enable_profiling()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.cli.extract_tarball"><code class="docutils literal notranslate"><span class="pre">extract_tarball()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.cli.find_json_files"><code class="docutils literal notranslate"><span class="pre">find_json_files()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.cli.load_and_update_config"><code class="docutils literal notranslate"><span class="pre">load_and_update_config()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.cli.prepare_extract_path"><code class="docutils literal notranslate"><span class="pre">prepare_extract_path()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.cli.update_mol_json"><code class="docutils literal notranslate"><span class="pre">update_mol_json()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#script_maker2000.orca.OrcaModule"><code class="docutils literal notranslate"><span class="pre">OrcaModule</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.OrcaModule.check_job_status"><code class="docutils literal notranslate"><span class="pre">OrcaModule.check_job_status()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.OrcaModule.collect_results"><code class="docutils literal notranslate"><span class="pre">OrcaModule.collect_results()</span></code></a></li>
@@ -117,39 +111,9 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="module-script_maker2000.cli">
-<span id="script-maker2000"></span><h1>script_maker2000<a class="headerlink" href="#module-script_maker2000.cli" title="Link to this heading"></a></h1>
-<dl class="py function">
-<dt class="sig sig-object py" id="script_maker2000.cli.enable_profiling">
-<span class="sig-prename descclassname"><span class="pre">script_maker2000.cli.</span></span><span class="sig-name descname"><span class="pre">enable_profiling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">extract_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.cli.enable_profiling" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="script_maker2000.cli.extract_tarball">
-<span class="sig-prename descclassname"><span class="pre">script_maker2000.cli.</span></span><span class="sig-name descname"><span class="pre">extract_tarball</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extract_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.cli.extract_tarball" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="script_maker2000.cli.find_json_files">
-<span class="sig-prename descclassname"><span class="pre">script_maker2000.cli.</span></span><span class="sig-name descname"><span class="pre">find_json_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">extract_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.cli.find_json_files" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="script_maker2000.cli.load_and_update_config">
-<span class="sig-prename descclassname"><span class="pre">script_maker2000.cli.</span></span><span class="sig-name descname"><span class="pre">load_and_update_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extract_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.cli.load_and_update_config" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="script_maker2000.cli.prepare_extract_path">
-<span class="sig-prename descclassname"><span class="pre">script_maker2000.cli.</span></span><span class="sig-name descname"><span class="pre">prepare_extract_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">extract_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.cli.prepare_extract_path" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="script_maker2000.cli.update_mol_json">
-<span class="sig-prename descclassname"><span class="pre">script_maker2000.cli.</span></span><span class="sig-name descname"><span class="pre">update_mol_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mol_json_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extract_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.cli.update_mol_json" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py class" id="module-script_maker2000.orca">
+  <section id="module-script_maker2000.orca">
+<span id="script-maker2000"></span><h1>script_maker2000<a class="headerlink" href="#module-script_maker2000.orca" title="Link to this heading"></a></h1>
+<dl class="py class">
 <dt class="sig sig-object py" id="script_maker2000.orca.OrcaModule">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">script_maker2000.orca.</span></span><span class="sig-name descname"><span class="pre">OrcaModule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">main_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.orca.OrcaModule" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">TemplateModule</span></code></p>
