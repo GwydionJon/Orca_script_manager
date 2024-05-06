@@ -1,6 +1,8 @@
 import dash_bootstrap_components as dbc
 from dash import html, dcc, Input, Output, State, dash_table
 
+from dash_bio import Speck
+
 import dash_treeview_antd as dta
 
 
@@ -16,6 +18,11 @@ from script_maker2000.dash_ui.results_window_calls import (
     create_results_file_tree,
     update_table_values,
     download_table_data,
+    update_detailed_screen_header,
+    update_xyz_slider,
+    update_xyz_data,
+    update_energy_convergence_plot,
+    update_simulated_ir_spectrum,
 )
 
 default_style = {"margin": "10px", "width": "100%"}
@@ -233,7 +240,81 @@ def create_results_table():
 
 
 def create_detailed_results_screen():
-    pass
+    layout = [
+        dcc.Store(id="detailed_results_store", data={}),
+        dbc.Fade(
+            children=[
+                dbc.Row(
+                    html.H3(
+                        "Detailed Results Screen for: ",
+                        id="detailed_results_screen_header",
+                        style=default_style,
+                    ),
+                ),
+                dbc.Row(html.H4("Molecular Structure", style=default_style)),
+                dbc.Row(
+                    dcc.Loading(
+                        Speck(
+                            id="speck",
+                            view={
+                                "resolution": 400,
+                                "ao": 0.1,
+                                "outline": 1,
+                                "atomScale": 0.25,
+                                "relativeAtomScale": 0.33,
+                                "bonds": True,
+                            },
+                            style={"width": "600px"},
+                        )
+                    ),
+                    style=default_style,
+                ),
+                dbc.Row(
+                    dbc.Fade(
+                        dcc.Slider(
+                            id="speck_slider",
+                            min=0,
+                            max=0,
+                            value=0,
+                            tooltip={
+                                "placement": "bottom",
+                                "always_visible": True,
+                            },
+                        ),
+                        is_in=True,
+                        id="speck_slider_fade",
+                    ),
+                    style={"width": "30%"},
+                ),
+                dbc.Row(
+                    dbc.Fade(
+                        [
+                            html.H4("Energy Convergence Plot", style=default_style),
+                            dcc.Graph(id="energy_convergence_plot"),
+                        ],
+                        is_in=False,
+                        id="energy_convergence_plot_fade",
+                    ),
+                    style=default_style,
+                ),
+                dbc.Row(
+                    dbc.Fade(
+                        [
+                            html.H4("Simulated IR Spectrum", style=default_style),
+                            dcc.Graph(id="simulated_ir_spectrum_graph"),
+                        ],
+                        is_in=False,
+                        id="simulated_ir_spectrum_graph_fade",
+                    ),
+                    style=default_style,
+                ),
+            ],
+            id="detailed_results_screen_fade",
+            is_in=False,
+        ),
+    ]
+
+    return layout
 
 
 def create_results_table_row():
@@ -259,10 +340,12 @@ def create_results_table_row():
                                 "seperate multiple filters by comma",
                                 debounce=True,
                             ),
-                            dta.TreeView(
-                                id="results_treeview",
-                                multiple=False,
-                                checkable=True,
+                            dcc.Loading(
+                                dta.TreeView(
+                                    id="results_treeview",
+                                    multiple=False,
+                                    checkable=True,
+                                )
                             ),  # noqa
                         ]
                     ),
@@ -271,8 +354,8 @@ def create_results_table_row():
             ),
             dbc.Col(
                 [
-                    dbc.Row(create_results_table()),
-                    dbc.Row(create_detailed_results_screen()),
+                    dbc.Row(create_results_table(), style=default_style),
+                    dbc.Row(create_detailed_results_screen(), style=default_style),
                 ],
                 width=9,
             ),
@@ -401,5 +484,47 @@ def add_callbacks_results(app, remote_connection):
         State("results_table", "data"),
         prevent_initial_call=True,
     )(download_table_data)
+
+    app.callback(
+        Output("detailed_results_screen_header", "children"),
+        Output("detailed_results_store", "data"),
+        Output("detailed_results_screen_fade", "is_in"),
+        Input("results_table", "selected_rows"),
+        State("results_table", "data"),
+        State("complete_results_dict_store", "data"),
+        prevent_initial_call=True,
+    )(update_detailed_screen_header)
+
+    app.callback(
+        Output("speck_slider", "max"),
+        Output("speck_slider", "value"),
+        Output("speck_slider", "step"),
+        Output("speck_slider", "marks"),
+        Output("speck_slider_fade", "is_in"),
+        Input("detailed_results_store", "data"),
+        prevent_initial_call=True,
+    )(update_xyz_slider)
+
+    app.callback(
+        Output("speck", "data"),
+        Input("speck_slider", "value"),
+        State("detailed_results_store", "data"),
+        prevent_initial_call=True,
+    )(update_xyz_data)
+
+    app.callback(
+        Output("energy_convergence_plot", "figure"),
+        Output("energy_convergence_plot_fade", "is_in"),
+        Input("detailed_results_store", "data"),
+        Input("energy_unit_select", "value"),
+        prevent_initial_call=True,
+    )(update_energy_convergence_plot)
+
+    app.callback(
+        Output("simulated_ir_spectrum_graph", "figure"),
+        Output("simulated_ir_spectrum_graph_fade", "is_in"),
+        Input("detailed_results_store", "data"),
+        prevent_initial_call=True,
+    )(update_simulated_ir_spectrum)
 
     return app
