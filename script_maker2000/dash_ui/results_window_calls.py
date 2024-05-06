@@ -6,13 +6,19 @@ from tempfile import mkdtemp
 from collections import defaultdict
 import zipfile
 import cclib
+import numpy as np
+import plotly.graph_objects as go
 
 from script_maker2000.files import (
     read_batch_config_file,
     check_dir_in_batch_config,
     add_dir_to_config,
 )
-from script_maker2000.analysis import extract_infos_from_results, parse_output_file
+from script_maker2000.analysis import (
+    extract_infos_from_results,
+    parse_output_file,
+    plot_ir_spectrum,
+)
 
 new_tmpdir = mkdtemp()
 
@@ -381,13 +387,10 @@ def update_table_values(
             continue
 
         selected_data.append(selected_entry)
-    print(selected_data)
-    print(len(selected_data))
-    print("")
+
     table_data, corrections_list = extract_infos_from_results(selected_data)
 
-    if complete_table_data == {}:  # will be reset when downloading a new file.
-        complete_table_data = table_data
+    complete_table_data = table_data
 
     columns_mol_info = [
         {"name": ["Molecular Informations", "Charge"], "id": "charge"},
@@ -440,6 +443,11 @@ def update_table_values(
 
     table_df = pd.DataFrame(table_data).T
 
+    column_ids = [x["id"] for x in columns]
+    for df_column in table_df.columns:
+        if df_column not in column_ids:
+            table_df.drop(df_column, axis=1, inplace=True)
+
     if energy_unit_select != "eV":
         energy_keys = [
             "final_sp_energy",
@@ -457,9 +465,6 @@ def update_table_values(
             table_df[energy_key] = table_df[energy_key].apply(
                 lambda x: cclib.parser.utils.convertor(x, "eV", energy_unit_select)
             )
-
-    # columns = [{"name": i, "id": i} for i in table_data[0].keys()]
-
     return table_df.to_dict("records"), columns, complete_table_data
 
 
@@ -475,3 +480,88 @@ def download_table_data(
     # Save the DataFrame to a CSV file
     df.to_csv("table_data.csv", index=False)
     return "Downloaded table data to " + str(target_dir)
+
+
+def update_detailed_screen_header(selected_row, table_data, complete_table_data):
+    if selected_row is None:
+        return "No Molecules selected for detailed analysis.", {}, False
+    index = selected_row[-1]
+    table_entry = table_data[index]
+
+    complete_table_entry = complete_table_data[table_entry["filename"]]
+    return f"Details for {complete_table_entry['filename']}", complete_table_entry, True
+
+
+def update_xyz_slider(table_entry):
+
+    if table_entry is None:
+        return 0, 0, 1, {0: "0"}, False
+
+    coords = table_entry["coords"]
+
+    if len(coords) == 1:
+        step = 1
+        marks = {1: "1"}
+        is_in = False
+    else:
+        step = 1
+        marks = {int(i): str(int(i)) for i in np.linspace(0, len(coords), 8, dtype=int)}
+        is_in = True
+    return len(coords) - 1, len(coords) - 1, step, marks, is_in
+
+
+def update_xyz_data(slider_value, table_entry):
+
+    if table_entry is None or slider_value is None:
+        return None
+
+    coords = list(table_entry["coords"].values())
+    data = coords[slider_value]
+    return data
+
+
+def update_energy_convergence_plot(table_entry, energy_unit_select):
+
+    if table_entry is None:
+        return go.Figure(), False
+
+    if len(table_entry["final_energy_path"]) == 1:
+        return go.Figure(), False
+
+    index = np.arange(len(table_entry["final_energy_path"]))
+    energies = table_entry["final_energy_path"]
+
+    if energy_unit_select != "eV":
+        energies = [
+            float(cclib.parser.utils.convertor(x, "eV", energy_unit_select))
+            for x in energies
+        ]
+
+    print(energies)
+    fig = go.Figure(data=go.Scatter(x=index, y=energies))
+
+    fig.update_layout(
+        title="Energy convergence of the molecule",
+        xaxis_title="Iteration",
+        yaxis_title=f"Energy [{energy_unit_select}]",
+        autosize=True,
+    )
+
+    return fig, True
+
+
+def update_simulated_ir_spectrum(table_entry):
+
+    if "vibfreqs" not in table_entry or "vibirs" not in table_entry:
+        return go.Figure(), False
+
+    fig = plot_ir_spectrum(
+        table_entry["filename"],
+        table_entry["vibfreqs"],
+        table_entry["vibirs"],
+        "Lorentzian",
+        10,
+        10,
+    )
+
+    return fig, True

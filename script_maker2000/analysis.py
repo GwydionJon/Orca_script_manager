@@ -5,6 +5,7 @@ from pathlib import Path
 import cclib
 import numpy as np
 import datetime
+import plotly.graph_objects as go
 
 
 single_value_entries = [
@@ -29,7 +30,7 @@ dict_entries = [
     "metadata",
 ]
 
-special_entries = ["vibfreqs"]
+special_entries = ["vibfreqs", "atomcoords", "vibirs"]
 
 
 def extract_infos_from_results(raw_output_files: list) -> tuple:
@@ -105,6 +106,10 @@ def extract_result_data(data):
             file_dict[key] = value
         elif key in multi_value_entries:
             file_dict[key] = value[-1]
+
+            if key in ["ccenergies", "final_sp_energy"]:
+                file_dict["final_energy_path"] = value
+
         elif key in dict_entries:
             if key == "energy_corrections":
                 total_corr = 0
@@ -126,7 +131,35 @@ def extract_result_data(data):
                     file_dict["T1 Diagnostic"] = value["t1_diagnostic"]
 
         elif key in special_entries:
-            file_dict["imaginary_freq"] = any(freq < 0 for freq in value)
+            if key == "vibfreqs":
+                file_dict["imaginary_freq"] = any(freq < 0 for freq in value)
+                file_dict["vibfreqs"] = value
+
+            elif key == "vibirs":
+                file_dict["vibirs"] = value
+
+            elif key == "atomcoords":
+                coord_dict_list_list = {}
+
+                atom_list = data["atomlabels"]
+                coord_step_list = value
+
+                for i, coord_step in enumerate(coord_step_list):
+                    new_coord_dict_list = []
+                    for atom, coord_row in zip(atom_list, coord_step):
+                        new_coord_dict_list.append(
+                            {
+                                "symbol": atom,
+                                "x": coord_row[0],
+                                "y": coord_row[1],
+                                "z": coord_row[2],
+                            }
+                        )
+
+                    coord_dict_list_list[f"Iteration_{i}"] = new_coord_dict_list
+
+                file_dict["coords"] = coord_dict_list_list
+
     return file_dict, corrections_list
 
 
@@ -171,3 +204,56 @@ def parse_output_file(output_dir):
     ) as f:
         json.dump(result_dict, f)
     return json_file
+
+
+def add_broadening(
+    list_ex_energy,
+    list_osci_strength,
+    line_profile="Lorentzian",
+    line_param=10,
+    step=10,
+):
+    x_min = np.amin(list_ex_energy) - 50
+    x_max = np.amax(list_ex_energy) + 50
+    x = np.arange(x_min, x_max, step)
+    y = np.zeros((len(x)))
+
+    # go through the frames and calculate the spectrum for each frame
+    for xp in range(len(x)):
+        for e, f in zip(list_ex_energy, list_osci_strength):
+            if line_profile == "Gaussian":
+                y[xp] += f * np.exp(-(((e - x[xp]) / line_param) ** 2))
+            elif line_profile == "Lorentzian":
+                y[xp] += (
+                    0.5
+                    * line_param
+                    * f
+                    / (np.pi * ((x[xp] - e) ** 2 + 0.25 * line_param**2))
+                )
+    return x, y
+
+
+def plot_ir_spectrum(
+    mol_name, vib_freq, vib_int, broadening="Lorentzian", line_param=10, step=10
+):
+
+    x, y = add_broadening(vib_freq, vib_int, broadening, line_param, step)
+
+    # transform to transmission spectrum
+    y = 1 - y / np.max(y)
+
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name="IR Spectrum"))
+
+    fig.update_layout(
+        title=f"Calculated IR Spectrum of {mol_name}",
+        xaxis_title="wavenumber (1/cm)",
+        xaxis_autorange="reversed",
+        yaxis_title="IR Transmission",
+        autosize=False,
+        width=700,
+        height=400,
+    )
+
+    return fig
