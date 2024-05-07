@@ -9,7 +9,7 @@ from script_maker2000.files import (
 import logging
 import pathlib
 import pytest
-import tarfile
+import zipfile
 import pandas as pd
 
 script_maker_log = logging.getLogger("Script_maker_log")
@@ -80,8 +80,9 @@ def test_collect_input_files(clean_tmp_dir):
         clean_tmp_dir / "example_config.json", clean_tmp_dir / "example_prep"
     )
     extract_path = clean_tmp_dir / "example_prep" / "extracted_test"
-    with tarfile.open(tar_path, "r:gz") as tar:
-        tar.extractall(path=extract_path, filter="fully_trusted")
+
+    with zipfile.ZipFile(tar_path, "r") as zipf:
+        zipf.extractall(path=extract_path)
 
     assert len(list(extract_path.glob("*"))) == 3
     assert len(list(extract_path.glob("*/*"))) == 11
@@ -98,8 +99,9 @@ def test_collect_input_files_from_dir(clean_tmp_dir):
         main_config, clean_tmp_dir / "example_prep", "example_xyz_config"
     )
     extract_path = clean_tmp_dir / "example_prep" / "extracted_test"
-    with tarfile.open(tar_path, "r:gz") as tar:
-        tar.extractall(path=extract_path, filter="fully_trusted")
+
+    with zipfile.ZipFile(tar_path, "r") as zipf:
+        zipf.extractall(path=extract_path)
 
     assert len(list(extract_path.glob("*"))) == 3
     assert len(list(extract_path.glob("*/*"))) == 11

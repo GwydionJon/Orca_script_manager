@@ -65,7 +65,7 @@ def create_remote_explorer_layout(mode):
         header_text = [
             "This is the local explorer.",
             html.Br(),
-            "Select the local tar ball you want to submit.",
+            "Select the local zipfile you want to submit.",
         ]
         input_id = "local_path_input"
         input_label = "Enter local path:"
@@ -124,7 +124,7 @@ def create_job_submission_layout():
                 style=default_style,
             ),
             create_new_intput(
-                "Select the tar file of your calculation. (See Config tab)",
+                "Select the zip file of your calculation. (See Config tab)",
                 "",
                 "valid_input_file",
                 placeholder_local,
@@ -141,7 +141,7 @@ def create_job_submission_layout():
                 [
                     "If these are correct, press the submit button to start a new calculation.",
                     html.Br(),
-                    "After starting a job you need to select a new tar file for the button to be enabled again.",
+                    "After starting a job you need to select a new zip file for the button to be enabled again.",
                     html.Br(),
                     "Please note that submitting the same job twice will most likely cause something to fail.",
                 ],
@@ -275,7 +275,7 @@ def add_callbacks_remote_explorer(app, remote_connection):
         # start the calculation using nohup
         result = remote_connection.run(
             f'screen -S {Path(input_file).stem} -X stuff "ml devel/python/3.11.4 ; '
-            + f" script_maker_cli start-tar --tar {str(file_to_extract)} -e {target_dir} --hide_job_status "
+            + f" script_maker_cli start-zip --zip {str(file_to_extract)} -e {target_dir} --hide_job_status "
             + f'>> {output_tracking_file} \n"',
             hide=False,
             warn=True,

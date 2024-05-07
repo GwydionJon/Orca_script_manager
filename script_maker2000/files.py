@@ -3,7 +3,6 @@ import logging
 import pathlib
 import shutil
 from collections import OrderedDict, defaultdict
-import tarfile
 import zipfile
 from platformdirs import PlatformDirs
 import os
@@ -456,19 +455,19 @@ def collect_xyz_files_to_dict(xyz_dir):
     return mol_dict
 
 
-def collect_input_files(config_path, preparation_dir, config_name=None, tar_name=None):
+def collect_input_files(config_path, preparation_dir, config_name=None, zip_name=None):
     """
-    This function collects all input files (xyz, config, csv) and puts them into a single tar ball.
+    This function collects all input files (xyz, config, csv) and puts them into a single zipball.
 
     Args:
         config_path (str): Path to the config file
         preparation_dir (str): Path to the directory where the input files will be prepared
         config_name (str, optional): Name of the config file. If not provided, the original name will be used.
         Defaults to None.
-        tar_name (str, optional): Name of the tar ball. If not provided, a default name will be used. Defaults to None.
+        tar_name (str, optional): Name of the zipball. If not provided, a default name will be used. Defaults to None.
 
     Returns:
-        pathlib.Path: Path to the created tar ball
+        pathlib.Path: Path to the created zipball
     """
     # check if config is valid
 
@@ -531,30 +530,30 @@ def collect_input_files(config_path, preparation_dir, config_name=None, tar_name
     with open(new_config_name, "w", encoding="utf-8") as json_file:
         json.dump(main_config, json_file, indent=4)
 
-    # Create the tar ball
-    if tar_name is None:
-        tar_path = preparation_dir / "test.tar.gz"
+    # Create the zip file
+    if zip_name is None:
+        zip_path = preparation_dir / "test.zip"
     else:
-        if not tar_name.endswith(".tar.gz"):
-            tar_name = tar_name + ".tar.gz"
+        if not zip_name.endswith(".zip"):
+            zip_name = zip_name + ".zip"
 
-        tar_path = preparation_dir / tar_name
+        zip_path = preparation_dir / zip_name
 
-    with tarfile.open(tar_path, "w:gz") as tar:
-        tar.add(new_molecule_json_name, arcname=new_molecule_json_name.name)
-        tar.add(new_config_name, arcname=new_config_name.name)
+    with zipfile.ZipFile(zip_path, "w") as zipf:
+        zipf.write(new_molecule_json_name, arcname=new_molecule_json_name.name)
+        zipf.write(new_config_name, arcname=new_config_name.name)
 
         for job_setup in mol_input.values():
             file = pathlib.Path(job_setup["path"])
-            tar.add(file, arcname="extracted_xyz/" + pathlib.Path(file).name)
+            zipf.write(file, arcname="extracted_xyz/" + pathlib.Path(file).name)
 
-    tar_path = pathlib.Path(tar_path)
+    zip_path = pathlib.Path(zip_path)
 
-    return tar_path
+    return zip_path
 
 
 def collect_results_(output_dir, exclude_patterns=None):
-    # for some reason zip file is many times faster than tar and significantly smaller
+    # for some reason zip file is many times faster than zip and significantly smaller
     output_dir = pathlib.Path(output_dir)
     if exclude_patterns is None:
         exclude_patterns = []

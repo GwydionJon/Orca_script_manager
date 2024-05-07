@@ -332,8 +332,8 @@ def test_parallel_steps(multilayer_tmp_dir, monkeypatch, fake_slurm_function):
     assert len(failed) == 15
     assert len(not_failed) == 23
 
-    # assert tar exists
-    tar_file = batch_manager.working_dir / "output.tar.gz"
+    # assert zip exists
+    tar_file = batch_manager.working_dir / "output.zip"
     assert tar_file.exists()
 
     # check the job_dict
