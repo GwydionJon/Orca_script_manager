@@ -8,6 +8,7 @@ import zipfile
 import cclib
 import numpy as np
 import plotly.graph_objects as go
+import os
 
 from script_maker2000.files import (
     read_batch_config_file,
@@ -565,3 +566,19 @@ def update_simulated_ir_spectrum(table_entry):
     )
 
     return fig, True
+
+
+def open_output_file(n_clicks, table_entry):
+
+    file_path = Path(table_entry["dirname"]) / (
+        Path(table_entry["filename"]).stem + ".out"
+    )
+    os.system(f"rundll32.exe shell32.dll,OpenAs_RunDLL {file_path}")
+
+    return "Open Output File"
+
+
+def open_results_folder(n_clicks, table_entry):
+    os.startfile(table_entry["dirname"])
+
+    return "Open Results Folder"

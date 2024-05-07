@@ -23,6 +23,8 @@ from script_maker2000.dash_ui.results_window_calls import (
     update_xyz_data,
     update_energy_convergence_plot,
     update_simulated_ir_spectrum,
+    open_output_file,
+    open_results_folder,
 )
 
 default_style = {"margin": "10px", "width": "100%"}
@@ -250,6 +252,26 @@ def create_detailed_results_screen():
                         id="detailed_results_screen_header",
                         style=default_style,
                     ),
+                ),
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            dbc.Button(
+                                "Open Output File",
+                                id="open_output_file_button",
+                                style=default_style,
+                            ),
+                            width=3,
+                        ),
+                        dbc.Col(
+                            dbc.Button(
+                                "Open Results Folder",
+                                id="open_results_folder_button",
+                                style=default_style,
+                            ),
+                            width=3,
+                        ),
+                    ]
                 ),
                 dbc.Row(html.H4("Molecular Structure", style=default_style)),
                 dbc.Row(
@@ -526,5 +548,19 @@ def add_callbacks_results(app, remote_connection):
         Input("detailed_results_store", "data"),
         prevent_initial_call=True,
     )(update_simulated_ir_spectrum)
+
+    app.callback(
+        Output("open_output_file_button", "children"),
+        Input("open_output_file_button", "n_clicks"),
+        State("detailed_results_store", "data"),
+        prevent_initial_call=True,
+    )(open_output_file)
+
+    app.callback(
+        Output("open_results_folder_button", "children"),
+        Input("open_results_folder_button", "n_clicks"),
+        State("detailed_results_store", "data"),
+        prevent_initial_call=True,
+    )(open_results_folder)
 
     return app
