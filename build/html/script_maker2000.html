@@ -75,8 +75,10 @@
 <li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.change_entry_in_batch_config"><code class="docutils literal notranslate"><span class="pre">change_entry_in_batch_config()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.check_config"><code class="docutils literal notranslate"><span class="pre">check_config()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.check_dir_in_batch_config"><code class="docutils literal notranslate"><span class="pre">check_dir_in_batch_config()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.check_input_files"><code class="docutils literal notranslate"><span class="pre">check_input_files()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.collect_input_files"><code class="docutils literal notranslate"><span class="pre">collect_input_files()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.collect_results_"><code class="docutils literal notranslate"><span class="pre">collect_results_()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.collect_xyz_files_to_dict"><code class="docutils literal notranslate"><span class="pre">collect_xyz_files_to_dict()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.create_working_dir_structure"><code class="docutils literal notranslate"><span class="pre">create_working_dir_structure()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.read_batch_config_file"><code class="docutils literal notranslate"><span class="pre">read_batch_config_file()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.read_config"><code class="docutils literal notranslate"><span class="pre">read_config()</span></code></a></li>
@@ -305,13 +307,22 @@ This should use the slurm class provided in this module.</p>
 <dd></dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="script_maker2000.files.check_input_files">
+<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">check_input_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">main_config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.check_input_files" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="script_maker2000.files.collect_input_files">
-<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">collect_input_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preparation_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tar_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.collect_input_files" title="Link to this definition"></a></dt>
-<dd><p>This function collects all input files (xyz, config, csv) and puts them into a single tar ball.</p>
+<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">collect_input_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preparation_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zip_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.collect_input_files" title="Link to this definition"></a></dt>
+<dd><p>This function collects all input files (xyz, config, csv) and puts them into a single zipball.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><p>config_path (str): Path to the config file
-input_csv (str): Path to the input csv file
-xyz_dir (str): Path to the xyz files</p>
+preparation_dir (str): Path to the directory where the input files will be prepared
+config_name (str, optional): Name of the config file. If not provided, the original name will be used.
+Defaults to None.
+tar_name (str, optional): Name of the zipball. If not provided, a default name will be used. Defaults to None.</p>
+</dd>
+<dt>Returns:</dt><dd><p>pathlib.Path: Path to the created zipball</p>
 </dd>
 </dl>
 </dd></dl>
@@ -320,6 +331,18 @@ xyz_dir (str): Path to the xyz files</p>
 <dt class="sig sig-object py" id="script_maker2000.files.collect_results_">
 <span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">collect_results_</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude_patterns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.collect_results_" title="Link to this definition"></a></dt>
 <dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="script_maker2000.files.collect_xyz_files_to_dict">
+<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">collect_xyz_files_to_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xyz_dir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.collect_xyz_files_to_dict" title="Link to this definition"></a></dt>
+<dd><p>This function collects all xyz files in a directory and returns them as a dictionary.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>xyz_dir (str): Path to the xyz files</p>
+</dd>
+<dt>Returns:</dt><dd><p>dict: Dictionary with the xyz files</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="script_maker2000.files.create_working_dir_structure">
