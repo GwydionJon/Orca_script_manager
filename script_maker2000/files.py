@@ -3,11 +3,11 @@ import logging
 import pathlib
 import shutil
 from collections import OrderedDict, defaultdict
-import tarfile
 import zipfile
 from platformdirs import PlatformDirs
 import os
 import copy
+import re
 
 batchLogger = logging.getLogger("BatchManager")
 
@@ -17,7 +17,6 @@ batchLogger = logging.getLogger("BatchManager")
 main_config_keys = [
     "config_name",
     "input_file_path",
-    "xyz_path",
     "output_dir",
     "parallel_layer_run",
     "wait_for_results_time",
@@ -150,9 +149,15 @@ def read_mol_input_json(input_json, skip_file_check=False):
         for entry_key, value in entry.items():
 
             if entry_key == "path":
-                if not pathlib.Path(value).exists():
+
+                new_path = pathlib.Path(value)
+
+                if not new_path.is_absolute():
+                    new_path = input_json.parent / new_path
+
+                if not new_path.exists():
                     raise FileNotFoundError(f"Can't find file {value}")
-                if pathlib.Path(value).suffix != ".xyz":
+                if new_path.suffix != ".xyz":
                     raise ValueError(
                         f"Input files must be in xyz format. The following files are not: {value}"
                     )
@@ -263,17 +268,30 @@ def check_config(main_config, skip_file_check=False, override_continue_job=False
         raise ValueError("The first step number must be 0.")
 
     if skip_file_check is False:
-        if main_config["main_config"]["input_file_path"] is None:
-            raise FileNotFoundError("No input file path provided.")
 
-        if main_config["main_config"]["input_file_path"] is None:
-            raise FileNotFoundError("No input file path provided.")
+        check_input_files(main_config)
 
-        input_path = pathlib.Path(main_config["main_config"]["input_file_path"])
 
-        if not input_path.exists():
+def check_input_files(main_config):
+    input_file_path = main_config["main_config"]["input_file_path"]
+
+    if input_file_path is None:
+        raise FileNotFoundError("No input file path provided.")
+
+    input_path = pathlib.Path(main_config["main_config"]["input_file_path"])
+    if not input_path.exists():
+        raise FileNotFoundError(
+            f"Can't find input files under {input_path}."
+            + " Please check your file name or provide the necessary files."
+        )
+
+    if input_path.is_file() and input_path.suffix != ".json":
+        raise ValueError(f"Input file must be in json format. Found {input_path}.")
+
+    if input_path.is_dir():
+        if len(list(input_path.glob("*.xyz"))) == 0:
             raise FileNotFoundError(
-                f"Can't find input files under {input_path}."
+                f"Can't find any xyz files under {input_path}."
                 + " Please check your file name or provide the necessary files."
             )
 
@@ -402,39 +420,93 @@ def read_config(config_file, perform_validation=True, override_continue_job=Fals
     return main_config
 
 
-def collect_input_files(config_path, preparation_dir, config_name=None, tar_name=None):
-    """This function collects all input files (xyz, config, csv) and puts them into a single tar ball.
+def collect_xyz_files_to_dict(xyz_dir):
+    """This function collects all xyz files in a directory and returns them as a dictionary.
+
+    Args:
+        xyz_dir (str): Path to the xyz files
+
+    Returns:
+        dict: Dictionary with the xyz files
+    """
+    xyz_dir = pathlib.Path(xyz_dir)
+    if not xyz_dir.exists():
+        raise FileNotFoundError(f"Can't find directory {xyz_dir}.")
+
+    mol_dict = {}
+
+    for file in xyz_dir.glob("*.xyz"):
+        match = re.search(r"__c([+-]?\d+)m([+-]?\d+)", file.stem)
+        if not match:
+            raise ValueError(
+                f"File {file} does not match the pattern {xyz_dir}__cXmX.xyz"
+            )
+
+        charge = int(match.group(1))
+        multiplicity = int(match.group(2))
+
+        mol_dict[file.stem] = {
+            "path": file,
+            "key": file.stem,
+            "charge": charge,
+            "multiplicity": multiplicity,
+        }
+
+    return mol_dict
+
+
+def collect_input_files(config_path, preparation_dir, config_name=None, zip_name=None):
+    """
+    This function collects all input files (xyz, config, csv) and puts them into a single zipball.
 
     Args:
         config_path (str): Path to the config file
-        input_csv (str): Path to the input csv file
-        xyz_dir (str): Path to the xyz files
+        preparation_dir (str): Path to the directory where the input files will be prepared
+        config_name (str, optional): Name of the config file. If not provided, the original name will be used.
+        Defaults to None.
+        tar_name (str, optional): Name of the zipball. If not provided, a default name will be used. Defaults to None.
+
+    Returns:
+        pathlib.Path: Path to the created zipball
     """
     # check if config is valid
+
+    if isinstance(config_path, dict) and config_name is None:
+        raise ValueError(
+            "If config is given as a dict, the config_name must be provided."
+        )
+
+    if config_name:
+        if not config_name.endswith(".json"):
+            config_name = config_name + ".json"
+
     main_config = read_config(config_path, perform_validation=True)
 
-    input_json = pathlib.Path(main_config["main_config"]["input_file_path"])
-    if main_config["main_config"]["xyz_path"]:
-        xyz_dir = pathlib.Path(main_config["main_config"]["xyz_path"])
-    else:
-        xyz_dir = None
+    input_path = pathlib.Path(main_config["main_config"]["input_file_path"])
 
-    # check if input_csv contains valid file paths
-    # found_files, input_df = _check_input_csv(input_csv, xyz_dir)
-    mol_input = read_mol_input_json(input_json)
+    if not input_path.exists():
+        raise FileNotFoundError("No input files provided.")
+
+    if input_path.is_dir():
+        # If input path is a directory, collect all xyz files
+        mol_input = collect_xyz_files_to_dict(input_path)
+        input_json = (
+            input_path / f"{main_config['main_config']['config_name']}_molecules.json"
+        )
+    else:
+        # If input path is a file, read the mol_input from the input json file
+        input_json = input_path
+        mol_input = read_mol_input_json(input_json)
+
+    # Create a deep copy of mol_input to modify the paths
     mol_input_new = copy.deepcopy(mol_input)
 
     for job_key, job_setup in mol_input.items():
-        # replace path in input_df with new path
-
+        # Replace path in input_df with new path
         file = pathlib.Path(job_setup["path"])
         mol_input_new[job_key]["path"] = "extracted_xyz/" + file.name
 
     main_config["main_config"]["input_file_path"] = str(input_json.name)
-    if xyz_dir is not None:
-        main_config["main_config"]["xyz_path"] = str(xyz_dir.name)
-    else:
-        main_config["main_config"]["xyz_path"] = ""
 
     main_config["main_config"]["output_dir"] = pathlib.Path(
         main_config["main_config"]["output_dir"]
@@ -443,13 +515,13 @@ def collect_input_files(config_path, preparation_dir, config_name=None, tar_name
     preparation_dir = pathlib.Path(preparation_dir)
     preparation_dir.mkdir(parents=True, exist_ok=True)
 
-    # write new input csv and config to preparation dir
+    # Write new input json and config to preparation dir
     new_molecule_json_name = preparation_dir / input_json.name
 
     with open(new_molecule_json_name, "w", encoding="utf-8") as json_file:
         json.dump(mol_input_new, json_file, indent=4)
 
-    # rename and save config file
+    # Rename and save config file
     if config_name is None:
         new_config_name = preparation_dir / config_path.name
     else:
@@ -458,30 +530,30 @@ def collect_input_files(config_path, preparation_dir, config_name=None, tar_name
     with open(new_config_name, "w", encoding="utf-8") as json_file:
         json.dump(main_config, json_file, indent=4)
 
-    if tar_name is None:
-        tar_path = preparation_dir / "test.tar.gz"
+    # Create the zip file
+    if zip_name is None:
+        zip_path = preparation_dir / "test.zip"
     else:
-        if not tar_name.endswith(".tar.gz"):
-            tar_name = tar_name + ".tar.gz"
+        if not zip_name.endswith(".zip"):
+            zip_name = zip_name + ".zip"
 
-        tar_path = preparation_dir / tar_name
+        zip_path = preparation_dir / zip_name
 
-    with tarfile.open(tar_path, "w:gz") as tar:
-
-        tar.add(new_molecule_json_name, arcname=new_molecule_json_name.name)
-        tar.add(new_config_name, arcname=new_config_name.name)
+    with zipfile.ZipFile(zip_path, "w") as zipf:
+        zipf.write(new_molecule_json_name, arcname=new_molecule_json_name.name)
+        zipf.write(new_config_name, arcname=new_config_name.name)
 
         for job_setup in mol_input.values():
             file = pathlib.Path(job_setup["path"])
-            tar.add(file, arcname="extracted_xyz/" + pathlib.Path(file).name)
+            zipf.write(file, arcname="extracted_xyz/" + pathlib.Path(file).name)
 
-    tar_path = pathlib.Path(tar_path)
+    zip_path = pathlib.Path(zip_path)
 
-    return tar_path
+    return zip_path
 
 
 def collect_results_(output_dir, exclude_patterns=None):
-    # for some reason zip file is many times faster than tar and significantly smaller
+    # for some reason zip file is many times faster than zip and significantly smaller
     output_dir = pathlib.Path(output_dir)
     if exclude_patterns is None:
         exclude_patterns = []

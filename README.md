@@ -43,8 +43,8 @@ It must run SLURM for this programm to function.
 
 ## Start calculations
 After you have succesfully transfered your file simply run either of these lines:
-`script_maker_cli start-tar --tar TAR_PATH --extract_path EXTRACT_PATH`
-`script_maker_cli start-tar --tar TAR_PATH --extract_path EXTRACT_PATH --remove_extracted`
+`script_maker_cli start-zip--zipTAR_PATH --extract_path EXTRACT_PATH`
+`script_maker_cli start-zip--zipTAR_PATH --extract_path EXTRACT_PATH --remove_extracted`
 
 The EXTRACT_PATH is the location where you want to start your calculation and where your logs and results are shown.
 

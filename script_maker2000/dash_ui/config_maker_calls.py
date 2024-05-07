@@ -171,6 +171,10 @@ def check_input_path(
         if input_path.is_file():
             input_valid = True
             input_invalid = False
+        elif input_path.is_dir():
+            if len(list(input_path.glob("*.xyz"))) > 0:
+                input_valid = True
+                input_invalid = False
 
     return input_valid, input_invalid
 
@@ -269,8 +273,8 @@ def _collect_input_files(n_clicks, settings_dict, config_name_input):
         )
         output_str += "To start the batch processing on the remote server, run the following command:\n"
 
-        output_str += f"script_maker2000 start_tar -t {tar_path.name}\n"
-        output_str += "The tar ball will be automatically extracted and the batch processing will start."
+        output_str += f"script_maker2000 start_zip -t {tar_path.name}\n"
+        output_str += "The zip ball will be automatically extracted and the batch processing will start."
 
     except Exception as e:
         output_str = f"Error during input collection: {e}"

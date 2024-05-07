@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 from tqdm import tqdm
 import traceback
-import tarfile
+import zipfile
 
 from script_maker2000.files import (
     read_config,
@@ -371,7 +371,7 @@ class BatchManager:
 
         if "already exists" in result_str:
             error_msg = f"Working dir {self.working_dir} does already exists for config {self.config_name}.\n"
-            +" Please make sure to choose a unique combination."
+            error_msg += " Please make sure to choose a unique combination."
 
             self.log.error(error_msg)
             raise ValueError(error_msg)
@@ -397,13 +397,21 @@ class BatchManager:
         task_results = asyncio.run(self.batch_processing_loop())
         result_dict = self.collect_result_overview()
 
-        # create a tar ball of the output directory
+        # create a zip ball of the output directory
 
-        output_filename = self.working_dir / f"{self.working_dir.stem}.tar.gz"
-        source_dir = self.working_dir
+        output_filename = self.working_dir / f"{self.working_dir.stem}.zip"
+        source_dir = Path(self.working_dir)
 
-        with tarfile.open(output_filename, "w:gz") as tar:
-            tar.add(source_dir, arcname=source_dir)
+        # Find all subfolders and files
+        all_files = list(source_dir.glob("**/*"))
+
+        with zipfile.ZipFile(output_filename, "w") as zipf:
+            for file in all_files:
+                if file.is_file():  # Only add files, not directories
+                    zipf.write(
+                        str(file),
+                        str(file.relative_to(source_dir)),
+                    )
 
         # check tasks for errors:
         exit_code = 0

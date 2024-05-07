@@ -2,7 +2,6 @@
     "main_config": {
         "config_name": "multilayer_test",
         "input_file_path": "example_xyz/example_molecules.json",
-        "xyz_path": "example_xyz",
         "output_dir": "output",
         "parallel_layer_run": true,
         "wait_for_results_time": 5,

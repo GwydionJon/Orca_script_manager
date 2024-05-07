@@ -305,8 +305,6 @@ def create_new_intput(
                 )
             elif key == "input_file_path":
                 placeholder = "Path to the molecule json file"
-            elif key == "xyz_path":
-                placeholder = "Path to the xyz dir (optional)"
 
         new_input = dbc.Row(
             children=[
@@ -454,7 +452,6 @@ def add_single_layer_config(i: int = None, options_dict: dict = None):
                 keep_list=True,
             )
             new_input.children[1].value = value
-            print(new_input)
             layer_layout.append(new_input)
 
         elif key == "options":
@@ -675,7 +672,6 @@ def add_callbacks(app: Dash) -> Dash:
             "main_config_inputs": {
                 "config_name": Input("config_name_input", "value"),
                 "input_file_path": Input("input_file_path_input", "value"),
-                "xyz_path": Input("xyz_path_input", "value"),
                 "output_dir": Input("output_dir_input", "value"),
                 "parallel_layer_run": Input("parallel_layer_run_input", "value"),
                 "wait_for_results_time": Input("wait_for_results_time_input", "value"),
@@ -770,7 +766,7 @@ def add_callbacks(app: Dash) -> Dash:
         inputs={
             "n_clicks": Input("collect_input_files_button", "n_clicks"),
             "settings_dict": State("json_view", "data"),
-            "config_name_input": State("config_check_output", "value"),
+            "config_name_input": State("config_name_input", "value"),
         },
         prevent_initial_call=True,
     )(_collect_input_files)

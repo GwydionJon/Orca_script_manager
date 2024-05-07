@@ -9,7 +9,7 @@ from script_maker2000.files import (
 import logging
 import pathlib
 import pytest
-import tarfile
+import zipfile
 import pandas as pd
 
 script_maker_log = logging.getLogger("Script_maker_log")
@@ -80,11 +80,44 @@ def test_collect_input_files(clean_tmp_dir):
         clean_tmp_dir / "example_config.json", clean_tmp_dir / "example_prep"
     )
     extract_path = clean_tmp_dir / "example_prep" / "extracted_test"
-    with tarfile.open(tar_path, "r:gz") as tar:
-        tar.extractall(path=extract_path, filter="fully_trusted")
+
+    with zipfile.ZipFile(tar_path, "r") as zipf:
+        zipf.extractall(path=extract_path)
 
     assert len(list(extract_path.glob("*"))) == 3
     assert len(list(extract_path.glob("*/*"))) == 11
+
+
+def test_collect_input_files_from_dir(clean_tmp_dir):
+    # change config to use a directory instead of a tar
+    main_config = read_config(clean_tmp_dir / "example_config.json")
+    main_config["main_config"]["input_file_path"] = str(
+        pathlib.Path(main_config["main_config"]["input_file_path"]).parents[0]
+    )
+
+    tar_path = collect_input_files(
+        main_config, clean_tmp_dir / "example_prep", "example_xyz_config"
+    )
+    extract_path = clean_tmp_dir / "example_prep" / "extracted_test"
+
+    with zipfile.ZipFile(tar_path, "r") as zipf:
+        zipf.extractall(path=extract_path)
+
+    assert len(list(extract_path.glob("*"))) == 3
+    assert len(list(extract_path.glob("*/*"))) == 11
+
+    mol_dict = read_mol_input_json(
+        clean_tmp_dir
+        / "example_prep"
+        / "extracted_test"
+        / "monolayer_test_molecules.json"
+    )
+
+    for entry in mol_dict.values():
+        assert "multiplicity" in entry
+        assert "charge" in entry
+        assert "path" in entry
+        assert "key" in entry
 
 
 def test_read_mol_input_json(clean_tmp_dir):

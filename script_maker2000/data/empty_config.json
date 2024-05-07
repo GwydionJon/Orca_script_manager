@@ -2,7 +2,6 @@
     "main_config": {
         "config_name": "empty_config",
         "input_file_path": "",
-        "xyz_path": "",
         "output_dir": "",
         "parallel_layer_run": true,
         "wait_for_results_time": 30,

@@ -2,8 +2,8 @@ from click.testing import CliRunner
 import json
 import shutil
 import pytest
-import tarfile
-from script_maker2000.cli import config_check, start_config, start_tar, collect_input
+import zipfile
+from script_maker2000.cli import config_check, start_config, start_zip, collect_input
 from script_maker2000.batch_manager import BatchManager
 
 
@@ -137,11 +137,11 @@ def test_collect_files(clean_tmp_dir):
     assert result.exit_code == 0
     assert "Tarball created at" in result.output
 
-    tar_path = prep_path / "input_files.tar.gz"
+    tar_path = prep_path / "input_files.zip"
     extract_path = clean_tmp_dir / "example_prep" / "extracted_test"
 
-    with tarfile.open(tar_path, "r:gz") as tar:
-        tar.extractall(path=extract_path, filter="fully_trusted")
+    with zipfile.ZipFile(tar_path, "r") as zipf:
+        zipf.extractall(path=extract_path)
 
     expected_files = ["extracted_xyz", "example_config.json", "example_molecules.json"]
     for file in expected_files:
@@ -156,11 +156,11 @@ def test_collect_files(clean_tmp_dir):
 
     new_tar_dir = clean_tmp_dir / "new_tar"
     new_tar_dir.mkdir()
-    new_tar_path = new_tar_dir / "new_tar.tar.gz"
+    new_tar_path = new_tar_dir / "new_tar.zip"
     shutil.copy(tar_path, new_tar_path)
 
-    with tarfile.open(new_tar_path, "r:gz") as tar:
-        tar.extractall(path=new_tar_dir, filter="fully_trusted")
+    with zipfile.ZipFile(new_tar_path, "r") as zipf:
+        zipf.extractall(path=new_tar_dir)
 
     expected_files = ["extracted_xyz", "example_config.json", "example_molecules.json"]
     for file in expected_files:
@@ -178,7 +178,7 @@ def test_collect_files(clean_tmp_dir):
     shutil.which("sbatch") is not None,
     reason="sbatch not found, this test should only run locally",
 )
-def test_start_tar_local(clean_tmp_dir, monkeypatch):
+def test_start_zip_local(clean_tmp_dir, monkeypatch):
     def new_init(self, *args, **kwargs):
         original_init(self, *args, **kwargs)
         self.wait_time = 1
@@ -202,14 +202,16 @@ def test_start_tar_local(clean_tmp_dir, monkeypatch):
     result = runner.invoke(config_check, ["--config", main_config_path])
     assert result.exit_code == 0
 
+    print("test1")
     result = runner.invoke(
         collect_input, ["--config", main_config_path, "-o", str(prep_path)]
     )
     assert result.exit_code == 0
 
-    tar_path = prep_path / "input_files.tar.gz"
+    zip_path = prep_path / "input_files.zip"
+    print("test2")
     result = runner.invoke(
-        start_tar, ["--tar", tar_path, "-e", str(prep_path)], catch_exceptions=True
+        start_zip, ["--zip", zip_path, "-e", str(prep_path)], catch_exceptions=True
     )
     assert "The slurm commands can't be run inside this test" in str(result.exception)
     assert result.exit_code == 1
@@ -220,7 +222,7 @@ def test_start_tar_local(clean_tmp_dir, monkeypatch):
     shutil.which("sbatch") is None,
     reason="sbatch not found, this test should only run on a server",
 )
-def test_start_tar_remote(clean_tmp_dir, monkeypatch):
+def test_start_zip_remote(clean_tmp_dir, monkeypatch):
     main_config_path = clean_tmp_dir / "example_config.json"
     main_config_path = str(main_config_path)
     prep_path = clean_tmp_dir / "example_prep"
@@ -239,4 +241,4 @@ def test_start_tar_remote(clean_tmp_dir, monkeypatch):
     print(traceback.print_tb(result.exc_info[2]))
 
     tar_path = prep_path / "test.tar.gz"
-    result = runner.invoke(start_tar, ["--tar", tar_path, "-e", str(prep_path)])
+    result = runner.invoke(start_zip, ["--tar", tar_path, "-e", str(prep_path)])

@@ -1,6 +1,6 @@
 import click
 from pathlib import Path
-import tarfile
+import zipfile
 import shutil
 import json
 import cProfile
@@ -143,17 +143,17 @@ def prepare_extract_path(extract_path: str):
     return extract_path
 
 
-def extract_tarball(tar: str, extract_path: Path):
-    click.echo(f"Starting the batch processing with the tarball at {tar}.")
+def extract_tarball(zipf: str, extract_path: Path):
+    click.echo(f"Starting the batch processing with the tarball at {zipf}.")
 
-    if not Path(tar).exists():
-        click.echo(f"Tarball not found at {tar}")
+    if not Path(zipf).exists():
+        click.echo(f"Tarball not found at {zipf}")
         return 1
     click.echo(f"Extracting the tarball to {extract_path}")
 
-    with tarfile.open(tar, "r:gz") as tar:
-        tar.extractall(path=extract_path, filter="data")
-    click.echo(f"Tarball extracted at {extract_path}")
+    with zipfile.ZipFile(zipf, "r") as zipf:
+        zipf.extractall(path=extract_path)
+    click.echo(f"Zip extracted at {extract_path}")
 
 
 def find_json_files(extract_path: Path):
@@ -225,12 +225,12 @@ def update_mol_json(mol_json_path: Path, extract_path: Path):
 
 
 @script_maker_cli.command()
-@click.option("--tar", "-t", help="Path to the tarball with the input files.")
+@click.option("--zip", "-z", help="Path to the zipfile with the input files.")
 @click.option(
     "--extract_path",
     "-e",
     default="input_files",
-    help="Path where the tar ball is extracted and the sub_dirs for the calculation are generated.",
+    help="Path where the zipball is extracted and the sub_dirs for the calculation are generated.",
 )
 @click.option(
     "--remove_extracted",
@@ -254,8 +254,8 @@ def update_mol_json(mol_json_path: Path, extract_path: Path):
     is_flag=True,
     help="If the code should be profiled. Will create a '.prof' file",
 )
-def start_tar(
-    tar, extract_path, remove_extracted, profile: bool, hide_job_status: bool = False
+def start_zip(
+    zip, extract_path, remove_extracted, profile: bool, hide_job_status: bool = False
 ):
     """Start the batch processing with the given tarball."""
 
@@ -263,7 +263,7 @@ def start_tar(
         enable_profiling(extract_path)
 
     extract_path = prepare_extract_path(extract_path)
-    extract_tarball(tar, extract_path)
+    extract_tarball(zip, extract_path)
 
     config_path, mol_json_path, error_code = find_json_files(extract_path)
     if error_code != 0:
@@ -314,16 +314,16 @@ def start_tar(
 @script_maker_cli.command()
 @click.option("--config", "-c", default="config.json", help="Path to the config file")
 @click.option(
-    "--output", "-o", default="input_files", help="Path where the tar ball is created."
+    "--output", "-o", default="input_files", help="Path where the zipball is created."
 )
 @click.option(
-    "--tar_name",
+    "--zip_name",
     "-t",
-    default="input_files.tar.gz",
-    help="Name of the tar ball with the input files.",
+    default="input_files.zip",
+    help="Name of the zipball with the input files.",
 )
-def collect_input(config, output, tar_name):
-    """Will search the config file for input files and prepares a tar ball with all the files."""
+def collect_input(config, output, zip_name):
+    """Will search the config file for input files and prepares a zipball with all the files."""
 
     prep_path = Path(output)
     prep_path = prep_path.resolve()
@@ -331,7 +331,7 @@ def collect_input(config, output, tar_name):
 
     config_path = Path(config)
 
-    tar_path = collect_input_files(config_path, prep_path, tar_name=tar_name)
+    tar_path = collect_input_files(config_path, prep_path, zip_name=zip_name)
     click.echo(f"Tarball created at {tar_path}")
     click.echo(
         "The tarball will contain all the input files needed for the batch processing."
@@ -347,9 +347,9 @@ def collect_input(config, output, tar_name):
     click.echo(
         "After installing the script_maker2000 package on the remote server run:"
     )
-    click.echo(f"script_maker2000 start_tar -t {tar_path.name}")
+    click.echo(f"script_maker2000 start_zip-t {tar_path.name}")
     click.echo(
-        "The tar ball will be automatically extracted and the batch processing will start."
+        "The zipball will be automatically extracted and the batch processing will start."
     )
 
     return 0
@@ -408,8 +408,8 @@ def collect_results(results_path, exclude_patterns=None):
         click.echo(f"Results path not found at {results_path}")
         return 1
 
-    result_tar = collect_results_(results_path, exclude_patterns)
+    result_zip = collect_results_(results_path, exclude_patterns)
 
-    click.echo(f"Tarball created at {result_tar}")
+    click.echo(f"Tarball created at {result_zip}")
 
     return 0
