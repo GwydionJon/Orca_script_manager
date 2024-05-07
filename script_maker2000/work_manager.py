@@ -12,6 +12,9 @@ from pint import UnitRegistry
 from script_maker2000.job import Job
 
 
+possible_layer_types = ["orca"]
+
+
 class WorkManager:
     """This class is used to manage the work of a WorkModule.
     For this it will check if new files are available,

@@ -12,6 +12,40 @@ import copy
 batchLogger = logging.getLogger("BatchManager")
 
 
+# config keys
+
+main_config_keys = [
+    "config_name",
+    "input_file_path",
+    "xyz_path",
+    "output_dir",
+    "parallel_layer_run",
+    "wait_for_results_time",
+    "continue_previous_run",
+    "max_n_jobs",
+    "max_ram_per_core",
+    "max_nodes",
+    "max_run_time",
+    "input_type",
+    "orca_version",
+    "common_input_files",
+]
+structure_check_config_keys = ["run_checks"]
+analysis_config_keys = ["run_benchmark"]
+loop_config_keys = ["type", "step_id", "additional_input_files", "options"]
+options_keys = [
+    "method",
+    "basisset",
+    "additional_settings",
+    "ram_per_core",
+    "n_cores_per_calculation",
+    "n_calculation_at_once",
+    "disk_storage",
+    "walltime",
+    "args",
+]
+
+
 def create_working_dir_structure(
     main_config: dict,
 ):
@@ -184,28 +218,30 @@ def check_config(main_config, skip_file_check=False, override_continue_job=False
     # check if all keys are present
     _check_config_keys(main_config)
 
-    output_dir = pathlib.Path(main_config["main_config"]["output_dir"])
-    sub_dir_names = [pathlib.Path(key) for key in main_config["loop_config"]]
-    if len(sub_dir_names) == 0:
-        raise ValueError("Can't find loop configs. ?")
+    if main_config["main_config"]["output_dir"]:
 
-    for sub_dir in sub_dir_names:
+        output_dir = pathlib.Path(main_config["main_config"]["output_dir"])
+        sub_dir_names = [pathlib.Path(key) for key in main_config["loop_config"]]
+        if len(sub_dir_names) == 0:
+            raise ValueError("Can't find loop configs. ?")
 
-        if (
-            (output_dir / "working" / sub_dir).exists()
-            and main_config["main_config"]["continue_previous_run"] is False
-            and override_continue_job is False
-        ):
-            batchLogger.error(
-                f"The directory {output_dir} already has subfolders setup. "
-                + "If you want to continue a previous run please change the "
-                + "'continue_previous_run'-option in the main config"
-            )
-            raise FileExistsError(
-                f"The directory {output_dir} already has subfolders setup. "
-                + "If you want to continue a previous run please change the "
-                + "'continue_previous_run'-option in the main config"
-            )
+        for sub_dir in sub_dir_names:
+
+            if (
+                (output_dir / "working" / sub_dir).exists()
+                and main_config["main_config"]["continue_previous_run"] is False
+                and override_continue_job is False
+            ):
+                batchLogger.error(
+                    f"The directory {output_dir} already has subfolders setup. "
+                    + "If you want to continue a previous run please change the "
+                    + "'continue_previous_run'-option in the main config"
+                )
+                raise FileExistsError(
+                    f"The directory {output_dir} already has subfolders setup. "
+                    + "If you want to continue a previous run please change the "
+                    + "'continue_previous_run'-option in the main config"
+                )
 
     is_multilayer = main_config["main_config"]["parallel_layer_run"]
 
@@ -227,6 +263,9 @@ def check_config(main_config, skip_file_check=False, override_continue_job=False
         raise ValueError("The first step number must be 0.")
 
     if skip_file_check is False:
+        if main_config["main_config"]["input_file_path"] is None:
+            raise FileNotFoundError("No input file path provided.")
+
         if main_config["main_config"]["input_file_path"] is None:
             raise FileNotFoundError("No input file path provided.")
 
@@ -253,35 +292,7 @@ def _check_config_keys(main_config):
         )
 
     # main_config keys
-    main_config_keys = [
-        "config_name",
-        "continue_previous_run",
-        "max_n_jobs",
-        "max_ram_per_core",
-        "max_nodes",
-        "output_dir",
-        "max_run_time",
-        "input_file_path",
-        "input_type",
-        "parallel_layer_run",
-        "orca_version",
-        "wait_for_results_time",
-        "common_input_files",
-        "xyz_path",
-    ]
-    structure_check_config_keys = ["run_checks"]
-    analysis_config_keys = ["run_benchmark"]
-    loop_config_keys = ["type", "step_id", "additional_input_files", "options"]
-    options_keys = [
-        "method",
-        "basisset",
-        "additional_settings",
-        "ram_per_core",
-        "n_cores_per_calculation",
-        "n_calculation_at_once",
-        "disk_storage",
-        "walltime",
-    ]
+
     # check if all keys are present
     if not set(main_config_keys).issubset(main_config["main_config"].keys()):
         raise KeyError(
@@ -531,7 +542,6 @@ def read_batch_config_file(mode):
     removed_keys_all = []
     # these are the different config keys
     for key, dir_values in dict_config.items():
-        removed_keys_per_config_key = []
         # these are finished, running and deleted
         for dir_key in ["running", "finished"]:
             dir_list = dir_values.get(dir_key, [])
@@ -540,13 +550,6 @@ def read_batch_config_file(mode):
                 if not pathlib.Path(dir_path).exists():
                     dict_config[key][dir_key].remove(dir_path)
                     removed_keys_all.append(dir_path)
-                    removed_keys_per_config_key.append(dir_path)
-
-        # add removed keys to deleted list
-        if len(removed_keys_per_config_key) > 0:
-            dict_config[key]["deleted"] = list(
-                set(dict_config[key].get("deleted", []) + removed_keys_per_config_key)
-            )
 
     if len(removed_keys_all) > 0:
         print(
@@ -692,3 +695,100 @@ def add_dir_to_config(new_output_dir):
         json.dump(batch_config, f)
 
     return "added to config."
+
+
+def read_premade_config(mode):
+
+    if mode not in ["path", "dict", "both"]:
+        raise ValueError(f"Mode must be either 'path', 'dict' or 'both' but is {mode}.")
+
+    try:
+        user_dirs = PlatformDirs(os.getlogin(), "Orca_Script_Maker")
+        user_config_dir = pathlib.Path(user_dirs.user_config_dir)
+    except OSError:
+        # this should only happen on  github actions
+        user_config_dir = pathlib.Path(".")
+
+    user_config_dir.mkdir(parents=True, exist_ok=True)
+
+    config_file = user_config_dir / "available_configs.json"
+
+    if not config_file.exists():
+        print("Can't find config file at", config_file, "creating new one.")
+        # read the empty config file
+
+        current_dir = pathlib.Path(__file__).parent
+        premade_config_path = current_dir / "data/empty_config.json"
+
+        with open(premade_config_path, "r", encoding="utf-8") as f:
+            dict_config = json.load(f)
+
+        dict_config = {"empty_config": dict_config}
+
+        with open(config_file, "w", encoding="utf-8") as f:
+            json.dump(dict_config, f, indent=4)
+
+    else:
+        with open(config_file, "r", encoding="utf-8") as f:
+            dict_config = json.load(f)
+
+    if mode == "path":
+        return config_file
+
+    if mode == "dict":
+        return dict_config
+
+    if mode == "both":
+        return config_file, dict_config
+
+
+def add_premade_config(config_path, return_config_name=False, override_config=False):
+    if isinstance(config_path, dict):
+        new_config = config_path
+
+    else:
+        with open(config_path, "r", encoding="utf-8") as f:
+            new_config = json.load(f)
+
+    new_config_name = new_config["main_config"]["config_name"]
+
+    config_file, premade_configs = read_premade_config("both")
+
+    if new_config_name in premade_configs.keys() and override_config is False:
+        return_text = f"Config name {new_config_name} already exists. \n"
+        return_text += (
+            "Please choose a different config name or remove the existing config."
+        )
+        return return_text
+
+    check_config(new_config, skip_file_check=True)
+
+    premade_configs[new_config_name] = new_config
+
+    with open(config_file, "w", encoding="utf-8") as f:
+        json.dump(premade_configs, f, indent=4)
+
+    if override_config:
+        output_text = f"Overwrote {new_config_name} in premade configs."
+    else:
+        output_text = f"Added {new_config_name} to premade configs."
+
+    if return_config_name:
+        return output_text, new_config_name
+
+    return output_text
+
+
+def remove_premade_config(config_name):
+
+    config_file, premade_configs = read_premade_config("both")
+
+    if config_name not in premade_configs.keys():
+        return f"Can't find config name {config_name} in the premade configs."
+
+    premade_configs.pop(config_name)
+
+    with open(config_file, "w", encoding="utf-8") as f:
+        json.dump(premade_configs, f, indent=4)
+
+    return f"Removed {config_name} from premade configs."
