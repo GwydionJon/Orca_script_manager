@@ -1,9 +1,14 @@
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 import json
 from pathlib import Path
 import dash_bootstrap_components as dbc
 from dash import html
-from script_maker2000.files import check_config, collect_input_files
+from script_maker2000.files import (
+    check_config,
+    collect_input_files,
+    read_premade_config,
+    add_premade_config,
+)
 
 
 def create_config_file(
@@ -13,9 +18,12 @@ def create_config_file(
     analysis_config_inputs,
     layer_config_inputs,
 ):
-    settings_dict = defaultdict(dict)
+    settings_dict = defaultdict(OrderedDict)
 
     for key, value in main_config_inputs.items():
+        if value is None:
+            value = "empty"
+
         if key == "parallel_layer_run":
             settings_dict["main_config"][key] = bool(value)
         elif key == "common_input_files":
@@ -23,12 +31,12 @@ def create_config_file(
                 v.strip() for v in value.split(",") if v.strip() != ""
             ]
         elif key == "xyz_path":
-            if value is None:
+            if value is None or value == "":
                 settings_dict["main_config"][key] = "empty"
             else:
                 settings_dict["main_config"][key] = str(Path(value).resolve())
         elif key == "input_file_path":
-            if value is None:
+            if value is None or value == "":
                 settings_dict["main_config"][key] = "empty"
             else:
                 settings_dict["main_config"][key] = str(Path(value).resolve())
@@ -43,9 +51,13 @@ def create_config_file(
             settings_dict["main_config"][key] = value
 
     for key, value in structure_check_config_inputs.items():
+        if value is None:
+            value = "empty"
         settings_dict["structure_check_config"][key] = value
 
     for key, value in analysis_config_inputs.items():
+        if value is None:
+            value = "empty"
         settings_dict["analysis_config"][key] = value
 
     layer_names = layer_config_inputs["layer_name"]
@@ -55,12 +67,14 @@ def create_config_file(
 
     config_check_output = "All seems in order with the config shown below."
     disbale_input_files_button = False
+
     try:
         check_config(settings_dict, skip_file_check=False)
     except Exception as e:
         config_check_output = f"Config check failed with error: {e}"
         config_check_output += "\n\n Input collection disabled."
         disbale_input_files_button = True
+
     return (
         [html.Div("Config file created")],
         settings_dict,
@@ -70,16 +84,27 @@ def create_config_file(
 
 
 def check_layer_config(layer_config_inputs, settings_dict, i, layer_name):
-    settings_dict["loop_config"][layer_name] = {}
-    settings_dict["loop_config"][layer_name]["options"] = {}
+
+    settings_dict["loop_config"][layer_name] = OrderedDict()
+    settings_dict["loop_config"][layer_name]["options"] = OrderedDict()
+
     for key, value in layer_config_inputs.items():
+
+        if isinstance(value, list):
+            if value is None or value == [] or value[i] is None:
+                value = {i: r"empty"}
+
         if key in ["type", "step_id", "additional_input_files"]:
             settings_dict["loop_config"][layer_name][key] = value[i]
 
         elif key == "additional_settings_block":
-            settings_dict["loop_config"][layer_name]["options"]["args"] = {
-                value["block"][i]: value["value"][i]
-            }
+
+            if value["block"][i] and value["value"][i]:
+                settings_dict["loop_config"][layer_name]["options"]["args"] = {
+                    value["block"][i]: value["value"][i]
+                }
+            else:
+                settings_dict["loop_config"][layer_name]["options"]["args"] = {}
 
         elif key in [
             "ram_per_core",
@@ -90,6 +115,12 @@ def check_layer_config(layer_config_inputs, settings_dict, i, layer_name):
             settings_dict["loop_config"][layer_name]["options"][key] = int(value[i])
         elif key != "additional_settings_block" and key != "layer_name":
             settings_dict["loop_config"][layer_name]["options"][key] = value[i]
+
+        elif key in ["layer_name"]:
+            pass
+
+        else:
+            raise ValueError(f"Unknown key {key} in layer config.")
 
 
 def create_layer_cyto_graph(settings_dict):
@@ -190,16 +221,27 @@ def add_additional_settings_block(
 
 
 def displayTapNodeData(data):
-    return json.dumps(data, indent=2)
+    return json.dumps(OrderedDict(data), indent=2)
+
+
+def _ordered_dict_recursive(d):
+    return OrderedDict(
+        (k, _ordered_dict_recursive(v) if isinstance(v, dict) else v)
+        for k, v in d.items()
+    )
 
 
 def export_json(n_clicks, config_name_input, settings_dict):
 
+    if settings_dict is None:
+        return "Please check the config inputs before exporting."
+
     if ".json" not in config_name_input:
         config_name_input += ".json"
-
     with open(config_name_input, "w", encoding="utf-8") as f:
-        json.dump(settings_dict, f)
+        json.dump(_ordered_dict_recursive(settings_dict), f)
+
+    return f"Config file exported as {config_name_input}."
 
 
 def _collect_input_files(n_clicks, settings_dict, config_name_input):
@@ -234,3 +276,65 @@ def _collect_input_files(n_clicks, settings_dict, config_name_input):
         output_str = f"Error during input collection: {e}"
 
     return output_str
+
+
+def update_predefined_config_select(custom_config_path_input):
+
+    config_added_return_text = ""
+
+    selected_config = "empty_config"
+
+    if custom_config_path_input:
+        custom_config_path = Path(custom_config_path_input).resolve()
+        if custom_config_path.is_file():
+            try:
+                config_added_return_text, new_config_name = add_premade_config(
+                    custom_config_path, return_config_name=True
+                )
+                selected_config = new_config_name
+            except Exception as e:
+                config_added_return_text = f"Error adding config: {e}"
+                raise e
+    new_options = []
+
+    for config in read_premade_config("dict"):
+        new_options.append({"label": config, "value": config})
+
+    return new_options, selected_config, config_added_return_text
+
+
+def add_predefined_config(
+    n_clicks,
+    config_name_input,
+    config_dict,
+    toggle_override,
+    predefined_select_value,
+):
+
+    if config_dict is None:
+        new_options = []
+
+        for config in read_premade_config("dict"):
+            new_options.append({"label": config, "value": config})
+        return (
+            "Please check the config inputs before exporting.",
+            new_options,
+            predefined_select_value,
+        )
+
+    return_text = add_premade_config(config_dict, override_config=toggle_override)
+
+    if "already exists" in return_text:
+        return_text += (
+            " Please enable the override toggle to overwrite the existing config."
+        )
+        return_value = predefined_select_value
+    else:
+        return_value = config_name_input
+
+    new_options = []
+
+    for config in read_premade_config("dict"):
+        new_options.append({"label": config, "value": config})
+
+    return return_text, new_options, return_value
