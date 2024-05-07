@@ -32,6 +32,7 @@ dependencies = [
     "dash-bootstrap-components",
     "dash-renderjson",
     "dash_cytoscape",
+    "dash-bio",
     "clickqt",
     "pint",
     "pint_pandas",
