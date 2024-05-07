@@ -50,6 +50,7 @@ def clean_tmp_dir():
     main_dict["main_config"]["input_file_path"] = str(
         tmp_dir / "example_xyz" / "example_molecules.json"
     )
+
     with open(tmp_dir / "example_config.json", "w") as json_file:
         json.dump(main_dict, json_file)
 
