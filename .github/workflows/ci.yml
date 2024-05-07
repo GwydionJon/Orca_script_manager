@@ -12,6 +12,10 @@ jobs:
   test:
     name: "${{ matrix.os }} :: ${{ matrix.python-version }}"
     runs-on: ${{ matrix.os }}
+    defaults:
+    run:
+      shell: bash -l {0}
+
     strategy:
       matrix:
         os: [ubuntu-22.04,windows-latest,macos-latest]
