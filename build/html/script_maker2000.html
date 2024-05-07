@@ -71,6 +71,7 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.add_dir_to_config"><code class="docutils literal notranslate"><span class="pre">add_dir_to_config()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.add_premade_config"><code class="docutils literal notranslate"><span class="pre">add_premade_config()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.change_entry_in_batch_config"><code class="docutils literal notranslate"><span class="pre">change_entry_in_batch_config()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.check_config"><code class="docutils literal notranslate"><span class="pre">check_config()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.check_dir_in_batch_config"><code class="docutils literal notranslate"><span class="pre">check_dir_in_batch_config()</span></code></a></li>
@@ -80,6 +81,8 @@
 <li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.read_batch_config_file"><code class="docutils literal notranslate"><span class="pre">read_batch_config_file()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.read_config"><code class="docutils literal notranslate"><span class="pre">read_config()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.read_mol_input_json"><code class="docutils literal notranslate"><span class="pre">read_mol_input_json()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.read_premade_config"><code class="docutils literal notranslate"><span class="pre">read_premade_config()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.remove_premade_config"><code class="docutils literal notranslate"><span class="pre">remove_premade_config()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -281,6 +284,11 @@ This should use the slurm class provided in this module.</p>
 <dd></dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="script_maker2000.files.add_premade_config">
+<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">add_premade_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_config_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">override_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.add_premade_config" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="script_maker2000.files.change_entry_in_batch_config">
 <span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">change_entry_in_batch_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_status</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.change_entry_in_batch_config" title="Link to this definition"></a></dt>
 <dd></dd></dl>
@@ -357,6 +365,16 @@ it also sets the location for the logging files.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="script_maker2000.files.read_mol_input_json">
 <span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">read_mol_input_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_json</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_file_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.read_mol_input_json" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="script_maker2000.files.read_premade_config">
+<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">read_premade_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.read_premade_config" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="script_maker2000.files.remove_premade_config">
+<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">remove_premade_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.remove_premade_config" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </section>
