@@ -1,18 +1,18 @@
 {
     "main_config": {
         "config_name": "monolayer_test",
+        "input_file_path": "example_xyz/example_molecules.json",
+        "xyz_path": "example_xyz",
+        "output_dir": "output",
+        "parallel_layer_run": true,
+        "wait_for_results_time": 5,
         "continue_previous_run": false,
         "max_n_jobs": 20,
         "max_ram_per_core": 2500,
         "max_nodes": 50,
-        "output_dir": "output",
         "max_run_time": "60:00:00",
-        "input_file_path": "example_xyz/example_molecules.json",
-        "xyz_path": "example_xyz",
         "input_type": "xyz",
-        "parallel_layer_run": false,
         "orca_version": "5.0.2",
-        "wait_for_results_time": 5,
         "common_input_files": "xyz"
     },
     "structure_check_config": {
