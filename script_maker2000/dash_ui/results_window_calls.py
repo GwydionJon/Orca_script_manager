@@ -538,7 +538,6 @@ def update_energy_convergence_plot(table_entry, energy_unit_select):
             for x in energies
         ]
 
-    print(energies)
     fig = go.Figure(data=go.Scatter(x=index, y=energies))
 
     fig.update_layout(

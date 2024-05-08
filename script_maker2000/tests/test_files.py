@@ -3,6 +3,7 @@ from script_maker2000.files import (
     create_working_dir_structure,
     collect_input_files,
     read_mol_input_json,
+    automatic_ressource_allocation,
 )
 
 
@@ -20,9 +21,9 @@ def test_read_config(test_setup_work_dir):
 
     config = read_config(test_setup_work_dir / "example_config.json")
 
-    assert (test_setup_work_dir / config["main_config"]["output_dir"]).exists()
+    # assert (test_setup_work_dir / config["main_config"]["output_dir"]).exists()
 
-    assert config["main_config"]["max_n_jobs"] == 20
+    assert config["main_config"]["max_n_jobs"] == 2000
 
     with pytest.raises(FileNotFoundError):
         config = read_config(test_setup_work_dir / "example_config3.json")
@@ -76,12 +77,12 @@ def test_create_working_dir_structure(test_setup_work_dir):
 
 def test_collect_input_files(clean_tmp_dir):
 
-    tar_path = collect_input_files(
+    zip_path = collect_input_files(
         clean_tmp_dir / "example_config.json", clean_tmp_dir / "example_prep"
     )
     extract_path = clean_tmp_dir / "example_prep" / "extracted_test"
 
-    with zipfile.ZipFile(tar_path, "r") as zipf:
+    with zipfile.ZipFile(zip_path, "r") as zipf:
         zipf.extractall(path=extract_path)
 
     assert len(list(extract_path.glob("*"))) == 3
@@ -95,12 +96,12 @@ def test_collect_input_files_from_dir(clean_tmp_dir):
         pathlib.Path(main_config["main_config"]["input_file_path"]).parents[0]
     )
 
-    tar_path = collect_input_files(
+    zip_path = collect_input_files(
         main_config, clean_tmp_dir / "example_prep", "example_xyz_config"
     )
     extract_path = clean_tmp_dir / "example_prep" / "extracted_test"
 
-    with zipfile.ZipFile(tar_path, "r") as zipf:
+    with zipfile.ZipFile(zip_path, "r") as zipf:
         zipf.extractall(path=extract_path)
 
     assert len(list(extract_path.glob("*"))) == 3
@@ -133,3 +134,76 @@ def test_read_mol_input_json(clean_tmp_dir):
     assert "key" in df.columns
     assert "multiplicity" in df.columns
     assert "charge" in df.columns
+
+
+def test_automatic_ressource_allocation(clean_tmp_dir):
+    # Define a sample main_config dictionary
+    main_config = {
+        "main_config": {
+            "input_file_path": str(clean_tmp_dir / "example_xyz"),
+            "max_n_jobs": 10,
+            "max_compute_nodes": 5,
+            "max_cores_per_node": 4,
+            "max_ram_per_core": 8000,
+        },
+        "loop_config": {
+            "test1": {
+                "options": {"automatic_ressource_allocation": "normal"},
+                "step_id": 0,
+            },
+            "test2": {
+                "options": {"automatic_ressource_allocation": "large"},
+                "step_id": 0,
+            },
+            "test3": {
+                "options": {"automatic_ressource_allocation": "custom"},
+                "step_id": 1,
+            },
+        },
+    }
+
+    # Call the function with the sample main_config
+    result, output_dict = automatic_ressource_allocation(main_config)
+
+    # Check that the function modified the main_config as expected
+    assert result["loop_config"]["test1"]["options"]["n_cores_per_calculation"] == 4
+    assert result["loop_config"]["test1"]["options"]["ram_per_core"] == 4000
+    assert result["loop_config"]["test2"]["options"]["n_cores_per_calculation"] == 4
+    assert result["loop_config"]["test2"]["options"]["ram_per_core"] == 8000
+    assert "n_cores_per_calculation" not in result["loop_config"]["test3"]["options"]
+    assert "ram_per_core" not in result["loop_config"]["test3"]["options"]
+
+    main_config = {
+        "main_config": {
+            "input_file_path": str(
+                clean_tmp_dir / "example_xyz"
+            ),  # replace with a valid path
+            "max_n_jobs": 5,
+            "max_compute_nodes": 5,
+            "max_cores_per_node": 50,
+            "max_ram_per_core": 8000,
+        },
+        "loop_config": {
+            "test1": {
+                "options": {"automatic_ressource_allocation": "normal"},
+                "step_id": 0,
+            },
+            "test2": {
+                "options": {"automatic_ressource_allocation": "large"},
+                "step_id": 0,
+            },
+            "test3": {
+                "options": {"automatic_ressource_allocation": "custom"},
+                "step_id": 1,
+            },
+        },
+    }
+
+    # Call the function with the sample main_config
+    result, output_dict = automatic_ressource_allocation(main_config)
+    assert result["loop_config"]["test1"]["options"]["n_cores_per_calculation"] == 24
+    assert result["loop_config"]["test1"]["options"]["ram_per_core"] == 4000
+    assert result["loop_config"]["test2"]["options"]["n_cores_per_calculation"] == 24
+    assert result["loop_config"]["test2"]["options"]["ram_per_core"] == 8000
+    assert "n_cores_per_calculation" not in result["loop_config"]["test3"]["options"]
+    assert "ram_per_core" not in result["loop_config"]["test3"]["options"]

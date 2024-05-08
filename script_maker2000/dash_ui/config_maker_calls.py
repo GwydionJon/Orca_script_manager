@@ -8,6 +8,7 @@ from script_maker2000.files import (
     collect_input_files,
     read_premade_config,
     add_premade_config,
+    automatic_ressource_allocation,
 )
 
 
@@ -75,12 +76,32 @@ def create_config_file(
         config_check_output += "\n\n Input collection disabled."
         disbale_input_files_button = True
 
+    # Automatic ressource allocation
+
+    if disbale_input_files_button is False:
+        settings_dict, config_check_output = _perform_resource_check(
+            settings_dict, config_check_output
+        )
+
     return (
         [html.Div("Config file created")],
         settings_dict,
         config_check_output,
         disbale_input_files_button,
     )
+
+
+def _perform_resource_check(settings_dict, config_check_output):
+    settings_dict, report_changes_dict = automatic_ressource_allocation(settings_dict)
+
+    if report_changes_dict:
+        config_check_output += "\n\nAutomatic ressource allocation was performed. "
+        config_check_output += " The following changes were made:\n"
+        for key, value in report_changes_dict.items():
+            config_check_output += f"{key}: \n"
+            for key2, value2 in value.items():
+                config_check_output += f"    {key2}: {value2}\n"
+    return settings_dict, config_check_output
 
 
 def check_layer_config(layer_config_inputs, settings_dict, i, layer_name):
@@ -255,13 +276,13 @@ def _collect_input_files(n_clicks, settings_dict, config_name_input):
             config_json_name = f"{config_name_input}.json"
         else:
             config_json_name = config_name_input
-        tar_path = collect_input_files(
+        zip_path = collect_input_files(
             settings_dict,
             config_name_input,
             config_name=config_json_name,
-            tar_name=config_name_input,
+            zip_name=config_name_input,
         )
-        output_str = f"Input files collected and tarred at {tar_path}.\n\n"
+        output_str = f"Input files collected and tarred at {zip_path}.\n\n"
         output_str += "The tarball will contain all the input files needed for the batch processing.\n"
         output_str += (
             "Please move the tarball to the remote server and extract it there.\n"
@@ -273,7 +294,7 @@ def _collect_input_files(n_clicks, settings_dict, config_name_input):
         )
         output_str += "To start the batch processing on the remote server, run the following command:\n"
 
-        output_str += f"script_maker2000 start_zip -t {tar_path.name}\n"
+        output_str += f"script_maker2000 start_zip -t {zip_path.name}\n"
         output_str += "The zip ball will be automatically extracted and the batch processing will start."
 
     except Exception as e:

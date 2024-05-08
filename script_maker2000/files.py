@@ -13,7 +13,6 @@ batchLogger = logging.getLogger("BatchManager")
 
 
 # config keys
-
 main_config_keys = [
     "config_name",
     "input_file_path",
@@ -23,7 +22,8 @@ main_config_keys = [
     "continue_previous_run",
     "max_n_jobs",
     "max_ram_per_core",
-    "max_nodes",
+    "max_compute_nodes",
+    "max_cores_per_node",
     "max_run_time",
     "input_type",
     "orca_version",
@@ -36,9 +36,9 @@ options_keys = [
     "method",
     "basisset",
     "additional_settings",
+    "automatic_ressource_allocation",
     "ram_per_core",
     "n_cores_per_calculation",
-    "n_calculation_at_once",
     "disk_storage",
     "walltime",
     "args",
@@ -331,7 +331,13 @@ def _check_config_keys(main_config):
             + f" {set(analysis_config_keys) - set(main_config['analysis_config'].keys())}"
         )
 
-    for key in ["max_n_jobs", "max_ram_per_core", "max_nodes", "wait_for_results_time"]:
+    for key in [
+        "max_n_jobs",
+        "max_ram_per_core",
+        "max_compute_nodes",
+        "max_cores_per_node",
+        "wait_for_results_time",
+    ]:
         if not isinstance(main_config["main_config"][key], int) and not isinstance(
             main_config["main_config"][key], float
         ):
@@ -415,7 +421,7 @@ def read_config(config_file, perform_validation=True, override_continue_job=Fals
     else:
         batchLogger.info("Skipping config validation.")
 
-    output_dir.mkdir(parents=True, exist_ok=True)
+    # output_dir.mkdir(parents=True, exist_ok=True)
 
     return main_config
 
@@ -464,7 +470,7 @@ def collect_input_files(config_path, preparation_dir, config_name=None, zip_name
         preparation_dir (str): Path to the directory where the input files will be prepared
         config_name (str, optional): Name of the config file. If not provided, the original name will be used.
         Defaults to None.
-        tar_name (str, optional): Name of the zipball. If not provided, a default name will be used. Defaults to None.
+        zip_name (str, optional): Name of the zipball. If not provided, a default name will be used. Defaults to None.
 
     Returns:
         pathlib.Path: Path to the created zipball
@@ -864,3 +870,89 @@ def remove_premade_config(config_name):
         json.dump(premade_configs, f, indent=4)
 
     return f"Removed {config_name} from premade configs."
+
+
+def automatic_ressource_allocation(main_config):
+
+    input_file = main_config["main_config"]["input_file_path"]
+    input_path = pathlib.Path(input_file)
+
+    if input_path.is_dir():
+        job_input = collect_xyz_files_to_dict(input_path)
+    elif input_path.is_file():
+        job_input = read_mol_input_json(input_path)
+
+    else:
+        raise FileNotFoundError(f"Test Can't find input files under {input_path}.")
+
+    # find max parallel layers
+
+    parallel_layer_dict = defaultdict(lambda: 0)
+    for loop_key, loop_config in main_config["loop_config"].items():
+
+        parallel_layer_dict[loop_config["step_id"]] += 1
+
+    max_parallel_layers = max(parallel_layer_dict.values())
+
+    potential_n_jobs = len(job_input) * max_parallel_layers
+    max_n_jobs = int(main_config["main_config"]["max_n_jobs"])
+
+    if potential_n_jobs > max_n_jobs:
+        active_jobs = max_n_jobs
+    else:
+        active_jobs = potential_n_jobs
+
+    max_compute_nodes = int(main_config["main_config"]["max_compute_nodes"])
+    max_cores_per_node = int(main_config["main_config"]["max_cores_per_node"])
+
+    active_jobs_per_node = active_jobs // max_compute_nodes
+    if active_jobs_per_node <= 2:
+        n_cores_per_calc = 24
+
+    elif active_jobs_per_node <= 4:
+        n_cores_per_calc = 16
+
+    elif active_jobs_per_node <= 8:
+        n_cores_per_calc = 6
+
+    elif active_jobs_per_node <= 12:
+        n_cores_per_calc = 4
+
+    elif active_jobs_per_node <= 24:
+        n_cores_per_calc = 2
+
+    else:
+        n_cores_per_calc = 1
+
+    if n_cores_per_calc > max_cores_per_node:
+        n_cores_per_calc = max_cores_per_node
+
+    max_ram_per_core = int(main_config["main_config"]["max_ram_per_core"])
+    # now iterate over the loop_config and set the values
+
+    report_changes_dict = {}
+
+    for loop_key, loop_config in main_config["loop_config"].items():
+
+        if loop_config["options"]["automatic_ressource_allocation"] == "custom":
+            continue
+
+        loop_config["options"]["n_cores_per_calculation"] = n_cores_per_calc
+
+        if loop_config["options"]["automatic_ressource_allocation"] == "normal":
+            allocated_ram = 4000
+
+        if loop_config["options"]["automatic_ressource_allocation"] == "large":
+            allocated_ram = 8000
+
+        if allocated_ram > max_ram_per_core:
+            allocated_ram = max_ram_per_core
+
+        report_changes_dict[loop_key] = {
+            "n_cores": n_cores_per_calc,
+            "ram": allocated_ram,
+        }
+
+        loop_config["options"]["ram_per_core"] = allocated_ram
+
+    return main_config, report_changes_dict

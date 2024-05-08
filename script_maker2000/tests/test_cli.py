@@ -137,10 +137,10 @@ def test_collect_files(clean_tmp_dir):
     assert result.exit_code == 0
     assert "Tarball created at" in result.output
 
-    tar_path = prep_path / "input_files.zip"
+    zip_path = prep_path / "input_files.zip"
     extract_path = clean_tmp_dir / "example_prep" / "extracted_test"
 
-    with zipfile.ZipFile(tar_path, "r") as zipf:
+    with zipfile.ZipFile(zip_path, "r") as zipf:
         zipf.extractall(path=extract_path)
 
     expected_files = ["extracted_xyz", "example_config.json", "example_molecules.json"]
@@ -154,21 +154,21 @@ def test_collect_files(clean_tmp_dir):
     assert "No such file or directory" in str(result.exception)
     assert result.exit_code == 1
 
-    new_tar_dir = clean_tmp_dir / "new_tar"
-    new_tar_dir.mkdir()
-    new_tar_path = new_tar_dir / "new_tar.zip"
-    shutil.copy(tar_path, new_tar_path)
+    new_zip_dir = clean_tmp_dir / "new_tar"
+    new_zip_dir.mkdir()
+    new_zip_path = new_zip_dir / "new_tar.zip"
+    shutil.copy(zip_path, new_zip_path)
 
-    with zipfile.ZipFile(new_tar_path, "r") as zipf:
-        zipf.extractall(path=new_tar_dir)
+    with zipfile.ZipFile(new_zip_path, "r") as zipf:
+        zipf.extractall(path=new_zip_dir)
 
     expected_files = ["extracted_xyz", "example_config.json", "example_molecules.json"]
     for file in expected_files:
-        assert (new_tar_dir / file).exists()
+        assert (new_zip_dir / file).exists()
 
     # read new example_molecules file and verify that the new filepath is accurate
     #  and points to the new extracted xyz dir
-    with open(new_tar_dir / "example_molecules.json", "r") as f:
+    with open(new_zip_dir / "example_molecules.json", "r") as f:
         molecules_dict = json.load(f)
     for molecule in molecules_dict.values():
         assert "extracted_xyz" in molecule["path"]
@@ -240,5 +240,5 @@ def test_start_zip_remote(clean_tmp_dir, monkeypatch):
 
     print(traceback.print_tb(result.exc_info[2]))
 
-    tar_path = prep_path / "test.tar.gz"
-    result = runner.invoke(start_zip, ["--tar", tar_path, "-e", str(prep_path)])
+    zip_path = prep_path / "test.tar.gz"
+    result = runner.invoke(start_zip, ["--tar", zip_path, "-e", str(prep_path)])

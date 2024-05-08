@@ -331,8 +331,8 @@ def collect_input(config, output, zip_name):
 
     config_path = Path(config)
 
-    tar_path = collect_input_files(config_path, prep_path, zip_name=zip_name)
-    click.echo(f"Tarball created at {tar_path}")
+    zip_path = collect_input_files(config_path, prep_path, zip_name=zip_name)
+    click.echo(f"Tarball created at {zip_path}")
     click.echo(
         "The tarball will contain all the input files needed for the batch processing."
     )
@@ -347,7 +347,7 @@ def collect_input(config, output, zip_name):
     click.echo(
         "After installing the script_maker2000 package on the remote server run:"
     )
-    click.echo(f"script_maker2000 start_zip-t {tar_path.name}")
+    click.echo(f"script_maker2000 start_zip-t {zip_path.name}")
     click.echo(
         "The zipball will be automatically extracted and the batch processing will start."
     )

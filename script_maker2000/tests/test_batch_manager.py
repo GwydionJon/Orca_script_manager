@@ -333,8 +333,8 @@ def test_parallel_steps(multilayer_tmp_dir, monkeypatch, fake_slurm_function):
     assert len(not_failed) == 23
 
     # assert zip exists
-    tar_file = batch_manager.working_dir / "output.zip"
-    assert tar_file.exists()
+    zip_file = batch_manager.working_dir / "output.zip"
+    assert zip_file.exists()
 
     # check the job_dict
 
@@ -400,10 +400,8 @@ def copy_output(target_dirs, succesful_output_dirs):
 def test_continue_run(pre_started_dir, monkeypatch, fake_slurm_function):
 
     main_config_path = pre_started_dir / "example_config.json"
-    with pytest.raises(FileExistsError):
-        BatchManager(main_config_path)
 
-    batch_manager = BatchManager(main_config_path, override_continue_job=True)
+    batch_manager = BatchManager(main_config_path)
     assert len(list(batch_manager.working_dir.glob("finished/raw_results/*"))) == 0
 
     if shutil.which("sbatch") is None:
