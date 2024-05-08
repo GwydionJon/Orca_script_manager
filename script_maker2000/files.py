@@ -461,6 +461,17 @@ def collect_xyz_files_to_dict(xyz_dir):
     return mol_dict
 
 
+def replace_empty_with_empty_string(config_dict):
+    # recursively replace all "empty" with ""
+
+    for key, value in config_dict.items():
+        if value == "empty":
+            config_dict[key] = ""
+
+        if isinstance(value, dict):
+            replace_empty_with_empty_string(value)
+
+
 def collect_input_files(config_path, preparation_dir, config_name=None, zip_name=None):
     """
     This function collects all input files (xyz, config, csv) and puts them into a single zipball.
@@ -517,6 +528,10 @@ def collect_input_files(config_path, preparation_dir, config_name=None, zip_name
     main_config["main_config"]["output_dir"] = pathlib.Path(
         main_config["main_config"]["output_dir"]
     ).stem
+
+    # replace all "empty" with "" in the main config and all sub configs
+
+    replace_empty_with_empty_string(main_config)
 
     preparation_dir = pathlib.Path(preparation_dir)
     preparation_dir.mkdir(parents=True, exist_ok=True)

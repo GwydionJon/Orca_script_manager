@@ -51,7 +51,7 @@ def check_local_zip_file(file_path):
         return input_valid, not input_valid, not input_valid
 
     file_path = Path(file_path)
-    if file_path.is_file() and ".tar" in file_path.name:
+    if file_path.is_file() and ".zip" in file_path.name:
         input_valid = True
     return input_valid, not input_valid, not input_valid
 

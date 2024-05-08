@@ -120,6 +120,10 @@ def check_layer_config(layer_config_inputs, settings_dict, i, layer_name):
 
         elif key == "additional_settings_block":
 
+            if not value["block"] or not value["value"]:
+                settings_dict["loop_config"][layer_name]["options"]["args"] = {}
+                continue
+
             if value["block"][i] and value["value"][i]:
                 settings_dict["loop_config"][layer_name]["options"]["args"] = {
                     value["block"][i]: value["value"][i]

@@ -115,9 +115,9 @@ def create_job_submission_layout():
             html.P(
                 [
                     "To submit a job you should have collected the input files in the Config tab."
-                    + " This will create a tar.gz file.",
+                    + " This will create a zip file.",
                     html.Br(),
-                    "Use the file explorer on the left to select the tar.gz of the job you want to submit.",
+                    "Use the file explorer on the left to select the zip of the job you want to submit.",
                     html.Br(),
                     "Use the file explorer on the right to select the parent directory for the calculation.",
                 ],
