@@ -255,13 +255,13 @@ def _collect_input_files(n_clicks, settings_dict, config_name_input):
             config_json_name = f"{config_name_input}.json"
         else:
             config_json_name = config_name_input
-        tar_path = collect_input_files(
+        zip_path = collect_input_files(
             settings_dict,
             config_name_input,
             config_name=config_json_name,
-            tar_name=config_name_input,
+            zip_name=config_name_input,
         )
-        output_str = f"Input files collected and tarred at {tar_path}.\n\n"
+        output_str = f"Input files collected and tarred at {zip_path}.\n\n"
         output_str += "The tarball will contain all the input files needed for the batch processing.\n"
         output_str += (
             "Please move the tarball to the remote server and extract it there.\n"
@@ -273,7 +273,7 @@ def _collect_input_files(n_clicks, settings_dict, config_name_input):
         )
         output_str += "To start the batch processing on the remote server, run the following command:\n"
 
-        output_str += f"script_maker2000 start_zip -t {tar_path.name}\n"
+        output_str += f"script_maker2000 start_zip -t {zip_path.name}\n"
         output_str += "The zip ball will be automatically extracted and the batch processing will start."
 
     except Exception as e:

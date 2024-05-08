@@ -43,7 +43,7 @@ def convert_paths_to_dict(path_list, mode="remote"):
     return default_to_regular(root)
 
 
-def check_local_tar_file(file_path):
+def check_local_zip_file(file_path):
 
     input_valid = False
 

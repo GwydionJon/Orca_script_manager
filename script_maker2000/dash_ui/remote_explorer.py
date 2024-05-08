@@ -7,7 +7,7 @@ from script_maker2000.dash_ui.remote_explorer_calls import (
     convert_paths_to_dict,
     print_selected_path,
     return_selected_path,
-    check_local_tar_file,
+    check_local_zip_file,
     get_local_paths,
 )
 
@@ -355,6 +355,6 @@ def add_callbacks_remote_explorer(app, remote_connection):
         Output("submit_new_job", "disabled", allow_duplicate=True),
         Input("valid_input_file", "value"),
         prevent_initial_call=True,
-    )(check_local_tar_file)
+    )(check_local_zip_file)
 
     return app

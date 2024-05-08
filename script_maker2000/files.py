@@ -464,7 +464,7 @@ def collect_input_files(config_path, preparation_dir, config_name=None, zip_name
         preparation_dir (str): Path to the directory where the input files will be prepared
         config_name (str, optional): Name of the config file. If not provided, the original name will be used.
         Defaults to None.
-        tar_name (str, optional): Name of the zipball. If not provided, a default name will be used. Defaults to None.
+        zip_name (str, optional): Name of the zipball. If not provided, a default name will be used. Defaults to None.
 
     Returns:
         pathlib.Path: Path to the created zipball
