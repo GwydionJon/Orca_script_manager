@@ -889,6 +889,7 @@ def automatic_ressource_allocation(main_config):
 
     parallel_layer_dict = defaultdict(lambda: 0)
     for loop_key, loop_config in main_config["loop_config"].items():
+
         parallel_layer_dict[loop_config["step_id"]] += 1
 
     max_parallel_layers = max(parallel_layer_dict.values())
