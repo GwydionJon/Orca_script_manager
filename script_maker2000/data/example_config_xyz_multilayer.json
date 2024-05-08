@@ -6,9 +6,10 @@
         "parallel_layer_run": true,
         "wait_for_results_time": 5,
         "continue_previous_run": false,
-        "max_n_jobs": 20,
+        "max_n_jobs": 2000,
         "max_ram_per_core": 2500,
-        "max_nodes": 50,
+        "max_compute_nodes": 4,
+        "max_cores_per_node":24,
         "max_run_time": "60:00:00",
         "input_type": "xyz",
         "orca_version": "5.0.2",
@@ -29,6 +30,8 @@
                 "method": "HF",
                 "basisset": " DEF2-SVP",
                 "additional_settings": "",
+                 "automatic_ressource_allocation":"normal",
+
                 "ram_per_core": 20,
                 "n_cores_per_calculation": 12,
                 "n_calculation_at_once": 30,
@@ -49,9 +52,10 @@
                 "method": "HF",
                 "basisset": " DEF2-SVP",
                 "additional_settings": "",
+                 "automatic_ressource_allocation":"normal",
+
                 "ram_per_core": 30,
                 "n_cores_per_calculation": 4,
-                "n_calculation_at_once": 30,
                 "disk_storage": 0,
                 "walltime": "0:2:00",
                 "args": {
@@ -69,9 +73,10 @@
                 "method": "HF",
                 "basisset": " DEF2-SVP",
                 "additional_settings": "",
+                 "automatic_ressource_allocation":"normal",
+
                 "ram_per_core": 20,
                 "n_cores_per_calculation": 2,
-                "n_calculation_at_once": 30,
                 "disk_storage": 0,
                 "walltime": "0:2:00",
                 "args": {
@@ -89,9 +94,10 @@
                 "method": "HF",
                 "basisset": " DEF2-SVP",
                 "additional_settings": "",
+                 "automatic_ressource_allocation":"normal",
+
                 "ram_per_core": 40,
                 "n_cores_per_calculation": 4,
-                "n_calculation_at_once": 30,
                 "disk_storage": 0,
                 "walltime": "0:2:00",
                 "args": {

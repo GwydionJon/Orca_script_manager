@@ -17,7 +17,10 @@ from script_maker2000.dash_ui.config_maker_calls import (
     add_predefined_config,
 )
 
-from script_maker2000.work_manager import possible_layer_types
+from script_maker2000.work_manager import (
+    possible_layer_types,
+    possible_resource_settings,
+)
 
 from script_maker2000.files import (
     read_premade_config,
@@ -360,7 +363,6 @@ def create_new_intput(
                         id=id_,
                         options=[{"label": i, "value": i} for i in value],
                         value=value[0],
-                        style=default_style,
                     ),
                 ],
                 style=default_style,
@@ -437,13 +439,12 @@ def add_single_layer_config(i: int = None, options_dict: dict = None):
         else:
             raise ValueError(f"Key {key} not found in options_dict_entries.")
 
-        if key != "options" and key != "type":
+        if key not in ["options", "type"]:
             new_id = {"type": f"{key}_input", "index": f"{i}"}
             new_input = create_new_intput(key, value, new_id, debounce=True)
             layer_layout.append(new_input)
 
         elif key == "type":
-
             new_id = {"type": f"{key}_input", "index": f"{i}"}
             new_input = create_new_intput(
                 key,
@@ -462,10 +463,18 @@ def add_single_layer_config(i: int = None, options_dict: dict = None):
                 else:
                     raise ValueError(f"Key {options_key} not found in options_dict.")
 
-                if options_key != "args":
+                if options_key not in ["args", "automatic_ressource_allocation"]:
                     new_id = {"type": f"{options_key}_input", "index": f"{i}"}
                     new_input = create_new_intput(
                         options_key, options_value, new_id, debounce=True
+                    )
+                    layer_layout.append(new_input)
+
+                if options_key == "automatic_ressource_allocation":
+                    new_id = {"type": f"{options_key}_input", "index": f"{i}"}
+
+                    new_input = create_new_intput(
+                        options_key, possible_resource_settings, new_id
                     )
                     layer_layout.append(new_input)
 
@@ -482,11 +491,21 @@ def add_single_layer_config(i: int = None, options_dict: dict = None):
                                     style={"margin-top": "20px"},
                                 ),
                             ]
-                        )
+                        ),
+                    )
+                    layer_layout.append(
+                        dbc.Row(
+                            [
+                                html.P(
+                                    "Enter a block name on the left and the respective values on the right."
+                                ),
+                                html.Br(),
+                                html.P("Seperate multiple values with a space."),
+                            ]
+                        ),
                     )
 
                     for j, (args_key, args_value) in enumerate(args_dict.items()):
-
                         if args_key == "":
                             args_key = None
                         if args_value == "":
@@ -499,7 +518,7 @@ def add_single_layer_config(i: int = None, options_dict: dict = None):
                                         [
                                             dbc.Row(
                                                 dbc.InputGroupText(
-                                                    "Add settings block"
+                                                    "Add settings block "
                                                 ),
                                             ),
                                             dbc.Row(
@@ -678,7 +697,9 @@ def add_callbacks(app: Dash) -> Dash:
                 "continue_previous_run": Input("continue_previous_run_input", "value"),
                 "max_n_jobs": Input("max_n_jobs_input", "value"),
                 "max_ram_per_core": Input("max_ram_per_core_input", "value"),
-                "max_nodes": Input("max_nodes_input", "value"),
+                "max_compute_nodes": Input("max_compute_nodes_input", "value"),
+                "max_cores_per_node": Input("max_cores_per_node_input", "value"),
+                # "max_nodes": Input("max_nodes_input", "value"),
                 "max_run_time": Input("max_run_time_input", "value"),
                 "input_type": Input("input_type_input", "value"),
                 "orca_version": Input("orca_version_input", "value"),
@@ -705,14 +726,15 @@ def add_callbacks(app: Dash) -> Dash:
                     {"type": "additional_settings_input", "index": ALL},
                     "value",
                 ),
+                "automatic_ressource_allocation": Input(
+                    {"type": "automatic_ressource_allocation_input", "index": ALL},
+                    "value",
+                ),
                 "ram_per_core": Input(
                     {"type": "ram_per_core_input", "index": ALL}, "value"
                 ),
                 "n_cores_per_calculation": Input(
                     {"type": "n_cores_per_calculation_input", "index": ALL}, "value"
-                ),
-                "n_calculation_at_once": Input(
-                    {"type": "n_calculation_at_once_input", "index": ALL}, "value"
                 ),
                 "disk_storage": Input(
                     {"type": "disk_storage_input", "index": ALL}, "value"

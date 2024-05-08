@@ -8,6 +8,7 @@ from script_maker2000.files import (
     collect_input_files,
     read_premade_config,
     add_premade_config,
+    automatic_ressource_allocation,
 )
 
 
@@ -75,12 +76,32 @@ def create_config_file(
         config_check_output += "\n\n Input collection disabled."
         disbale_input_files_button = True
 
+    # Automatic ressource allocation
+
+    if disbale_input_files_button is False:
+        settings_dict, config_check_output = _perform_resource_check(
+            settings_dict, config_check_output
+        )
+
     return (
         [html.Div("Config file created")],
         settings_dict,
         config_check_output,
         disbale_input_files_button,
     )
+
+
+def _perform_resource_check(settings_dict, config_check_output):
+    settings_dict, report_changes_dict = automatic_ressource_allocation(settings_dict)
+
+    if report_changes_dict:
+        config_check_output += "\n\nAutomatic ressource allocation was performed. "
+        config_check_output += " The following changes were made:\n"
+        for key, value in report_changes_dict.items():
+            config_check_output += f"{key}: \n"
+            for key2, value2 in value.items():
+                config_check_output += f"    {key2}: {value2}\n"
+    return settings_dict, config_check_output
 
 
 def check_layer_config(layer_config_inputs, settings_dict, i, layer_name):

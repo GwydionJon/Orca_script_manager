@@ -13,6 +13,7 @@ from script_maker2000.job import Job
 
 
 possible_layer_types = ["orca"]
+possible_resource_settings = ["normal", "large", "custom"]
 
 
 class WorkManager:

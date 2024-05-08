@@ -3,6 +3,7 @@ from script_maker2000.files import (
     create_working_dir_structure,
     collect_input_files,
     read_mol_input_json,
+    automatic_ressource_allocation,
 )
 
 
@@ -133,3 +134,58 @@ def test_read_mol_input_json(clean_tmp_dir):
     assert "key" in df.columns
     assert "multiplicity" in df.columns
     assert "charge" in df.columns
+
+
+def test_automatic_ressource_allocation(clean_tmp_dir):
+    # Define a sample main_config dictionary
+    main_config = {
+        "main_config": {
+            "input_file_path": str(clean_tmp_dir / "example_xyz"),
+            "max_n_jobs": 10,
+            "max_compute_nodes": 5,
+            "max_cores_per_node": 4,
+            "max_ram_per_core": 8000,
+        },
+        "loop_config": {
+            "test1": {"options": {"automatic_ressource_allocation": "normal"}},
+            "test2": {"options": {"automatic_ressource_allocation": "large"}},
+            "test3": {"options": {"automatic_ressource_allocation": "custom"}},
+        },
+    }
+
+    # Call the function with the sample main_config
+    result = automatic_ressource_allocation(main_config)
+
+    # Check that the function modified the main_config as expected
+    assert result["loop_config"][0]["options"]["n_cores_per_calculation"] == 4
+    assert result["loop_config"][0]["options"]["ram_per_core"] == 4000
+    assert result["loop_config"][1]["options"]["n_cores_per_calculation"] == 4
+    assert result["loop_config"][1]["options"]["ram_per_core"] == 8000
+    assert "n_cores_per_calculation" not in result["loop_config"][2]["options"]
+    assert "ram_per_core" not in result["loop_config"][2]["options"]
+
+    main_config = {
+        "main_config": {
+            "input_file_path": str(
+                clean_tmp_dir / "example_xyz"
+            ),  # replace with a valid path
+            "max_n_jobs": 5,
+            "max_compute_nodes": 5,
+            "max_cores_per_node": 50,
+            "max_ram_per_core": 8000,
+        },
+        "loop_config": {
+            "test1": {"options": {"automatic_ressource_allocation": "normal"}},
+            "test2": {"options": {"automatic_ressource_allocation": "large"}},
+            "test3": {"options": {"automatic_ressource_allocation": "custom"}},
+        },
+    }
+
+    # Call the function with the sample main_config
+    result = automatic_ressource_allocation(main_config)
+    assert result["loop_config"][0]["options"]["n_cores_per_calculation"] == 24
+    assert result["loop_config"][0]["options"]["ram_per_core"] == 4000
+    assert result["loop_config"][1]["options"]["n_cores_per_calculation"] == 24
+    assert result["loop_config"][1]["options"]["ram_per_core"] == 8000
+    assert "n_cores_per_calculation" not in result["loop_config"][2]["options"]
+    assert "ram_per_core" not in result["loop_config"][2]["options"]
