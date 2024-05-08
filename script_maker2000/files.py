@@ -910,7 +910,7 @@ def automatic_ressource_allocation(main_config):
         n_cores_per_calc = 24
 
     elif active_jobs_per_node <= 4:
-        n_cores_per_calc = 16
+        n_cores_per_calc = 12
 
     elif active_jobs_per_node <= 8:
         n_cores_per_calc = 6
