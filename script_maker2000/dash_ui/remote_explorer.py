@@ -1,14 +1,16 @@
 import dash_bootstrap_components as dbc
 from dash import html, dcc, Input, Output, State
 import dash_treeview_antd as dta
-from pathlib import Path
 from script_maker2000.dash_ui.config_maker_ui import create_new_intput
 from script_maker2000.dash_ui.remote_explorer_calls import (
-    convert_paths_to_dict,
     print_selected_path,
     return_selected_path,
     check_local_zip_file,
     get_local_paths,
+    disable_button_start_interval,
+    _get_live_updates,
+    _submit_job,
+    _get_remote_paths,
 )
 
 default_style = {"margin": "10px", "width": "100%"}
@@ -177,126 +179,25 @@ def create_job_submission_layout():
 
 def add_callbacks_remote_explorer(app, remote_connection):
 
-    def workspaces_paths(remote_connection, workspace_id=None):
+    def get_remote_paths(
+        n_clicks,
+        path,
+    ):
 
-        if workspace_id is None:
-            output = remote_connection.run("ws_list", hide=True)
+        output = _get_remote_paths(n_clicks, path, remote_connection)
+        return output
 
-        else:
-            output = remote_connection.run(f"ws_list {workspace_id}", hide=True)
-
-        if output.stdout == "":
-            return [], []
-        output = output.stdout.split("\n")[:-1]
-
-        ws_ids = [line.split(":")[1].strip() for line in output if "id:" in line]
-        ws_paths = [
-            line.split(":")[1].strip()
-            for line in output
-            if "workspace directory" in line
-        ]
-
-        return ws_ids, ws_paths
-
-    def get_remote_paths(n_clicks, path):
-
-        if path is None:
-            path = "."
-
-        if path[-1] != "/":
-            path = path + "/"
-
-        # get workspace ids and paths:
-
-        ws_ids, ws_paths = workspaces_paths(remote_connection)
-
-        main_path = "cwd"
-
-        if path == "workspaces/":
-            path = " ".join(ws_paths)
-            main_path = "workspaces"
-
-        else:
-            for ws_id, ws_path in zip(ws_ids, ws_paths):
-                if ws_id in path:
-                    path = path.replace(ws_id, ws_path)
-
-        output = remote_connection.run(
-            f"find {path} -not -path '*/\.*' -type d -print",
-            hide=True,
-            warn=True,  # noqa
-        )
-
-        if output.exited != 0:
-            return {"title": "Nothing found", "key": "Nothing", "children": []}
-
-        output = output.stdout.split("\n")[:-1]
-
-        if main_path == "cwd":
-            main_path = remote_connection.run("pwd", hide=True).stdout.strip()
-
-        output = convert_paths_to_dict(output, mode="remote")
-
-        return {"title": main_path, "key": main_path, "children": output}
-
-    def get_live_updates(n_intervals, target_dir):
+    def get_live_updates(
+        n_intervals,
+        target_dir,
+    ):
         """This function will check the output file for the job status and update the textarea.
 
         Args:
             n_intervals (int): Value of the button to trigger the function.
             target_dir (str): Remote target dir for the calculation.
         """
-        if n_intervals is None:
-            return "No job submitted yet."
-
-        output_tracking_file = target_dir + "/check_shell_output.out"
-        result = remote_connection.run(
-            f"[ -f {output_tracking_file} ] && cat {output_tracking_file} || echo 'Output file not yet created'",
-            hide=True,
-        )
-
-        result_output = result.stdout
-
-        if "Error" in result_output:
-            return result_output, 0
-
-        if "Starting the batch processing:" in result_output:
-            return result_output, 0
-
-        return result.stdout, -1
-
-    def disable_button_start_interval(n_clicks):
-        return True, -1
-
-    def prepare_submission(input_file, target_dir, output_tracking_file):
-        if input_file is None or target_dir is None:
-            return "No job submitted yet."
-
-        # use batch to check is the target dir exists, and if not recursivly create it.
-        remote_connection.run(
-            f"test -d {target_dir} || mkdir -p {target_dir}",
-            hide=True,
-        )
-
-        # initiate the output file
-        remote_connection.run(
-            f"echo 'Starting the batch setup: ' > {output_tracking_file} "
-        )
-
-        result = remote_connection.put(input_file, target_dir)
-        remote_connection.run(
-            f"echo 'File copied to {result}'  >> {output_tracking_file} "
-        )
-
-        # check if the script manager has already been installed by the user, if not do so.
-        remote_connection.run(
-            r"command -v script_maker_cli >/dev/null 2>&1 && echo 'The orca script manager is installed. ' ||"
-            + f" {{ echo >&2 'The Script maker package is not installed. Installing now:.'>>{output_tracking_file};"
-            + "ml devel/python/3.11.4; echo 'Unsetting pip'; unset PIP_TARGET; "
-            + f"pip install git+https://github.com/GwydionJon/Orca_script_manager >> {output_tracking_file}; }}",
-            timeout=600,
-            hide=True,
-        )
+        return _get_live_updates(n_intervals, target_dir, remote_connection)
 
     def submit_job(n_clicks, input_file, target_dir):
         """This function will copy the input file to the target dir and start the calculation.
@@ -308,35 +209,7 @@ def add_callbacks_remote_explorer(app, remote_connection):
             target_dir (str): Remote target dir for the calculation.
         """
 
-        output_tracking_file = target_dir + "/check_shell_output.out"
-
-        prepare_submission(input_file, target_dir, output_tracking_file)
-
-        # the pathllib library does not like creating unix paths on a windows machine
-        # if this script is ever run on a windows server someone needs to find a better solution
-        input_file = Path(input_file)
-        file_to_extract = target_dir + "/" + input_file.name
-
-        # create a new screen session to run the program in.
-
-        screen_check = remote_connection.run("screen -ls", warn=True, hide=True)
-
-        if Path(input_file).stem not in screen_check.stdout:
-            remote_connection.run(f"screen -dmS {Path(input_file).stem}")
-
-        # start the calculation using nohup
-        result = remote_connection.run(
-            f'screen -S {Path(input_file).stem} -X stuff "ml devel/python/3.11.4 ; '
-            + f" script_maker_cli start-zip --zip {str(file_to_extract)} -e {target_dir} --hide_job_status "
-            + f'>> {output_tracking_file} \n"',
-            hide=False,
-            warn=True,
-        )
-        # check if job was started correctly
-        if result.exited != 0:
-            raise Exception(f"Error starting job: \n {result.stderr}")
-
-        return None
+        return _submit_job(n_clicks, input_file, target_dir, remote_connection)
 
     app.callback(
         Output("job_output", "value"),
