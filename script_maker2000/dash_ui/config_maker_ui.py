@@ -505,10 +505,13 @@ def add_single_layer_config(i: int = None, options_dict: dict = None):
                         ),
                     )
 
+                    if args_dict == {}:
+                        args_dict["empty"] = "empty"
+
                     for j, (args_key, args_value) in enumerate(args_dict.items()):
-                        if args_key == "":
+                        if args_key == "" or args_key == "empty":
                             args_key = None
-                        if args_value == "":
+                        if args_value == "" or args_value == "empty":
                             args_value = None
 
                         layer_layout.append(
