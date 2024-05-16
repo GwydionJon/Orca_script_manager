@@ -716,6 +716,11 @@ def check_dir_in_batch_config(output_dir):
 
 def add_dir_to_config(new_output_dir):
 
+    new_output_dir = pathlib.Path(new_output_dir)
+
+    if not new_output_dir.is_absolute():
+        new_output_dir = new_output_dir.resolve()
+
     batch_config = read_batch_config_file("dict")
 
     # check if the new output dir is already in the config
@@ -724,7 +729,6 @@ def add_dir_to_config(new_output_dir):
 
     # check if the output dir exists and has the necessary subfolders/files
 
-    new_output_dir = pathlib.Path(new_output_dir)
     if not new_output_dir.exists():
         raise FileNotFoundError(f"Can't find {new_output_dir}.")
 
