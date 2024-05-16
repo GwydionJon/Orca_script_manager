@@ -201,6 +201,10 @@ class OrcaModule(TemplateModule):
         nprocs = options["n_cores_per_calculation"]
         args = options["args"]
 
+        for argument in [method, basisset, add_setting]:
+            if argument == "empty":
+                argument = ""
+
         # start setting the pieces for the orca file
 
         setup_lines = []

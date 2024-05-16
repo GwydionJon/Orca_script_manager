@@ -341,7 +341,7 @@ class Job:
         for dir in dir_list:
             if dir.exists():
                 shutil.make_archive(
-                    dir.parents[0] / ("archive_" + dir.stem), "gztar", dir
+                    dir.parents[0] / ("archive_" + dir.stem), "zip", dir
                 )
                 shutil.rmtree(dir)
 
