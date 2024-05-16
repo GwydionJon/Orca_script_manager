@@ -54,7 +54,11 @@ def create_remote_explorer_layout(mode):
         header_text = [
             "This is the remote explorer.",
             html.Br(),
-            " Select the directory where you want to start the calculation.",
+            "Select the directory where you want to start the calculation.",
+            html.Br(),
+            "You can also select a workspace to start from.",
+            html.Br(),
+            "Either write 'workspaces' or a workspace id to start from there.",
         ]
         input_id = "remote_path_input"
         input_label = "Enter remote path:"
@@ -75,7 +79,10 @@ def create_remote_explorer_layout(mode):
     layout = dbc.Row(
         children=[
             # explanation text for the user
-            html.P(header_text, style=default_style),
+            html.P(
+                header_text,
+                style={"margin": "10px", "width": "100%", "height": "100px"},
+            ),
             create_new_intput(input_label, input_value, input_id, input_placeholder),
             # text field to show wich path is selected
             html.P(
@@ -170,6 +177,27 @@ def create_job_submission_layout():
 
 def add_callbacks_remote_explorer(app, remote_connection):
 
+    def workspaces_paths(remote_connection, workspace_id=None):
+
+        if workspace_id is None:
+            output = remote_connection.run("ws_list", hide=True)
+
+        else:
+            output = remote_connection.run(f"ws_list {workspace_id}", hide=True)
+
+        if output.stdout == "":
+            return [], []
+        output = output.stdout.split("\n")[:-1]
+
+        ws_ids = [line.split(":")[1].strip() for line in output if "id:" in line]
+        ws_paths = [
+            line.split(":")[1].strip()
+            for line in output
+            if "workspace directory" in line
+        ]
+
+        return ws_ids, ws_paths
+
     def get_remote_paths(n_clicks, path):
 
         if path is None:
@@ -177,15 +205,39 @@ def add_callbacks_remote_explorer(app, remote_connection):
 
         if path[-1] != "/":
             path = path + "/"
+
+        # get workspace ids and paths:
+
+        ws_ids, ws_paths = workspaces_paths(remote_connection)
+
+        main_path = "cwd"
+
+        if path == "workspaces/":
+            path = " ".join(ws_paths)
+            main_path = "workspaces"
+
+        else:
+            for ws_id, ws_path in zip(ws_ids, ws_paths):
+                if ws_id in path:
+                    path = path.replace(ws_id, ws_path)
+
         output = remote_connection.run(
-            f"find {path} -not -path '*/\.*' -type d -print", hide=True  # noqa
+            f"find {path} -not -path '*/\.*' -type d -print",
+            hide=True,
+            warn=True,  # noqa
         )
+
+        if output.exited != 0:
+            return {"title": "Nothing found", "key": "Nothing", "children": []}
+
         output = output.stdout.split("\n")[:-1]
+
+        if main_path == "cwd":
+            main_path = remote_connection.run("pwd", hide=True).stdout.strip()
+
         output = convert_paths_to_dict(output, mode="remote")
 
-        cwd = remote_connection.run("pwd", hide=True).stdout.strip()
-
-        return {"title": cwd, "key": cwd, "children": output}
+        return {"title": main_path, "key": main_path, "children": output}
 
     def get_live_updates(n_intervals, target_dir):
         """This function will check the output file for the job status and update the textarea.
@@ -216,6 +268,36 @@ def add_callbacks_remote_explorer(app, remote_connection):
     def disable_button_start_interval(n_clicks):
         return True, -1
 
+    def prepare_submission(input_file, target_dir, output_tracking_file):
+        if input_file is None or target_dir is None:
+            return "No job submitted yet."
+
+        # use batch to check is the target dir exists, and if not recursivly create it.
+        remote_connection.run(
+            f"test -d {target_dir} || mkdir -p {target_dir}",
+            hide=True,
+        )
+
+        # initiate the output file
+        remote_connection.run(
+            f"echo 'Starting the batch setup: ' > {output_tracking_file} "
+        )
+
+        result = remote_connection.put(input_file, target_dir)
+        remote_connection.run(
+            f"echo 'File copied to {result}'  >> {output_tracking_file} "
+        )
+
+        # check if the script manager has already been installed by the user, if not do so.
+        remote_connection.run(
+            r"command -v script_maker_cli >/dev/null 2>&1 && echo 'The orca script manager is installed. ' ||"
+            + f" {{ echo >&2 'The Script maker package is not installed. Installing now:.'>>{output_tracking_file};"
+            + "ml devel/python/3.11.4; echo 'Unsetting pip'; unset PIP_TARGET; "
+            + f"pip install git+https://github.com/GwydionJon/Orca_script_manager >> {output_tracking_file}; }}",
+            timeout=600,
+            hide=True,
+        )
+
     def submit_job(n_clicks, input_file, target_dir):
         """This function will copy the input file to the target dir and start the calculation.
         Will also start the interval for live updates.
@@ -225,36 +307,6 @@ def add_callbacks_remote_explorer(app, remote_connection):
             input_file (str): Local input file to copy to the target dir.
             target_dir (str): Remote target dir for the calculation.
         """
-
-        def prepare_submission(input_file, target_dir, output_tracking_file):
-            if input_file is None or target_dir is None:
-                return "No job submitted yet."
-
-            # use batch to check is the target dir exists, and if not recursivly create it.
-            remote_connection.run(
-                f"test -d {target_dir} || mkdir -p {target_dir}",
-                hide=True,
-            )
-
-            # initiate the output file
-            remote_connection.run(
-                f"echo 'Starting the batch setup: ' > {output_tracking_file} "
-            )
-
-            result = remote_connection.put(input_file, target_dir)
-            remote_connection.run(
-                f"echo 'File copied to {result}'  >> {output_tracking_file} "
-            )
-
-            # check if the script manager has already been installed by the user, if not do so.
-            remote_connection.run(
-                r"command -v script_maker_cli >/dev/null 2>&1 && echo 'The orca script manager is installed. ' ||"
-                + f" {{ echo >&2 'The Script maker package is not installed. Installing now:.'>>{output_tracking_file};"
-                + "ml devel/python/3.11.4; echo 'Unsetting pip'; unset PIP_TARGET; "
-                + f"pip install git+https://github.com/GwydionJon/Orca_script_manager >> {output_tracking_file}; }}",
-                timeout=600,
-                hide=True,
-            )
 
         output_tracking_file = target_dir + "/check_shell_output.out"
 
