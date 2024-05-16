@@ -1,6 +1,5 @@
 from collections import defaultdict
 import asyncio
-import time
 import logging
 import itertools
 import json
@@ -263,16 +262,12 @@ class BatchManager:
             set: A set of manager tasks.
         """
         manager_runs = set()
-        times = []
         for work_managers_list in self.work_managers.values():
             for work_manager in work_managers_list:
                 task = asyncio.create_task(
                     work_manager.loop(), name=work_manager.config_key
                 )
-                times.append(time.time())
                 manager_runs.add(task)
-
-        self.log.info(f"Time start all loops: {times[1]-times[0]} seconds.")
 
         return manager_runs
 
