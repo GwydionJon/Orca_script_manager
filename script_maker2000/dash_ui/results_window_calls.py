@@ -248,9 +248,7 @@ def download_results_(
 
         windoes_max_file_path = 260
         if windoes_max_file_path < len(faulty_path):
-            return_str = (
-                f"Error: Can't extract {faulty_path} the path is too long for windows. "
-            )
+            return_str = f"Error: Can't extract {faulty_path} the path might be too long for windows. "
 
             return_str += "Please choose a shorter path and try again."
             return return_str
@@ -285,7 +283,7 @@ def _get_all_mol_dirs_in_finished_dirs(config_dict, files_filter_value):
 
         tree_config_dict = {
             "title": config_key,
-            "key": f"config_{config_key}",
+            "key": f"__config__{config_key}",
             "children": [],
         }
 
@@ -296,7 +294,7 @@ def _get_all_mol_dirs_in_finished_dirs(config_dict, files_filter_value):
 
                 mol_main_dict = {
                     "title": mol_main_dir.stem,
-                    "key": f"main_{str(mol_main_dir)}",
+                    "key": f"__main__{str(mol_main_dir)}",
                     "children": [],
                 }
 
@@ -377,18 +375,19 @@ def create_results_file_tree(files_filter_value):
 def update_table_values(
     tree_dict_selected, table_column_input, energy_unit_select, complete_table_data
 ):
-
+    print("")
+    print(tree_dict_selected)
     selected_data = []
     for selected_entry in tree_dict_selected:
         if selected_entry == "all":
             continue
-        if "config_" in selected_entry:
+        if selected_entry.startswith("__config__"):
             continue
-        if "main_" in selected_entry:
+        if selected_entry.startswith("__main__"):
             continue
 
         selected_data.append(selected_entry)
-
+    print(selected_data)
     table_data, corrections_list = extract_infos_from_results(selected_data)
 
     complete_table_data = table_data

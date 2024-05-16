@@ -143,13 +143,13 @@ def prepare_extract_path(extract_path: str):
     return extract_path
 
 
-def extract_tarball(zipf: str, extract_path: Path):
-    click.echo(f"Starting the batch processing with the tarball at {zipf}.")
+def extract_zipfile(zipf: str, extract_path: Path):
+    click.echo(f"Starting the batch processing with the zip file at {zipf}.")
 
     if not Path(zipf).exists():
-        click.echo(f"Tarball not found at {zipf}")
+        click.echo(f"zip file not found at {zipf}")
         return 1
-    click.echo(f"Extracting the tarball to {extract_path}")
+    click.echo(f"Extracting the zip file to {extract_path}")
 
     with zipfile.ZipFile(zipf, "r") as zipf:
         zipf.extractall(path=extract_path)
@@ -257,13 +257,13 @@ def update_mol_json(mol_json_path: Path, extract_path: Path):
 def start_zip(
     zip, extract_path, remove_extracted, profile: bool, hide_job_status: bool = False
 ):
-    """Start the batch processing with the given tarball."""
+    """Start the batch processing with the given zip file."""
 
     if profile:
         enable_profiling(extract_path)
 
     extract_path = prepare_extract_path(extract_path)
-    extract_tarball(zip, extract_path)
+    extract_zipfile(zip, extract_path)
 
     config_path, mol_json_path, error_code = find_json_files(extract_path)
     if error_code != 0:
@@ -332,13 +332,13 @@ def collect_input(config, output, zip_name):
     config_path = Path(config)
 
     zip_path = collect_input_files(config_path, prep_path, zip_name=zip_name)
-    click.echo(f"Tarball created at {zip_path}")
+    click.echo(f"zip file created at {zip_path}")
     click.echo(
-        "The tarball will contain all the input files needed for the batch processing."
+        "The zip file will contain all the input files needed for the batch processing."
     )
-    click.echo("Please move the tarball to the remote server and extract it there.")
+    click.echo("Please move the zip file to the remote server and extract it there.")
     click.echo(
-        "To copy the tarball to the remote server you can use the following command:"
+        "To copy the zip file to the remote server you can use the following command:"
     )
     click.echo("scp -P <port> <local_file> <remote_user>@<remote_host>:<remote_path>")
     click.echo(
@@ -382,7 +382,7 @@ def return_batch_config(as_json=False):
     "--exclude_patterns",
     "-e",
     default=None,
-    help="Comma seperated list of patterns to exclude from the tarball.",
+    help="Comma seperated list of patterns to exclude from the zip file.",
 )
 def collect_results(results_path, exclude_patterns=None):
 
@@ -410,6 +410,6 @@ def collect_results(results_path, exclude_patterns=None):
 
     result_zip = collect_results_(results_path, exclude_patterns)
 
-    click.echo(f"Tarball created at {result_zip}")
+    click.echo(f"zip file created at {result_zip}")
 
     return 0

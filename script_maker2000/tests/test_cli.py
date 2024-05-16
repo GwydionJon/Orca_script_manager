@@ -135,7 +135,7 @@ def test_collect_files(clean_tmp_dir):
         collect_input, ["--config", main_config_path, "-o", str(prep_path)]
     )
     assert result.exit_code == 0
-    assert "Tarball created at" in result.output
+    assert "zip file created at" in result.output
 
     zip_path = prep_path / "input_files.zip"
     extract_path = clean_tmp_dir / "example_prep" / "extracted_test"
