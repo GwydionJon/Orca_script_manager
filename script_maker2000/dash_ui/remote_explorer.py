@@ -184,8 +184,7 @@ def add_callbacks_remote_explorer(app, remote_connection):
         path,
     ):
 
-        output = _get_remote_paths(n_clicks, path, remote_connection)
-        return output
+        return _get_remote_paths(n_clicks, path, remote_connection)
 
     def get_live_updates(
         n_intervals,
