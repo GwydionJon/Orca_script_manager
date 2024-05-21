@@ -352,10 +352,114 @@ def expected_df_second_log_jobs(expected_df_first_log_jobs):
 original_subprocess_run = subprocess.run
 
 
+def model_sbatch_output(args, cache_list):
+    example_output_dir = Path(__file__).parent / "test_data" / "example_outputs"
+
+    new_id = np.random.randint(100)
+    if new_id in cache_list:
+        new_id = max(cache_list) + 1
+    cache_list.append(new_id)
+    fake_output_str = f"job {new_id}"
+
+    # get mol id
+    mol_id = Path(args[1]).stem.split("___")[1]
+    step_id = Path(args[1]).stem.split("___")[0]
+    run_id = Path(args[1]).stem
+
+    # get output_dir for this mol_id
+    mol_output_dir = Path(args[1]).parents[2] / "output" / run_id
+
+    example_output_mol_dir = list(example_output_dir.glob(f"*{mol_id}"))[0]
+
+    # copy example output files to output_dir
+    for file in example_output_mol_dir.glob("*"):
+        new_file = str(file.name).replace("START_", f"{step_id}___")
+        if (mol_output_dir / new_file).exists():
+            continue
+
+        mol_output_dir.mkdir(exist_ok=True, parents=True)
+        shutil.copy(file, mol_output_dir / new_file)
+    return fake_output_str
+
+
+def model_sacct_output(args, monkey_patch_job_dict):
+    id_list = [
+        [
+            str(i),
+            f"{i}.batch",
+            f"{i}.extern",
+        ]
+        for i in args[2].split(",")
+    ]
+
+    format_option_dict = {
+        "ExitCode": "0:0",
+        "NCPUS": "16",
+        "CPUTimeRAW": "656",
+        "ElapsedRaw": "41",
+        "TimelimitRaw": "2",
+        "ConsumedEnergyRaw": "11000",
+        "MaxDiskRead": "1723M",
+        "MaxDiskWrite": "423M",
+        "MaxVMSize": "22753K",
+        "ReqMem": "56000M",
+        "MaxRSS": "1035K",
+        "State": "COMPLETED",
+    }
+
+    # get format options
+    format_options = args[4].split(",")
+
+    fake_output_str = ""
+
+    header_line = "|".join(format_options) + "\n"
+    fake_output_str += header_line
+    # get job name and corresponding slumr id
+
+    job_dict_ = monkey_patch_job_dict
+    # job_slurm_names = {}
+    # for job in job_dict_.values():
+    #     current_key = job.current_key
+    #     job_slurm_id = job.slurm_id_per_key[current_key]
+    #     job_slurm_names[job_slurm_id] = job.current_step_id
+
+    job_names = []
+
+    for id_trio in id_list:
+        pure_id = int(id_trio[0])
+
+        for job in job_dict_.values():
+            for value in job.slurm_id_per_key.values():
+                if value == pure_id:
+                    job_names.append(job.current_step_id)
+                    break
+    for id_trio, job_name in zip(id_list, job_names):
+        # no type conversion needed as its compared to itself.
+        pure_id = id_trio[0]
+
+        for id_ in id_trio:
+            new_line = ""
+            for format_option in format_options:
+                if format_option == "JobID":
+                    new_line += str(pure_id) + "|"
+                elif format_option == "JobName":
+                    if id_ == pure_id:
+                        new_line += job_name + "|"
+                    elif "batch" in id_:
+                        new_line += "batch" + "|"
+                    elif "extern" in id_:
+                        new_line += "extern" + "|"
+                else:
+                    new_line += format_option_dict[format_option] + "|"
+
+            fake_output_str += new_line + "\n"
+    return fake_output_str
+
+
 @pytest.fixture
 def fake_slurm_function():
 
-    def _fake_slurm_function(args, monkey_patch_test, cache_list=[], **kwargs):
+    def _fake_slurm_function(args, monkey_patch_job_dict, cache_list=[], **kwargs):
 
         # 12486234|PBEh3c_freq_16cores_sp_PBEh_3c_opt__PBEh3c_freq_16cores_sp___C24H3I13N2O3Si|TIMEOUT|
         # 12486234.batch|batch|CANCELLED|
@@ -366,88 +470,14 @@ def fake_slurm_function():
                 self.stdout = stdout
 
         if "sbatch" == str(args[0]):
-            new_id = np.random.randint(100)
-            if new_id in cache_list:
-                new_id = max(cache_list) + 1
-            cache_list.append(new_id)
-            fake_output_str = f"job {new_id}"
+            fake_output_str = model_sbatch_output(args, cache_list)
 
         elif "sacct" in args[0]:
             # get id list
 
-            id_list = [
-                [
-                    str(i),
-                    f"{i}.batch",
-                    f"{i}.extern",
-                ]
-                for i in args[2].split(",")
-            ]
-
-            format_option_dict = {
-                "ExitCode": "0:0",
-                "NCPUS": "16",
-                "CPUTimeRAW": "656",
-                "ElapsedRaw": "41",
-                "TimelimitRaw": "2",
-                "ConsumedEnergyRaw": "11000",
-                "MaxDiskRead": "1723M",
-                "MaxDiskWrite": "423M",
-                "MaxVMSize": "22753K",
-                "ReqMem": "56000M",
-                "MaxRSS": "1035K",
-                "State": "COMPLETED",
-            }
-
-            # get format options
-            format_options = args[4].split(",")
-
-            fake_output_str = ""
-
-            header_line = "|".join(format_options) + "\n"
-            fake_output_str += header_line
-            # get job name and corresponding slumr id
-
-            job_dict_ = monkey_patch_test
-            # job_slurm_names = {}
-            # for job in job_dict_.values():
-            #     current_key = job.current_key
-            #     job_slurm_id = job.slurm_id_per_key[current_key]
-            #     job_slurm_names[job_slurm_id] = job.current_step_id
-
-            job_names = []
-
-            for id_trio in id_list:
-                pure_id = int(id_trio[0])
-
-                for job in job_dict_.values():
-                    for value in job.slurm_id_per_key.values():
-                        if value == pure_id:
-                            job_names.append(job.current_step_id)
-                            break
-            for id_trio, job_name in zip(id_list, job_names):
-                # no type conversion needed as its compared to itself.
-                pure_id = id_trio[0]
-
-                for id_ in id_trio:
-                    new_line = ""
-                    for format_option in format_options:
-                        if format_option == "JobID":
-                            new_line += str(pure_id) + "|"
-                        elif format_option == "JobName":
-                            if id_ == pure_id:
-                                new_line += job_name + "|"
-                            elif "batch" in id_:
-                                new_line += "batch" + "|"
-                            elif "extern" in id_:
-                                new_line += "extern" + "|"
-                        else:
-                            new_line += format_option_dict[format_option] + "|"
-
-                    fake_output_str += new_line + "\n"
+            fake_output_str = model_sacct_output(args, monkey_patch_job_dict)
         else:
             # return the original subprocess output
-            print(args, kwargs)
             original_subprocess_run(args, **kwargs)
 
         return FakeOutput(fake_output_str)
