@@ -4,6 +4,7 @@ from pathlib import Path
 import logging
 from typing import Union
 from script_maker2000.files import read_config
+from abc import abstractmethod
 
 
 class TemplateModule:
@@ -62,12 +63,14 @@ class TemplateModule:
         internal_config = main_config["loop_config"][config_key]
         return internal_config
 
+    @abstractmethod
     def create_slurm_scripts(self, slurm_config=None) -> Union[str, Path]:
         """Create the slurm script that is used to submit this calculation run to the server.
         This should use the slurm class provided in this module.
         """
         raise NotImplementedError
 
+    @abstractmethod
     def prepare_jobs(self, input_dirs, **kwargs) -> dict:
         """prepare the job files for submission.
 
@@ -79,11 +82,22 @@ class TemplateModule:
         """
         raise NotImplementedError
 
-    def run_job(self, key) -> None:
+    @abstractmethod
+    def run_job(self, job) -> None:
         """Interface to send the job to the server.
 
         Raises:
             NotImplementedError: _description_
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def restart_jobs(self, job_list, key):
+        """restart a job that failed.
+
+        Args:
+            job_list (list): list of jobs that failed.
+            key (str): the key of the job that failed.
         """
         raise NotImplementedError
 
