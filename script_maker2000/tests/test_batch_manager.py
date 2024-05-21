@@ -2,8 +2,6 @@ from pathlib import Path
 import shutil
 import asyncio
 import pytest
-import logging
-import time
 import json
 
 from script_maker2000.batch_manager import BatchManager
@@ -12,24 +10,6 @@ from script_maker2000.analysis import extract_infos_from_results
 
 
 def test_batch_manager(clean_tmp_dir, monkeypatch, fake_slurm_function):
-    def move_files():
-
-        # move output files to output dir
-        example_output_files = Path(__file__).parent / "test_data" / "example_outputs"
-        if len(list((first_worker.output_dir).glob("*"))) == 0:
-            shutil.copytree(
-                example_output_files,
-                first_worker.output_dir,
-                dirs_exist_ok=True,
-            )
-            for dir_ in first_worker.output_dir.glob("*"):
-                new_dir = str(dir_).replace("START_", "opt_config___")
-                new_dir = Path(new_dir)
-                new_dir.mkdir()
-                for file in dir_.glob("*"):
-                    new_file = str(file.name).replace("START_", "opt_config___")
-                    file.rename(Path(new_dir) / new_file)
-                shutil.rmtree(dir_)
 
     main_config_path = clean_tmp_dir / "example_config.json"
     batch_manager = BatchManager(main_config_path)
@@ -44,28 +24,36 @@ def test_batch_manager(clean_tmp_dir, monkeypatch, fake_slurm_function):
     # monkeypatch the job dict into the monkeypatched slurm function
     job_dict = batch_manager.job_dict
 
-    def new_fake_slurm_function(*args, monkey_patch_test=job_dict, **kwargs):
-        move_files()
-        return fake_slurm_function(*args, monkey_patch_test=monkey_patch_test, **kwargs)
+    def new_fake_slurm_function(*args, monkey_patch_job_dict=job_dict, **kwargs):
+        return fake_slurm_function(
+            *args, monkey_patch_job_dict=monkey_patch_job_dict, **kwargs
+        )
 
     monkeypatch.setattr("subprocess.run", new_fake_slurm_function)
     monkeypatch.setattr("shutil.which", lambda x: x)
     monkeypatch.setattr(first_worker, "wait_time", 0.2)
     monkeypatch.setattr(first_worker, "max_loop", 4)
-
+    print("Running first worker")
     worker_output = asyncio.run(first_worker.loop())
     assert "All jobs done after " in worker_output
 
+    print("Advancing jobs first")
     batch_manager.advance_jobs()
     second_worker = list(batch_manager.work_managers.values())[1][0]
     monkeypatch.setattr(second_worker, "wait_time", 0.2)
     monkeypatch.setattr(second_worker, "max_loop", 5)
 
+    print("Running second worker")
+    worker_output = asyncio.run(second_worker.loop())
+    assert "All jobs done after " in worker_output
+    print("Advancing jobs second")
+    batch_manager.advance_jobs()
+
     all_results = list(batch_manager.working_dir.glob("finished/raw_results/*"))
     failed = list(batch_manager.working_dir.glob("finished/raw_results/*/failed*"))
 
     # only the failed jobs should be in the raw results dir
-    assert len(all_results) == 7
+    assert len(all_results) == 11
     assert len(failed) == 7
 
 
@@ -93,62 +81,23 @@ def test_batch_loop_with_files(clean_tmp_dir, monkeypatch, fake_slurm_function):
     main_config_path = clean_tmp_dir / "example_config.json"
     batch_manager = BatchManager(main_config_path)
 
-    for logger in logging.Logger.manager.loggerDict.values():
-        if isinstance(logger, logging.Logger):  # Just to be sure it is a Logger object
-            logger.setLevel(logging.WARNING)
-
-    # test locally
     monkeypatch.setattr("shutil.which", lambda x: x)
 
-    # copy output files into dir
-
-    example_output_files = Path(__file__).parent / "test_data" / "example_outputs"
-    target_dirs = []
-    for work_manager_list in batch_manager.work_managers.values():
-        for work_manager in work_manager_list:
-            target_dirs.append(work_manager.output_dir)
-
-    for target_dir in target_dirs:
-        shutil.copytree(
-            example_output_files,
-            target_dir,
-            dirs_exist_ok=True,
-        )
-    # move example output files to output dirs and replace name for new naming scheme
-    for out_dir in target_dirs:
-
-        if "opt_config" in str(out_dir):
-            replacement = "opt_config___"
-        elif "sp_config" in str(out_dir):
-            replacement = "opt_config__sp_config___"
-        for dir_ in out_dir.glob("*"):
-            new_dir = str(dir_).replace("START_", replacement)
-            new_dir = Path(new_dir)
-            new_dir.mkdir()
-            for file in dir_.glob("*"):
-
-                new_file = str(file.name).replace("START_", replacement)
-                if "slurm" in new_file:
-                    new_file = "slurm_output.out"
-
-                file.rename(Path(new_dir) / new_file)
-            shutil.rmtree(dir_)
-
-    time.sleep(1)
-
     monkeypatch.setattr(batch_manager, "wait_time", 0.5)
-    monkeypatch.setattr(batch_manager, "max_loop", 8)
+    monkeypatch.setattr(batch_manager, "max_loop", 12)
 
     for work_manager_list in batch_manager.work_managers.values():
         for work_manager in work_manager_list:
             monkeypatch.setattr(work_manager, "wait_time", 0.3)
-            monkeypatch.setattr(work_manager, "max_loop", 6)
+            monkeypatch.setattr(work_manager, "max_loop", 10)
 
     # monkeypatch the job dict into the monkeypatched slurm function
     job_dict = batch_manager.job_dict
 
-    def new_fake_slurm_function(*args, monkey_patch_test=job_dict, **kwargs):
-        return fake_slurm_function(*args, monkey_patch_test=monkey_patch_test, **kwargs)
+    def new_fake_slurm_function(*args, monkey_patch_job_dict=job_dict, **kwargs):
+        return fake_slurm_function(
+            *args, monkey_patch_job_dict=monkey_patch_job_dict, **kwargs
+        )
 
     monkeypatch.setattr("subprocess.run", new_fake_slurm_function)
 
@@ -193,105 +142,15 @@ def test_parallel_steps(multilayer_tmp_dir, monkeypatch, fake_slurm_function):
         # monkeypatch the job dict into the monkeypatched slurm function
         job_dict = batch_manager.job_dict
 
-        def new_fake_slurm_function(*args, monkey_patch_test=job_dict, **kwargs):
+        def new_fake_slurm_function(*args, monkey_patch_job_dict=job_dict, **kwargs):
             return fake_slurm_function(
-                *args, monkey_patch_test=monkey_patch_test, **kwargs
+                *args, monkey_patch_job_dict=monkey_patch_job_dict, **kwargs
             )
 
         monkeypatch.setattr("subprocess.run", new_fake_slurm_function)
 
-        # copy output files into dir
-        example_output_files = Path(__file__).parent / "test_data" / "example_outputs"
-
-        # move files for opt_config 1 + 2
-        working_dir = batch_manager.working_dir
-        target_dirs = [
-            working_dir / "working" / "opt_config1" / "output",
-            working_dir / "working" / "opt_config2" / "output",
-        ]
-
-        for target_dir in target_dirs:
-            shutil.copytree(
-                example_output_files,
-                target_dir,
-                dirs_exist_ok=True,
-            )
-        for i, out_dir in enumerate(target_dirs):
-            replacement = f"opt_config{i+1}___"
-            for dir_ in out_dir.glob("*"):
-                new_dir = str(dir_).replace("START_", replacement)
-                new_dir = Path(new_dir)
-                new_dir.mkdir()
-                for file in dir_.glob("*"):
-
-                    new_file = str(file.name).replace("START_", replacement)
-                    if "slurm" in new_file:
-                        new_file = "slurm_output.out"
-
-                    file.rename(Path(new_dir) / new_file)
-                shutil.rmtree(dir_)
-
-        # move files for sp_config 1 + 2
-
-        succesful_output_ids = ["a004_b007", "a007_b021_2", "a007_b022_2", "a007_b026"]
-        succesful_output_dirs = []
-        for id in succesful_output_ids:
-            output_file = list(example_output_files.glob(f"*{id}*"))[0]
-            succesful_output_dirs.append(output_file)
-
-        # copy and rename these files to the target dirs
-        target_dirs = [
-            working_dir / "working" / "sp_config1" / "output",
-            working_dir / "working" / "sp_config2" / "output",
-        ]
-
-        copy_output(target_dirs, succesful_output_dirs)
-
-        # this will get a bit ugly but i need to
-        # overwrite at least one of the slurm output files for the second run
-        # with a walltime error
-
-        # copy output file from opt_config1___a001_b001 to opt_config1_sp_config1___a004_b006
-        # and overwrite the slurm output file
-        src_file = (
-            working_dir
-            / "working"
-            / "opt_config1"
-            / "output"
-            / "opt_config1___a001_b001"
-            / "slurm_output.out"
-        )
-        target_file = (
-            working_dir
-            / "working"
-            / "sp_config1"
-            / "output"
-            / "opt_config1__sp_config1___a004_b007"
-            / "slurm_output.out"
-        )
-        shutil.copy(src_file, target_file)
-
-        # copy and then rename the orca output file
-        src_file = (
-            working_dir
-            / "working"
-            / "opt_config1"
-            / "output"
-            / "opt_config1___a001_b001"
-            / "opt_config1___a001_b001.out"
-        )
-        target_file = (
-            working_dir
-            / "working"
-            / "sp_config1"
-            / "output"
-            / "opt_config1__sp_config1___a004_b007"
-            / "opt_config1__sp_config1___a004_b007.out"
-        )
-        shutil.copy(src_file, target_file)
-
-        monkeypatch.setattr(batch_manager, "wait_time", 0.14)
-        monkeypatch.setattr(batch_manager, "max_loop", 8)
+        monkeypatch.setattr(batch_manager, "wait_time", 0.1)
+        monkeypatch.setattr(batch_manager, "max_loop", 10)
 
         for work_manager_list in batch_manager.work_managers.values():
             for work_manager in work_manager_list:
@@ -329,8 +188,8 @@ def test_parallel_steps(multilayer_tmp_dir, monkeypatch, fake_slurm_function):
     )
 
     assert len(all_results) == 11
-    assert len(failed) == 15
-    assert len(not_failed) == 23
+    assert len(failed) == 14
+    assert len(not_failed) == 24
 
     # assert zip exists
     zip_file = batch_manager.working_dir / "output.zip"
@@ -371,32 +230,6 @@ def perform_checks(batch_manager):
         assert "charge" in test_dict[key].keys()
 
 
-def copy_output(target_dirs, succesful_output_dirs):
-    for i in range(2):
-        for target_dir in target_dirs:
-            for output_dir in succesful_output_dirs:
-                new_dir_path = shutil.copytree(
-                    output_dir, target_dir / output_dir.name, dirs_exist_ok=True
-                )
-                if "sp_config1" in str(target_dir):
-                    j = 1
-                else:
-                    j = 2
-
-                new_dir_name = target_dir / str(output_dir.name).replace(
-                    "START_", f"opt_config{i+1}__sp_config{j}___"
-                )
-                new_dir_path.rename(new_dir_name)
-                for file in new_dir_name.glob("*"):
-                    new_file = str(file.name).replace(
-                        "START_", f"opt_config{i+1}__sp_config{j}___"
-                    )
-                    if "slurm" in new_file:
-                        new_file = "slurm_output.out"
-
-                    file.rename(new_dir_name / new_file)
-
-
 def test_continue_run(pre_started_dir, monkeypatch, fake_slurm_function):
 
     main_config_path = pre_started_dir / "example_config.json"
@@ -409,9 +242,9 @@ def test_continue_run(pre_started_dir, monkeypatch, fake_slurm_function):
         # monkeypatch the job dict into the monkeypatched slurm function
         job_dict = batch_manager.job_dict
 
-        def new_fake_slurm_function(*args, monkey_patch_test=job_dict, **kwargs):
+        def new_fake_slurm_function(*args, monkey_patch_job_dict=job_dict, **kwargs):
             return fake_slurm_function(
-                *args, monkey_patch_test=monkey_patch_test, **kwargs
+                *args, monkey_patch_job_dict=monkey_patch_job_dict, **kwargs
             )
 
         monkeypatch.setattr("subprocess.run", new_fake_slurm_function)
@@ -433,6 +266,7 @@ def test_continue_run(pre_started_dir, monkeypatch, fake_slurm_function):
             for work_manager in work_manager_list:
                 monkeypatch.setattr(work_manager, "wait_time", 10)
                 monkeypatch.setattr(work_manager, "max_loop", -1)
+
     with pytest.raises(RuntimeError):
         exit_code, task_results = batch_manager.run_batch_processing()
         assert exit_code == 1

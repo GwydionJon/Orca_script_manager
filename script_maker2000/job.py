@@ -64,6 +64,8 @@ class Job:
         # this will be used to keep track of the jobs that are finished
         self.finished_keys = []
 
+        self.iterations_per_key = {}
+
         self._init_all_dicts(working_dir, all_keys)
 
         # self.tqdm = None
@@ -78,13 +80,13 @@ class Job:
         rep_str = (
             "JOB: "
             + self.unique_job_id
-            + " current_key: "
+            + ", current_key: "
             + self.current_key
-            + " current status: "
+            + ", current status: "
             + self.current_status
         )
         if self.current_status == "failed":
-            rep_str += " failed reason: " + self.failed_reason
+            rep_str += ", failed reason: " + self.failed_reason
         return rep_str
 
     def _init_all_dicts(
@@ -239,6 +241,19 @@ class Job:
             / self.failed_per_key[key].name,
         }
 
+    def reset_key(self, key):
+
+        if self.iterations_per_key.get(key, 0) == 0:
+            # if no walltime error has been encountered zet the job will be resubmitted
+            self.failed_reason = None
+            self.current_status = "found"
+            self.status_per_key[key] = "found"
+            self.iterations_per_key[key] = 1
+            return "reset"
+
+        if self.iterations_per_key.get(key, 0) > 0:
+            return "walltime_error"
+
     def manage_return(self, return_str):
         """
         Currently the possible return_str are:
@@ -335,6 +350,14 @@ class Job:
 
         This method is used to clean up the input and output directories by archiving them and then removing them.
         """
+
+        # check if all overlapping jobs have finished
+        for overlapping_job in self.overlapping_jobs:
+            if overlapping_job.current_key == self.current_key:
+                if overlapping_job.current_status not in ["finished", "failed"]:
+                    return
+
+        # only clean up if all overlapping jobs have finished
         dir_list = list(self.output_dir_per_key.values()) + list(
             self.input_dir_per_key.values()
         )
@@ -350,7 +373,6 @@ class Job:
         wrap_up_return_str = "finalized"
 
         final_dir = self.raw_success_dir
-
         for key in self.finished_keys:  # pylint: disable=C0206
 
             if key in self.final_dirs.keys():

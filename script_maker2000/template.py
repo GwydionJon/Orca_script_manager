@@ -117,3 +117,12 @@ class TemplateModule:
 
         """
         raise NotImplementedError
+
+    def restart_jobs(self, job_list, key):
+        """restart a job that failed.
+
+        Args:
+            job_list (list): list of jobs that failed.
+            key (str): the key of the job that failed.
+        """
+        raise NotImplementedError

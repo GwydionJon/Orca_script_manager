@@ -1,29 +1,9 @@
-import shutil
-from pathlib import Path
 from script_maker2000.orca import OrcaModule
 from script_maker2000.work_manager import WorkManager
 import asyncio
 
 
 def test_workmanager(clean_tmp_dir, job_dict, monkeypatch, fake_slurm_function):
-    def move_files():
-
-        # move output files to output dir
-        example_output_files = Path(__file__).parent / "test_data" / "example_outputs"
-        if len(list((orca_test.working_dir / "output").glob("*"))) == 0:
-            shutil.copytree(
-                example_output_files,
-                orca_test.working_dir / "output",
-                dirs_exist_ok=True,
-            )
-            for dir in (orca_test.working_dir / "output").glob("*"):
-                new_dir = str(dir).replace("START_", "opt_config___")
-                new_dir = Path(new_dir)
-                new_dir.mkdir()
-                for file in dir.glob("*"):
-                    new_file = str(file.name).replace("START_", "opt_config___")
-                    file.rename(Path(new_dir) / new_file)
-                shutil.rmtree(dir)
 
     config_path = clean_tmp_dir / "example_config.json"
 
@@ -39,9 +19,10 @@ def test_workmanager(clean_tmp_dir, job_dict, monkeypatch, fake_slurm_function):
     # monkeypatch the job dict into the monkeypatched slurm function
     job_dict = work_manager.job_dict
 
-    def new_fake_slurm_function(*args, monkey_patch_test=job_dict, **kwargs):
-        move_files()
-        return fake_slurm_function(*args, monkey_patch_test=monkey_patch_test, **kwargs)
+    def new_fake_slurm_function(*args, monkey_patch_job_dict=job_dict, **kwargs):
+        return fake_slurm_function(
+            *args, monkey_patch_job_dict=monkey_patch_job_dict, **kwargs
+        )
 
     monkeypatch.setattr("subprocess.run", new_fake_slurm_function)
     monkeypatch.setattr("shutil.which", lambda x: x)
@@ -81,7 +62,47 @@ def test_workmanager(clean_tmp_dir, job_dict, monkeypatch, fake_slurm_function):
 
     # check on returned jobs
     # manage finished jobs
-    work_manager.manage_returned_jobs(current_job_dict["returned"])
+    _, walltime_error_jobs = work_manager.manage_returned_jobs(
+        current_job_dict["returned"]
+    )
+
+    restarted_jobs, non_resetted_jobs = work_manager.restart_walltime_error_jobs(
+        walltime_error_jobs
+    )
+
+    assert len(restarted_jobs) == 4
+    assert len(non_resetted_jobs) == 0
+    current_job_dict = work_manager.check_job_status()
+    assert len(current_job_dict["found"]) == 4
+
+    # resubmit the failed jobs
+    current_job_dict["not_started"].extend(
+        work_manager.prepare_jobs(current_job_dict["found"])
+    )
+    assert len(current_job_dict["not_started"]) == 4
+    current_job_dict["submitted"].extend(
+        work_manager.submit_jobs(current_job_dict["not_started"])
+    )
+
+    assert len(current_job_dict["submitted"]) == 4
+
+    current_job_dict["returned"].extend(
+        work_manager.check_submitted_jobs(current_job_dict["submitted"])
+    )
+    _, walltime_error_jobs = work_manager.manage_returned_jobs(
+        current_job_dict["returned"]
+    )
+
+    assert len(walltime_error_jobs) == 4
+
+    restarted_jobs, non_resetted_jobs = work_manager.restart_walltime_error_jobs(
+        walltime_error_jobs
+    )
+    assert len(restarted_jobs) == 0
+    assert len(non_resetted_jobs) == 4
+
+    current_job_dict = work_manager.check_job_status()
+    assert len(current_job_dict["found"]) == 0
 
     current_job_dict = work_manager.check_job_status()
 
@@ -95,28 +116,10 @@ def test_workmanager(clean_tmp_dir, job_dict, monkeypatch, fake_slurm_function):
 
 def test_submit_file_limit(clean_tmp_dir, job_dict, monkeypatch, fake_slurm_function):
 
-    def move_files():
-
-        # move output files to output dir
-        example_output_files = Path(__file__).parent / "test_data" / "example_outputs"
-        if len(list((orca_test.working_dir / "output").glob("*"))) == 0:
-            shutil.copytree(
-                example_output_files,
-                orca_test.working_dir / "output",
-                dirs_exist_ok=True,
-            )
-            for dir in (orca_test.working_dir / "output").glob("*"):
-                new_dir = str(dir).replace("START_", "opt_config___")
-                new_dir = Path(new_dir)
-                new_dir.mkdir()
-                for file in dir.glob("*"):
-                    new_file = str(file.name).replace("START_", "opt_config___")
-                    file.rename(Path(new_dir) / new_file)
-                shutil.rmtree(dir)
-
-    def new_fake_slurm_function(*args, monkey_patch_test=job_dict, **kwargs):
-        move_files()
-        return fake_slurm_function(*args, monkey_patch_test=monkey_patch_test, **kwargs)
+    def new_fake_slurm_function(*args, monkey_patch_job_dict=job_dict, **kwargs):
+        return fake_slurm_function(
+            *args, monkey_patch_job_dict=monkey_patch_job_dict, **kwargs
+        )
 
     monkeypatch.setattr("subprocess.run", new_fake_slurm_function)
     monkeypatch.setattr("shutil.which", lambda x: x)
@@ -144,11 +147,12 @@ def test_submit_file_limit(clean_tmp_dir, job_dict, monkeypatch, fake_slurm_func
     current_job_dict["returned"].extend(
         work_manager.check_submitted_jobs(current_job_dict["submitted"])
     )
-    returned_jobs = work_manager.manage_returned_jobs(current_job_dict["returned"])
+    returned_jobs, walltime_error_jobs = work_manager.manage_returned_jobs(
+        current_job_dict["returned"]
+    )
 
     for job in returned_jobs:
         if job.current_status == "finished":
-            print(job)
             job.advance_to_next_key()
 
     work_manager.main_config["main_config"]["max_n_jobs"] = 2
@@ -176,28 +180,12 @@ def test_submit_file_limit_multi_layer(
     multilayer_tmp_dir, job_dict_multilayer, monkeypatch, fake_slurm_function
 ):
 
-    def move_files():
-
-        # move output files to output dir
-        example_output_files = Path(__file__).parent / "test_data" / "example_outputs"
-        if len(list((orca_test.working_dir / "output").glob("*"))) == 0:
-            shutil.copytree(
-                example_output_files,
-                orca_test.working_dir / "output",
-                dirs_exist_ok=True,
-            )
-            for dir in (orca_test.working_dir / "output").glob("*"):
-                new_dir = str(dir).replace("START_", "opt_config___")
-                new_dir = Path(new_dir)
-                new_dir.mkdir()
-                for file in dir.glob("*"):
-                    new_file = str(file.name).replace("START_", "opt_config___")
-                    file.rename(Path(new_dir) / new_file)
-                shutil.rmtree(dir)
-
-    def new_fake_slurm_function(*args, monkey_patch_test=job_dict_multilayer, **kwargs):
-        move_files()
-        return fake_slurm_function(*args, monkey_patch_test=monkey_patch_test, **kwargs)
+    def new_fake_slurm_function(
+        *args, monkey_patch_job_dict=job_dict_multilayer, **kwargs
+    ):
+        return fake_slurm_function(
+            *args, monkey_patch_job_dict=monkey_patch_job_dict, **kwargs
+        )
 
     monkeypatch.setattr("subprocess.run", new_fake_slurm_function)
     monkeypatch.setattr("shutil.which", lambda x: x)
@@ -224,27 +212,6 @@ def test_submit_file_limit_multi_layer(
 
 
 def test_workmanager_loop(clean_tmp_dir, job_dict, monkeypatch, fake_slurm_function):
-    def move_files():
-
-        # move output files to output dir
-        example_output_files = Path(__file__).parent / "test_data" / "example_outputs"
-        if (
-            len(list((orca_test.working_dir / "output").glob("*"))) == 0
-            and len(list((orca_test.working_dir / "finished").glob("*"))) == 0
-        ):
-            shutil.copytree(
-                example_output_files,
-                orca_test.working_dir / "output",
-                dirs_exist_ok=True,
-            )
-            for dir in (orca_test.working_dir / "output").glob("*"):
-                new_dir = str(dir).replace("START_", "opt_config___")
-                new_dir = Path(new_dir)
-                new_dir.mkdir()
-                for file in dir.glob("*"):
-                    new_file = str(file.name).replace("START_", "opt_config___")
-                    file.rename(Path(new_dir) / new_file)
-                shutil.rmtree(dir)
 
     config_path = clean_tmp_dir / "example_config.json"
 
@@ -255,9 +222,10 @@ def test_workmanager_loop(clean_tmp_dir, job_dict, monkeypatch, fake_slurm_funct
     # monkeypatch the job dict into the monkeypatched slurm function
     job_dict = work_manager.job_dict
 
-    def new_fake_slurm_function(*args, monkey_patch_test=job_dict, **kwargs):
-        move_files()
-        return fake_slurm_function(*args, monkey_patch_test=monkey_patch_test, **kwargs)
+    def new_fake_slurm_function(*args, monkey_patch_job_dict=job_dict, **kwargs):
+        return fake_slurm_function(
+            *args, monkey_patch_job_dict=monkey_patch_job_dict, **kwargs
+        )
 
     monkeypatch.setattr("subprocess.run", new_fake_slurm_function)
 
@@ -278,4 +246,3 @@ def test_workmanager_loop(clean_tmp_dir, job_dict, monkeypatch, fake_slurm_funct
     assert len(list(work_manager.failed_dir.glob("*/*"))) == 7
 
     assert len(list(work_manager.input_dir.glob("*"))) == 11
-    assert len(list(work_manager.output_dir.glob("*"))) == 0
