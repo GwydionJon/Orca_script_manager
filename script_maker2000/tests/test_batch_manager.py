@@ -124,6 +124,9 @@ def test_batch_loop_with_files(clean_tmp_dir, monkeypatch, fake_slurm_function):
     working_dir = batch_manager.working_dir
 
     assert str(working_dir) not in batch_config[config_name]["running"]
+
+    # debug ci
+    print(batch_config[config_name])
     assert str(working_dir) in batch_config[config_name]["finished"]
 
 
