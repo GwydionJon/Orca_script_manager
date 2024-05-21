@@ -61,7 +61,6 @@
 <li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.OrcaModule.prepare_jobs"><code class="docutils literal notranslate"><span class="pre">OrcaModule.prepare_jobs()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.OrcaModule.prepare_slurm_script"><code class="docutils literal notranslate"><span class="pre">OrcaModule.prepare_slurm_script()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.OrcaModule.read_xyzs"><code class="docutils literal notranslate"><span class="pre">OrcaModule.read_xyzs()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.OrcaModule.restart_jobs"><code class="docutils literal notranslate"><span class="pre">OrcaModule.restart_jobs()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.OrcaModule.run_job"><code class="docutils literal notranslate"><span class="pre">OrcaModule.run_job()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.OrcaModule.write_orca_scripts"><code class="docutils literal notranslate"><span class="pre">OrcaModule.write_orca_scripts()</span></code></a></li>
 </ul>
@@ -180,14 +179,12 @@ This should be handled indepentendly from the existence of this class object.</p
 
 <dl class="py method">
 <dt class="sig sig-object py" id="script_maker2000.orca.OrcaModule.collect_results">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">collect_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">job</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">results_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'finished'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#script_maker2000.orca.OrcaModule.collect_results" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">collect_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">job</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#script_maker2000.orca.OrcaModule.collect_results" title="Link to this definition"></a></dt>
 <dd><p>Use the cclib library to extract the results from the orca output file.</p>
 <dl class="simple">
-<dt>Args:</dt><dd><p>job (Job): current job object to collect results from.
-key (str): the key of the job to collect results from.
-results_dir (str): the directory where the results are stored.</p>
+<dt>Args:</dt><dd><p>job (Job): current job object to collect results from.</p>
 </dd>
-<dt>Returns:</dt><dd><p>dict: _description_</p>
+<dt>Returns:</dt><dd><p>_type_: _description_</p>
 </dd>
 </dl>
 </dd></dl>
@@ -228,7 +225,7 @@ This should use the slurm class provided in this module.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="script_maker2000.orca.OrcaModule.prepare_slurm_script">
-<span class="sig-name descname"><span class="pre">prepare_slurm_script</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">orca_file_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">override_settings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#script_maker2000.orca.OrcaModule.prepare_slurm_script" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">prepare_slurm_script</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">orca_file_dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span></span></span><a class="headerlink" href="#script_maker2000.orca.OrcaModule.prepare_slurm_script" title="Link to this definition"></a></dt>
 <dd><p>Variables to fill:
 __jobname : str
 __ntasks : int
@@ -240,8 +237,6 @@ __output_dir : full path to original dir
 __input_file : rel path to input file (this gets copied)
 __output_file : saves the orca output (full path to original dir)
 __marked_files : str /home/usr/dir/{file1,file2,file3,file4}</p>
-<p>override_settings: dict
-example: {“n_cores_per_calculation”: 8, “ram_per_core”: 8000, “walltime”: “24:00:00”}</p>
 </dd></dl>
 
 <dl class="py method">
@@ -250,14 +245,8 @@ example: {“n_cores_per_calculation”: 8, “ram_per_core”: 8000, “walltim
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="script_maker2000.orca.OrcaModule.restart_jobs">
-<span class="sig-name descname"><span class="pre">restart_jobs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">job_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.orca.OrcaModule.restart_jobs" title="Link to this definition"></a></dt>
-<dd><p>Restart a list of jobs that failed due to a walltime error.</p>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="script_maker2000.orca.OrcaModule.run_job">
-<span class="sig-name descname"><span class="pre">run_job</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">job</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#script_maker2000.orca.OrcaModule.run_job" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">run_job</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">job_dir</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#script_maker2000.orca.OrcaModule.run_job" title="Link to this definition"></a></dt>
 <dd><p>Interface to send the job to the server.</p>
 <dl class="simple">
 <dt>Returns:</dt><dd><p>subprocess.CompletedProcess: the process object that was created by the subprocess.run command.
