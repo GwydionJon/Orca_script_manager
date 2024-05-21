@@ -202,14 +202,12 @@ def test_start_zip_local(clean_tmp_dir, monkeypatch):
     result = runner.invoke(config_check, ["--config", main_config_path])
     assert result.exit_code == 0
 
-    print("test1")
     result = runner.invoke(
         collect_input, ["--config", main_config_path, "-o", str(prep_path)]
     )
     assert result.exit_code == 0
 
     zip_path = prep_path / "input_files.zip"
-    print("test2")
     result = runner.invoke(
         start_zip, ["--zip", zip_path, "-e", str(prep_path)], catch_exceptions=True
     )
@@ -236,9 +234,6 @@ def test_start_zip_remote(clean_tmp_dir, monkeypatch):
         catch_exceptions=True,
     )
     assert result.exit_code == 0
-    import traceback
-
-    print(traceback.print_tb(result.exc_info[2]))
 
     zip_path = prep_path / "test.tar.gz"
     result = runner.invoke(start_zip, ["--tar", zip_path, "-e", str(prep_path)])
