@@ -79,7 +79,7 @@ class TemplateModule:
         """
         raise NotImplementedError
 
-    def run_job(self, key) -> None:
+    def run_job(self, job) -> None:
         """Interface to send the job to the server.
 
         Raises:
@@ -101,5 +101,14 @@ class TemplateModule:
         """provide some method to verify if a single calculation was succesful.
         This should be handled indepentendly from the existence of this class object.
 
+        """
+        raise NotImplementedError
+
+    def restart_jobs(self, job_list, key):
+        """restart a job that failed.
+
+        Args:
+            job_list (list): list of jobs that failed.
+            key (str): the key of the job that failed.
         """
         raise NotImplementedError
