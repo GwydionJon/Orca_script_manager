@@ -10,6 +10,11 @@ from script_maker2000.job import Job
 from script_maker2000.analysis import extract_infos_from_results, parse_output_file
 
 
+orca_ram_scaling = (
+    0.65  # 75% of the available ram is used for orca this is subject to change
+)
+
+
 class OrcaModule(TemplateModule):
 
     # Handles an entire batch of orca jobs at once.
@@ -20,7 +25,7 @@ class OrcaModule(TemplateModule):
         self,
         main_config: dict,
         config_key: str,
-    ) -> None:
+    ):
         """Setup the orca files from the main config.
         Since different orca setups can be defined in the config
         we need to pass the corresponding kyword ( eg.: opimization or single_point)
@@ -60,7 +65,7 @@ class OrcaModule(TemplateModule):
         input_dir_dict = {input_dir.stem: input_dir for input_dir in input_dirs}
         return input_dir_dict
 
-    def prepare_slurm_script(self, orca_file_dict) -> Union[str, Path]:
+    def prepare_slurm_script(self, orca_file_dict, override_settings=None) -> dict:
         """
 
         Variables to fill:
@@ -74,8 +79,22 @@ class OrcaModule(TemplateModule):
         __input_file : rel path to input file (this gets copied)
         __output_file : saves the orca output (full path to original dir)
         __marked_files : str /home/usr/dir/{file1,file2,file3,file4}
+
+        override_settings: dict
+        example: {"n_cores_per_calculation": 8, "ram_per_core": 8000, "walltime": "24:00:00"}
+
         """
         options = self.internal_config["options"]
+
+        if isinstance(override_settings, dict):
+            for key, value in override_settings.items():
+                options[key] = value
+
+        elif override_settings is not None:
+            raise TypeError(
+                f"Override settings must be a dict but is {type(override_settings)}"
+            )
+
         slurm_dict = {}
         # Get current date
         current_date = datetime.datetime.now()
@@ -185,14 +204,10 @@ class OrcaModule(TemplateModule):
         example:
             {"scf": ["MAXITER 0"], "elprop": ["Polar 1","Solver C"] }
 
-
         """
 
-        orca_ram_scaling = (
-            0.75  # 75% of the available ram is used for orca this is subject to change
-        )
-
         options = self.internal_config["options"]
+
         # extract setup from config
         method = options["method"]
         basisset = options["basisset"]
@@ -234,13 +249,15 @@ class OrcaModule(TemplateModule):
 
         return orca_file_dict
 
-    def run_job(self, job_dir) -> None:
+    def run_job(self, job) -> None:
         """Interface to send the job to the server.
 
         Returns:
             subprocess.CompletedProcess: the process object that was created by the subprocess.run command.
             can be used to check for succesful submission.
         """
+
+        job_dir = job.current_dirs["input"]
         key = job_dir.stem
         slurm_file = job_dir / (key + ".sbatch")
         orca_file = job_dir / (key + ".inp")
@@ -266,35 +283,84 @@ class OrcaModule(TemplateModule):
 
         else:
             raise FileNotFoundError(
-                f"Can't find slurm file: {slurm_file} or orca file: {orca_file}."
+                f"Can't find slurm file: {slurm_file} or orca file: {orca_file} for job {job}."
                 + " Please check your file name or provide the necessary files."
             )
         return process
 
+    def restart_jobs(self, job_list, key):
+        """Restart a list of jobs that failed due to a walltime error."""
+
+        new_xyz_dict = {}
+        reset_jobs_list = []
+
+        self.log.info(f"Restarting {len(job_list)} jobs")
+
+        for job in job_list:
+
+            reset_result = job.reset_key(self.config_key)
+            if reset_result == "walltime_error":
+                continue
+
+            result_dict = OrcaModule.collect_results(job, key, "walltime_error")
+            new_key = list(result_dict.keys())[0]
+
+            last_xyz_coords = list(result_dict[new_key]["coords"].values())[-1]
+
+            new_xyz_input = [
+                f"{atom['symbol']} {atom['x']} {atom['y']} {atom['z']}"
+                for atom in last_xyz_coords
+            ]
+            new_xyz_dict[new_key] = {
+                "coords": new_xyz_input,
+                "charge": result_dict[new_key]["charge"],
+                "mul": result_dict[new_key]["mult"],
+            }
+
+            # remove the old files
+            for file in job.current_dirs["input"].glob("*"):
+                file.unlink()
+
+            reset_jobs_list.append(job)
+
+        override_slurm_settings = {
+            "walltime": self.main_config["main_config"]["max_run_time"]
+        }
+        new_orca_file_dict = self.create_orca_input_files(new_xyz_dict)
+        new_slurm_config = self.prepare_slurm_script(
+            new_orca_file_dict, override_slurm_settings
+        )
+
+        self.write_orca_scripts(new_orca_file_dict)
+        self.create_slurm_scripts(new_slurm_config)
+
+        non_reset_jobs = [job for job in job_list if job not in reset_jobs_list]
+
+        return reset_jobs_list, non_reset_jobs
+
     @classmethod
-    def collect_results(cls, job, key) -> None:
+    def collect_results(cls, job, key, results_dir="finished") -> dict:
         """Use the cclib library to extract the results from the orca output file.
-
-
 
         Args:
             job (Job): current job object to collect results from.
-
+            key (str): the key of the job to collect results from.
+            results_dir (str): the directory where the results are stored.
         Returns:
-            _type_: _description_
+            dict: _description_
         """
 
         # prepare the cclib result dict for storage
 
         # get the output file
-        if job.status_per_key[key] != "finished":
+        if job.status_per_key[key] != "finished" and results_dir == "finished":
             return None
 
         # first parse the output file and get result json
 
-        parse_output_file(job.current_dirs["finished"])
+        parse_output_file(job.current_dirs[results_dir])
 
-        result_dict = extract_infos_from_results(job.current_dirs["finished"])
+        result_dict, _ = extract_infos_from_results(job.current_dirs[results_dir])
 
         return result_dict
 
@@ -365,9 +431,8 @@ class OrcaModule(TemplateModule):
             if check_slurm_walltime_error(file_contents):
                 output_string = "walltime_error"
 
-        if not orca_out_file.exists() and not slurm_file.exists():
+        if not orca_out_file.exists() or not slurm_file.exists():
             output_string = "missing_files_error"
-
         return output_string
 
 
