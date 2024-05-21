@@ -129,7 +129,7 @@ class WorkManager:
                 if total_running_jobs >= max_jobs:
                     continue
 
-                process = self.workModule.run_job(job.current_dirs["input"])
+                process = self.workModule.run_job(job)
                 job_id = int(process.stdout.split("job ")[1])
                 job.slurm_id_per_key[self.config_key] = job_id
                 job.current_status = "submitted"
@@ -220,6 +220,9 @@ class WorkManager:
         return_status_dict = defaultdict(lambda: 0)
         overlapping_jobs_info = []
         non_existing_output = []
+
+        wall_time_error_jobs = []
+
         for job in returned_jobs:
 
             # first check if the job was successful and
@@ -233,14 +236,28 @@ class WorkManager:
 
             if not job.current_dirs["output"].exists():
                 non_existing_output.append(job)
+                print(
+                    f"Job {job.unique_job_id} has no output dir under {job.current_dirs['output']}."
+                )
                 continue
 
             work_module_status = self.workModule.check_job_status(job)
 
-            return_status_dict[work_module_status] += 1
+            # check if status is walltime error, if skip the return manager
+
+            if work_module_status == "walltime_error":
+                wall_time_error_jobs.append(job)
+
             job.manage_return(work_module_status)
-            for job in non_existing_output:
-                returned_jobs.remove(job)
+            return_status_dict[work_module_status] += 1
+
+        # remove empty jobs
+        for job in non_existing_output:
+            returned_jobs.remove(job)
+
+        # remove walltime error jobs that will be restarted
+        for job in wall_time_error_jobs:
+            returned_jobs.remove(job)
 
         self.log.info(
             f"Skipped {len(overlapping_jobs_info)} overlapping jobs as they are already done."
@@ -262,7 +279,15 @@ class WorkManager:
         self.log.warning(
             f"Managed {len(returned_jobs)} returned jobs.\n\t" + output_info
         )
-        return returned_jobs
+        return returned_jobs, wall_time_error_jobs
+
+    def restart_walltime_error_jobs(self, wall_time_error_jobs):
+
+        reset_jobs_list, non_reset_jobs = self.workModule.restart_jobs(
+            wall_time_error_jobs, self.config_key
+        )
+
+        return reset_jobs_list, non_reset_jobs
 
     def manage_finished_jobs(self, finished_jobs):
 
@@ -357,6 +382,7 @@ class WorkManager:
         n_loops = 0
         # this loop will break if all jobs are done
         while True:
+            print(f"Loop {n_loops}.")
             n_loops += 1
 
             # current_job_dict
@@ -381,8 +407,17 @@ class WorkManager:
             )
 
             # manage finished jobs
-            fresh_finished = self.manage_returned_jobs(current_job_dict["returned"])
-            current_job_dict["finished"].extend(fresh_finished)
+            fresh_finished, wall_time_error_jobs = self.manage_returned_jobs(
+                current_job_dict["returned"]
+            )
+
+            # restart walltime error jobs
+            # will be resubmitted in the next loop
+            current_job_dict["restarted_jobs"], non_resetted_jobs = (
+                self.restart_walltime_error_jobs(wall_time_error_jobs)
+            )
+
+            fresh_finished.extend(non_resetted_jobs)
 
             # check on newly finished jobs to collect efficiency data
             self.manage_finished_jobs(fresh_finished)
