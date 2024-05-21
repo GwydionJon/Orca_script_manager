@@ -250,6 +250,13 @@ def check_config(main_config, skip_file_check=False, override_continue_job=False
 
     is_multilayer = main_config["main_config"]["parallel_layer_run"]
 
+    # check if layer names are unique
+    layer_names = []
+    for loop_config in main_config["loop_config"]:
+        layer_names.append(loop_config)
+    if len(layer_names) != len(set(layer_names)):
+        raise ValueError(f"Layer snames must be unique but are {layer_names}.")
+
     step_list = []
     for loop_config in main_config["loop_config"]:
         step_list.append(int(main_config["loop_config"][loop_config]["step_id"]))
@@ -680,15 +687,12 @@ def change_entry_in_batch_config(config_name, new_status, output_dir):
             f"New status must be either 'running', 'finished' or 'deleted' but is {new_status}."
         )
 
-    for key, dir_values in batch_config.items():
-        for dir_key in ["running", "finished", "deleted"]:
-            if str(output_dir) in dir_values.get(dir_key, []):
-                batch_config[key][dir_key].remove(str(output_dir))
+    for key, dir_values in batch_config[config_name].items():
+        if str(output_dir) in dir_values and key != new_status:
+            batch_config[config_name][key].remove(str(output_dir))
 
-        if new_status not in batch_config[key].keys():
-            batch_config[key][new_status] = [str(output_dir)]
-        else:
-            batch_config[key][new_status].append(str(output_dir))
+        if key == new_status and str(output_dir) not in dir_values:
+            batch_config[config_name][key].append(str(output_dir))
 
     batch_config_path = read_batch_config_file("path")
     with open(batch_config_path, "w", encoding="utf-8") as f:
