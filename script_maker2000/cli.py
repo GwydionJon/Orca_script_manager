@@ -5,7 +5,8 @@ import shutil
 import json
 import cProfile
 import atexit
-
+import webbrowser
+from threading import Timer
 
 from script_maker2000.dash_ui.dash_main_gui import create_main_app
 from script_maker2000.files import (
@@ -17,6 +18,14 @@ from script_maker2000.files import (
 )
 from script_maker2000 import BatchManager
 from script_maker2000.remote_connection import RemoteConnection
+
+
+def open_browser(port):
+    """
+    Open browser to localhost
+    """
+
+    webbrowser.open_new(f"http://127.0.0.1:{port}")
 
 
 @click.group()
@@ -59,6 +68,8 @@ def config_creator(port, config, hostname, username, password):
     remote_connection = remote_connection_obj.connect(username, hostname, password)
 
     app = create_main_app(config, remote_connection)
+
+    Timer(1, open_browser, [port]).start()
     app.run_server(debug=True, port=port, use_reloader=False)
 
 
@@ -401,8 +412,6 @@ def collect_results(results_path, exclude_patterns=None):
 
         exclude_patterns = exclude_patterns.split(",")
         exclude_patterns = [pattern.strip() for pattern in exclude_patterns]
-
-    print(exclude_patterns)
 
     if not results_path.exists():
         click.echo(f"Results path not found at {results_path}")

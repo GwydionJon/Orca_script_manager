@@ -375,8 +375,7 @@ def create_results_file_tree(files_filter_value):
 def update_table_values(
     tree_dict_selected, table_column_input, energy_unit_select, complete_table_data
 ):
-    print("")
-    print(tree_dict_selected)
+
     selected_data = []
     for selected_entry in tree_dict_selected:
         if selected_entry == "all":
@@ -387,7 +386,6 @@ def update_table_values(
             continue
 
         selected_data.append(selected_entry)
-    print(selected_data)
     table_data, corrections_list = extract_infos_from_results(selected_data)
 
     complete_table_data = table_data

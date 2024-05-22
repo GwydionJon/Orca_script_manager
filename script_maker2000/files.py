@@ -250,6 +250,13 @@ def check_config(main_config, skip_file_check=False, override_continue_job=False
 
     is_multilayer = main_config["main_config"]["parallel_layer_run"]
 
+    # check if layer names are unique
+    layer_names = []
+    for loop_config in main_config["loop_config"]:
+        layer_names.append(loop_config)
+    if len(layer_names) != len(set(layer_names)):
+        raise ValueError(f"Layer snames must be unique but are {layer_names}.")
+
     step_list = []
     for loop_config in main_config["loop_config"]:
         step_list.append(int(main_config["loop_config"][loop_config]["step_id"]))
@@ -665,8 +672,28 @@ def read_batch_config_file(mode):
 
 
 def change_entry_in_batch_config(config_name, new_status, output_dir):
+    """
+    Change the status of an entry in the batch config.
+
+    Args:
+        config_name (str): Name of the config.
+        new_status (str): New status of the entry. Must be either 'running', 'finished', or 'deleted'.
+        output_dir (str): Output directory of the entry.
+
+    Returns:
+        str: Message indicating that the entry has been changed in the batch config.
+
+    Raises:
+        KeyError: If the config name is not found in the batch config.
+        ValueError: If the new status is not 'running', 'finished', or 'deleted'.
+    """
 
     batch_config = read_batch_config_file("dict")
+
+    batchLogger.info(
+        f"Changing {config_name}  {output_dir} to {new_status}\n"
+        + f"Current batch config: {batch_config}"
+    )
 
     if config_name not in batch_config.keys():
         error_msg = f"Can't find config name {config_name} in the batch config.\n"
@@ -675,20 +702,24 @@ def change_entry_in_batch_config(config_name, new_status, output_dir):
 
         raise KeyError(error_msg)
 
-    if new_status not in ["running", "finished", "deleted"]:
+    if new_status not in ["running", "finished"]:
         raise ValueError(
-            f"New status must be either 'running', 'finished' or 'deleted' but is {new_status}."
+            "New status must be either 'running', 'finished' or 'deleted' but is %s."
+            % new_status
         )
 
-    for key, dir_values in batch_config.items():
-        for dir_key in ["running", "finished", "deleted"]:
-            if str(output_dir) in dir_values.get(dir_key, []):
-                batch_config[key][dir_key].remove(str(output_dir))
+    for key in ["running", "finished"]:
+        dir_values = batch_config[config_name].get(key, [])
 
-        if new_status not in batch_config[key].keys():
-            batch_config[key][new_status] = [str(output_dir)]
-        else:
-            batch_config[key][new_status].append(str(output_dir))
+        if str(output_dir) in dir_values and key != new_status:
+            dir_values.remove(str(output_dir))
+            batchLogger.info("Removed %s from %s.", output_dir, key)
+
+        if key == new_status and str(output_dir) not in dir_values:
+            dir_values.append(str(output_dir))
+            batchLogger.info("Added %s to %s.", output_dir, key)
+
+        batch_config[config_name][key] = dir_values
 
     batch_config_path = read_batch_config_file("path")
     with open(batch_config_path, "w", encoding="utf-8") as f:
@@ -715,6 +746,18 @@ def check_dir_in_batch_config(output_dir):
 
 
 def add_dir_to_config(new_output_dir):
+    """
+    Add a new output directory to the batch config.
+
+    Args:
+        new_output_dir (str): The path to the new output directory.
+
+    Returns:
+        str: A message indicating whether the directory was successfully added to the config or not.
+
+    Raises:
+        FileNotFoundError: If the new output directory or any required subfolders/files are not found.
+    """
 
     new_output_dir = pathlib.Path(new_output_dir)
 
