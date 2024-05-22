@@ -33,20 +33,16 @@ def test_batch_manager(clean_tmp_dir, monkeypatch, fake_slurm_function):
     monkeypatch.setattr("shutil.which", lambda x: x)
     monkeypatch.setattr(first_worker, "wait_time", 0.2)
     monkeypatch.setattr(first_worker, "max_loop", 4)
-    print("Running first worker")
     worker_output = asyncio.run(first_worker.loop())
     assert "All jobs done after " in worker_output
 
-    print("Advancing jobs first")
     batch_manager.advance_jobs()
     second_worker = list(batch_manager.work_managers.values())[1][0]
     monkeypatch.setattr(second_worker, "wait_time", 0.2)
     monkeypatch.setattr(second_worker, "max_loop", 5)
 
-    print("Running second worker")
     worker_output = asyncio.run(second_worker.loop())
     assert "All jobs done after " in worker_output
-    print("Advancing jobs second")
     batch_manager.advance_jobs()
 
     all_results = list(batch_manager.working_dir.glob("finished/raw_results/*"))
@@ -120,10 +116,17 @@ def test_batch_loop_with_files(clean_tmp_dir, monkeypatch, fake_slurm_function):
 
     # make sure the global batch config is updated
     config_name = batch_manager.main_config["main_config"]["config_name"]
+
+    batch_config_path = read_batch_config_file("path")
+
     batch_config = read_batch_config_file("dict")
     working_dir = batch_manager.working_dir
 
     assert str(working_dir) not in batch_config[config_name]["running"]
+
+    # debug ci
+    batch_manager.log.error(batch_config_path)
+    batch_manager.log.error(batch_config)
     assert str(working_dir) in batch_config[config_name]["finished"]
 
 
