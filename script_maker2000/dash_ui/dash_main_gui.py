@@ -13,12 +13,19 @@ from script_maker2000.dash_ui.results_window import (
     add_callbacks_results,
 )
 
+from script_maker2000.dash_ui.slurm_watch_ui import (
+    create_slurm_watcher_layout,
+    add_callbacks_slurm_watcher,
+)
+
 
 def create_main_app(file_path: str, remote_connection):
 
     app = Dash("Test", external_stylesheets=[dbc.themes.LITERA])
     config_div = create_config_manager_layout(file_path)
     remote_explorer_layout = create_manager_layout()
+    slurm_watch_layout = create_slurm_watcher_layout()
+
     results_window = create_results_layout()
 
     tabs = dbc.Tabs(
@@ -33,6 +40,12 @@ def create_main_app(file_path: str, remote_connection):
                 tab_id="managment",
                 label="Managment",
                 children=[remote_explorer_layout],
+                style={"padding-top": "20px"},
+            ),
+            dbc.Tab(
+                tab_id="slurm_watcher",
+                label="Slurm Watcher",
+                children=[slurm_watch_layout],
                 style={"padding-top": "20px"},
             ),
             dbc.Tab(
@@ -54,4 +67,5 @@ def create_main_app(file_path: str, remote_connection):
 
     app = add_callbacks_remote_explorer(app, remote_connection)
     app = add_callbacks_results(app, remote_connection)
+    app = add_callbacks_slurm_watcher(app, remote_connection)
     return app
