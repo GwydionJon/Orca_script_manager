@@ -382,7 +382,6 @@ class WorkManager:
         n_loops = 0
         # this loop will break if all jobs are done
         while True:
-            print(f"Loop {n_loops}.")
             n_loops += 1
 
             # current_job_dict
