@@ -672,6 +672,21 @@ def read_batch_config_file(mode):
 
 
 def change_entry_in_batch_config(config_name, new_status, output_dir):
+    """
+    Change the status of an entry in the batch config.
+
+    Args:
+        config_name (str): Name of the config.
+        new_status (str): New status of the entry. Must be either 'running', 'finished', or 'deleted'.
+        output_dir (str): Output directory of the entry.
+
+    Returns:
+        str: Message indicating that the entry has been changed in the batch config.
+
+    Raises:
+        KeyError: If the config name is not found in the batch config.
+        ValueError: If the new status is not 'running', 'finished', or 'deleted'.
+    """
 
     batch_config = read_batch_config_file("dict")
 
@@ -687,19 +702,24 @@ def change_entry_in_batch_config(config_name, new_status, output_dir):
 
         raise KeyError(error_msg)
 
-    if new_status not in ["running", "finished", "deleted"]:
+    if new_status not in ["running", "finished"]:
         raise ValueError(
-            f"New status must be either 'running', 'finished' or 'deleted' but is {new_status}."
+            "New status must be either 'running', 'finished' or 'deleted' but is %s."
+            % new_status
         )
 
-    for key, dir_values in batch_config[config_name].items():
+    for key in ["running", "finished"]:
+        dir_values = batch_config[config_name].get(key, [])
+
         if str(output_dir) in dir_values and key != new_status:
-            batch_config[config_name][key].remove(str(output_dir))
-            batchLogger.info(f"Removed {output_dir} from {key}.")
+            dir_values.remove(str(output_dir))
+            batchLogger.info("Removed %s from %s.", output_dir, key)
 
         if key == new_status and str(output_dir) not in dir_values:
-            batch_config[config_name][key].append(str(output_dir))
-            batchLogger.info(f"Added {output_dir} to {key}.")
+            dir_values.append(str(output_dir))
+            batchLogger.info("Added %s to %s.", output_dir, key)
+
+        batch_config[config_name][key] = dir_values
 
     batch_config_path = read_batch_config_file("path")
     with open(batch_config_path, "w", encoding="utf-8") as f:
@@ -726,6 +746,18 @@ def check_dir_in_batch_config(output_dir):
 
 
 def add_dir_to_config(new_output_dir):
+    """
+    Add a new output directory to the batch config.
+
+    Args:
+        new_output_dir (str): The path to the new output directory.
+
+    Returns:
+        str: A message indicating whether the directory was successfully added to the config or not.
+
+    Raises:
+        FileNotFoundError: If the new output directory or any required subfolders/files are not found.
+    """
 
     new_output_dir = pathlib.Path(new_output_dir)
 
