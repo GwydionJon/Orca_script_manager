@@ -116,14 +116,17 @@ def test_batch_loop_with_files(clean_tmp_dir, monkeypatch, fake_slurm_function):
 
     # make sure the global batch config is updated
     config_name = batch_manager.main_config["main_config"]["config_name"]
+
+    batch_config_path = read_batch_config_file("path")
+
     batch_config = read_batch_config_file("dict")
     working_dir = batch_manager.working_dir
 
     assert str(working_dir) not in batch_config[config_name]["running"]
 
     # debug ci
-    print(batch_config[config_name])
-    batch_manager.log.error(batch_config[config_name])
+    batch_manager.log.error(batch_config_path)
+    batch_manager.log.error(batch_config)
     assert str(working_dir) in batch_config[config_name]["finished"]
 
 

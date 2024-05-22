@@ -675,6 +675,11 @@ def change_entry_in_batch_config(config_name, new_status, output_dir):
 
     batch_config = read_batch_config_file("dict")
 
+    batchLogger.info(
+        f"Changing {config_name}  {output_dir} to {new_status}\n"
+        + f"Current batch config: {batch_config}"
+    )
+
     if config_name not in batch_config.keys():
         error_msg = f"Can't find config name {config_name} in the batch config.\n"
         error_msg += "Available config names are:\n"
@@ -690,9 +695,11 @@ def change_entry_in_batch_config(config_name, new_status, output_dir):
     for key, dir_values in batch_config[config_name].items():
         if str(output_dir) in dir_values and key != new_status:
             batch_config[config_name][key].remove(str(output_dir))
+            batchLogger.info(f"Removed {output_dir} from {key}.")
 
         if key == new_status and str(output_dir) not in dir_values:
             batch_config[config_name][key].append(str(output_dir))
+            batchLogger.info(f"Added {output_dir} to {key}.")
 
     batch_config_path = read_batch_config_file("path")
     with open(batch_config_path, "w", encoding="utf-8") as f:
