@@ -339,7 +339,16 @@ This should use the slurm class provided in this module.</p>
 <dl class="py function" id="module-script_maker2000.files">
 <dt class="sig sig-object py" id="script_maker2000.files.add_dir_to_config">
 <span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">add_dir_to_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_output_dir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.add_dir_to_config" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Add a new output directory to the batch config.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>new_output_dir (str): The path to the new output directory.</p>
+</dd>
+<dt>Returns:</dt><dd><p>str: A message indicating whether the directory was successfully added to the config or not.</p>
+</dd>
+<dt>Raises:</dt><dd><p>FileNotFoundError: If the new output directory or any required subfolders/files are not found.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="script_maker2000.files.add_premade_config">
@@ -354,7 +363,19 @@ This should use the slurm class provided in this module.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="script_maker2000.files.change_entry_in_batch_config">
 <span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">change_entry_in_batch_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_status</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.change_entry_in_batch_config" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Change the status of an entry in the batch config.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>config_name (str): Name of the config.
+new_status (str): New status of the entry. Must be either ‘running’, ‘finished’, or ‘deleted’.
+output_dir (str): Output directory of the entry.</p>
+</dd>
+<dt>Returns:</dt><dd><p>str: Message indicating that the entry has been changed in the batch config.</p>
+</dd>
+<dt>Raises:</dt><dd><p>KeyError: If the config name is not found in the batch config.
+ValueError: If the new status is not ‘running’, ‘finished’, or ‘deleted’.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="script_maker2000.files.check_config">
