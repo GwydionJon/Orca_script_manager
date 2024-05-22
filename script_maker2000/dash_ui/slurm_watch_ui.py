@@ -91,6 +91,41 @@ def create_slurm_watcher_layout():
         ],
     )
 
+    table_explanation = dbc.Col(
+        [
+            dbc.Row(
+                [
+                    html.H4("Slurm Output:"),
+                    html.Br(),
+                    html.P(
+                        "This table shows the output of the sacct command. ",
+                        "You sort the table by clicking on the column headers.",
+                    ),
+                    html.Br(),
+                    html.P(
+                        "You can also filter the table by typing in the filter boxes at the top of the table."
+                    ),
+                    html.Br(),
+                    html.P(
+                        [
+                            "For more information about filtering syntax check the ",
+                            html.A(
+                                "dash wiki.",
+                                href="https://dash.plotly.com/datatable/filtering",
+                                target="_blank",
+                            ),
+                        ]
+                    ),
+                    html.Br(),
+                    html.P(
+                        "The most relevant state values are:",
+                        " CANCELLED, COMPLETED, OUT_OF_MEMORY, PENDING, RUNNING, TIMEOUT",
+                    ),
+                ]
+            )
+        ]
+    )
+
     slurm_table = dash_table.DataTable(
         id="slurm_table",
         filter_action="native",
@@ -128,6 +163,9 @@ def create_slurm_watcher_layout():
             ),
             dbc.Row(
                 slurm_update_button,
+            ),
+            dbc.Row(
+                table_explanation,
             ),
             dbc.Row(
                 slurm_table,
