@@ -287,6 +287,7 @@ def basic_connectivity_check(calc_results):
 
     first_xyz_str = first_xyz_str.strip()
 
+    # differentiate wether the data is directly parsed from orca (atomcoords) or has been extracted first (coords)
     if "coords" in calc_results:
         final_coords = list(calc_results["coords"].values())[-1]
         final_xyz_str = f"{len(final_coords)}\n\n"
