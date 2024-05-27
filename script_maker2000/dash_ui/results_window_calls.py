@@ -404,6 +404,10 @@ def update_table_values(
         {"name": ["Calculation Setup", "Method"], "id": "metadata_method"},
         {"name": ["Calculation Setup", "keywords"], "id": "metadata_keywords"},
         {"name": ["Calculation Setup", "Opt done"], "id": "optdone"},
+        {
+            "name": ["Calculation Setup", "Connectivity Check"],
+            "id": "connectivity_check",
+        },
     ]
     columns_energies = [
         {"name": ["Energies", "Final SP Energy"], "id": "final_sp_energy"},

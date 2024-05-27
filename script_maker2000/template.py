@@ -102,7 +102,7 @@ class TemplateModule:
         raise NotImplementedError
 
     @classmethod
-    def collect_results(cls, job) -> dict:
+    def collect_results(cls, job, key, results_dir="finished") -> dict:
         """Collect the results of the calculation and save in a {mol_id}_calc_result.json file in each subfolder.
 
         Raises:
@@ -118,11 +118,7 @@ class TemplateModule:
         """
         raise NotImplementedError
 
-    def restart_jobs(self, job_list, key):
-        """restart a job that failed.
-
-        Args:
-            job_list (list): list of jobs that failed.
-            key (str): the key of the job that failed.
-        """
+    @classmethod
+    def connectivity_check(cls):
+        """Check if the molecule connectivity has changed during the calculation."""
         raise NotImplementedError

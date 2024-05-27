@@ -4,8 +4,13 @@ from script_maker2000.cpu_benchmark_analysis import (
     filter_dataframe,
 )
 
-from script_maker2000.analysis import extract_infos_from_results, parse_output_file
+from script_maker2000.analysis import (
+    extract_infos_from_results,
+    parse_output_file,
+    basic_connectivity_check,
+)
 from pathlib import Path
+import pytest
 
 
 def test_extract_efficency_dataframe():
@@ -65,3 +70,218 @@ def test_parse_and_extract(analysis_tmp_dir):
     assert "Dispersion_correction" in result_dict.keys()
 
     assert result_dict["imaginary_freq"] is False
+
+
+def test_basic_connectivity_check():
+    # Test with valid dict input
+    calc_results_dict = {
+        "metadata": {"coords": [["H", 0.0, 0.0, 0.0], ["O", 0.0, 0.0, 1.0]]},
+        "coords": {
+            "0": [
+                {"symbol": "H", "x": 0.0, "y": 0.0, "z": 0.0},
+                {"symbol": "O", "x": 0.0, "y": 0.0, "z": 1.0},
+            ]
+        },
+    }
+    assert basic_connectivity_check(calc_results_dict) is True
+
+    # Test with invalid input type
+    calc_results_invalid = ["invalid", "input"]
+    with pytest.raises(ValueError):
+        basic_connectivity_check(calc_results_invalid)
+
+    # Test with dict input where the structure has changed during the calculation
+    calc_results_changed = {
+        "metadata": {
+            "coords": [
+                ["H", -2.0801425360, 0.4329727646, 0.0722817289],
+                ["C", -1.2129704155, -0.2295285634, -0.0097156258],
+                ["H", -1.2655910941, -0.9539857247, 0.8097953440],
+                ["C", 0.0849758188, 0.5590385475, 0.0510545434],
+                ["O", 1.2322305822, -0.2731895077, -0.1276123902],
+                ["H", 0.1506137362, 1.1200249874, 0.9943015309],
+                ["H", 1.2473876659, -0.8998737590, 0.6150681570],
+                ["H", 0.1316093068, 1.2841805400, -0.7645223601],
+                ["H", -1.2737541560, -0.7748626513, -0.9540587845],
+            ]
+        },
+        "coords": {
+            "0": [
+                {
+                    "symbol": "H",
+                    "x": -2.0801425360,
+                    "y": 0.4329727646,
+                    "z": 0.0722817289,
+                },
+                {
+                    "symbol": "O",
+                    "x": -1.2129704155,
+                    "y": -0.2295285634,
+                    "z": -0.0097156258,
+                },
+                {
+                    "symbol": "H",
+                    "x": -1.2655910941,
+                    "y": -0.9539857247,
+                    "z": 0.8097953440,
+                },
+                {
+                    "symbol": "C",
+                    "x": 0.0849758188,
+                    "y": 0.5590385475,
+                    "z": 0.0510545434,
+                },
+                {
+                    "symbol": "C",
+                    "x": 1.2322305822,
+                    "y": -0.2731895077,
+                    "z": -0.1276123902,
+                },
+                {
+                    "symbol": "H",
+                    "x": 0.1506137362,
+                    "y": 1.1200249874,
+                    "z": 0.9943015309,
+                },
+                {
+                    "symbol": "H",
+                    "x": 1.2473876659,
+                    "y": -0.8998737590,
+                    "z": 0.6150681570,
+                },
+                {
+                    "symbol": "H",
+                    "x": 0.1316093068,
+                    "y": 1.2841805400,
+                    "z": -0.7645223601,
+                },
+                {
+                    "symbol": "H",
+                    "x": -1.2737541560,
+                    "y": -0.7748626513,
+                    "z": -0.9540587845,
+                },
+            ]
+        },  # changed coords
+    }
+    assert basic_connectivity_check(calc_results_changed) is False
+
+    # Test with dict input where the structure has changed during the calculation and no xyz strucutre in input file
+    calc_results_changed_no_xyz_input = {
+        "metadata": {"coords": []},
+        "coords": {
+            "0": [
+                {
+                    "symbol": "H",
+                    "x": -2.0801425360,
+                    "y": 0.4329727646,
+                    "z": 0.0722817289,
+                },
+                {
+                    "symbol": "C",
+                    "x": -1.2129704155,
+                    "y": -0.2295285634,
+                    "z": -0.0097156258,
+                },
+                {
+                    "symbol": "H",
+                    "x": -1.2655910941,
+                    "y": -0.9539857247,
+                    "z": 0.8097953440,
+                },
+                {
+                    "symbol": "C",
+                    "x": 0.0849758188,
+                    "y": 0.5590385475,
+                    "z": 0.0510545434,
+                },
+                {
+                    "symbol": "O",
+                    "x": 1.2322305822,
+                    "y": -0.2731895077,
+                    "z": -0.1276123902,
+                },
+                {
+                    "symbol": "H",
+                    "x": 0.1506137362,
+                    "y": 1.1200249874,
+                    "z": 0.9943015309,
+                },
+                {
+                    "symbol": "H",
+                    "x": 1.2473876659,
+                    "y": -0.8998737590,
+                    "z": 0.6150681570,
+                },
+                {
+                    "symbol": "H",
+                    "x": 0.1316093068,
+                    "y": 1.2841805400,
+                    "z": -0.7645223601,
+                },
+                {
+                    "symbol": "H",
+                    "x": -1.2737541560,
+                    "y": -0.7748626513,
+                    "z": -0.9540587845,
+                },
+            ],
+            "1": [
+                {
+                    "symbol": "H",
+                    "x": -2.0801425360,
+                    "y": 0.4329727646,
+                    "z": 0.0722817289,
+                },
+                {
+                    "symbol": "O",
+                    "x": -1.2129704155,
+                    "y": -0.2295285634,
+                    "z": -0.0097156258,
+                },
+                {
+                    "symbol": "H",
+                    "x": -1.2655910941,
+                    "y": -0.9539857247,
+                    "z": 0.8097953440,
+                },
+                {
+                    "symbol": "C",
+                    "x": 0.0849758188,
+                    "y": 0.5590385475,
+                    "z": 0.0510545434,
+                },
+                {
+                    "symbol": "C",
+                    "x": 1.2322305822,
+                    "y": -0.2731895077,
+                    "z": -0.1276123902,
+                },
+                {
+                    "symbol": "H",
+                    "x": 0.1506137362,
+                    "y": 1.1200249874,
+                    "z": 0.9943015309,
+                },
+                {
+                    "symbol": "H",
+                    "x": 1.2473876659,
+                    "y": -0.8998737590,
+                    "z": 0.6150681570,
+                },
+                {
+                    "symbol": "H",
+                    "x": 0.1316093068,
+                    "y": 1.2841805400,
+                    "z": -0.7645223601,
+                },
+                {
+                    "symbol": "H",
+                    "x": -1.2737541560,
+                    "y": -0.7748626513,
+                    "z": -0.9540587845,
+                },
+            ],
+        },  # changed coords
+    }
+    assert basic_connectivity_check(calc_results_changed_no_xyz_input) is False
