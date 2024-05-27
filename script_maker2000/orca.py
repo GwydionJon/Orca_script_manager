@@ -341,7 +341,7 @@ class OrcaModule(TemplateModule):
     @classmethod
     def collect_results(cls, job, key, results_dir="finished") -> dict:
         """Use the cclib library to extract the results from the orca output file.
-
+        This creates a __calc_result.json file in the output directory.
         Args:
             job (Job): current job object to collect results from.
             key (str): the key of the job to collect results from.

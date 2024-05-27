@@ -4,8 +4,13 @@ from script_maker2000.cpu_benchmark_analysis import (
     filter_dataframe,
 )
 
-from script_maker2000.analysis import extract_infos_from_results, parse_output_file
+from script_maker2000.analysis import (
+    extract_infos_from_results,
+    parse_output_file,
+    basic_connectivity_check,
+)
 from pathlib import Path
+import pytest
 
 
 def test_extract_efficency_dataframe():
@@ -65,3 +70,41 @@ def test_parse_and_extract(analysis_tmp_dir):
     assert "Dispersion_correction" in result_dict.keys()
 
     assert result_dict["imaginary_freq"] is False
+
+
+def test_basic_connectivity_check():
+    # Test with valid dict input
+    calc_results_dict = {
+        "metadata": {"coords": [["H", 0.0, 0.0, 0.0], ["O", 0.0, 0.0, 1.0]]},
+        "coords": {
+            "0": [
+                {"symbol": "H", "x": 0.0, "y": 0.0, "z": 0.0},
+                {"symbol": "O", "x": 0.0, "y": 0.0, "z": 1.0},
+            ]
+        },
+    }
+    assert basic_connectivity_check(calc_results_dict) is True
+
+    # Test with invalid input type
+    calc_results_invalid = ["invalid", "input"]
+    with pytest.raises(ValueError):
+        basic_connectivity_check(calc_results_invalid)
+
+    # Test with dict input where the structure has changed during the calculation
+    calc_results_changed = {
+        "metadata": {
+            "coords": [
+                ["H", 0.0, 0.0, 0.0],
+                ["O", 0.0, 0.0, 1.0],
+                ["H", 0.0, 0.0, 12.0],
+            ]
+        },
+        "coords": {
+            "0": [
+                {"symbol": "H", "x": 0.0, "y": 0.0, "z": 0.0},
+                {"symbol": "O", "x": 0.0, "y": 0.0, "z": 2.0},
+                {"symbol": "H", "x": 0.0, "y": 0.0, "z": 1.0},
+            ]
+        },  # changed coords
+    }
+    assert basic_connectivity_check(calc_results_changed) is False

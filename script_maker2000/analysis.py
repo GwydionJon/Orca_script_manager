@@ -6,7 +6,8 @@ import cclib
 import numpy as np
 import datetime
 import plotly.graph_objects as go
-
+from rdkit import Chem
+from rdkit.Chem import AllChem
 
 single_value_entries = [
     "charge",
@@ -21,6 +22,7 @@ single_value_entries = [
     "preassure",
     "temperature",
     "zpve",
+    "connectivity_check",
 ]
 
 multi_value_entries = ["scfenergies", "final_sp_energy", "ccenergies"]
@@ -127,6 +129,7 @@ def extract_result_data(data):
                 file_dict["metadata_functional"] = value["keywords"][0]
                 file_dict["metadata_method"] = " ".join(set(value["methods"])).strip()
                 file_dict["metadata_keywords"] = " ".join(value["keywords"][1:])
+
                 if "t1_diagnostic" in value:
                     file_dict["T1 Diagnostic"] = value["t1_diagnostic"]
 
@@ -195,6 +198,9 @@ def parse_output_file(output_dir):
     cclib_attr = cclib_results.getattributes()
 
     result_dict = _convert_np_to_list(cclib_attr)
+
+    result_dict["connectivity_check"] = basic_connectivity_check(result_dict)
+
     # print("should write file")
     # save the results in a json file
     with open(
@@ -257,3 +263,65 @@ def plot_ir_spectrum(
     )
 
     return fig
+
+
+def basic_connectivity_check(calc_results):
+    """Check if the strucutre has changed during the calculation."""
+
+    if isinstance(calc_results, str) or isinstance(calc_results, Path):
+        calc_results = Path(calc_results)
+        with open(calc_results, "r", encoding="utf-8") as f:
+            calc_results = json.load(f)
+    elif isinstance(calc_results, dict):
+        pass
+    else:
+        raise ValueError(
+            f"calc_results must be a string, a Path object or a dict but is {type(calc_results)}."
+        )
+
+    original_coords = calc_results["metadata"]["coords"]
+    first_xyz_str = f"{len(original_coords)}\n\n"
+    for row in original_coords:
+        atom, *coords = row
+        first_xyz_str += f"{atom} {' '.join(map(str, coords))}\n"
+
+    first_xyz_str = first_xyz_str.strip()
+
+    if "coords" in calc_results:
+        final_coords = list(calc_results["coords"].values())[-1]
+        final_xyz_str = f"{len(final_coords)}\n\n"
+
+        for row in final_coords:
+            atom, *coords = row.values()
+            final_xyz_str += f"{atom} {' '.join(map(str, coords))}\n"
+    elif "atomcoords" in calc_results:
+        final_xyz_str = f"{len(calc_results['atomlabels'])}\n\n"
+
+        for atom, coords in zip(
+            calc_results["atomlabels"], calc_results["atomcoords"][-1]
+        ):
+            final_xyz_str += f"{atom} {' '.join(map(str, coords))}\n"
+
+    final_xyz_str = final_xyz_str.strip()
+
+    # bonds of the input structure
+    first_mol = Chem.rdmolfiles.MolFromXYZBlock(first_xyz_str)
+    AllChem.Compute2DCoords(first_mol)
+    first_mol = AllChem.AddHs(first_mol)
+    AllChem.EmbedMolecule(first_mol)
+    first_bond_list = []
+
+    for bond in first_mol.GetBonds():
+        first_bond_list.append((bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()))
+
+    # bonds of the last iteration
+    last_mol = Chem.rdmolfiles.MolFromXYZBlock(final_xyz_str)
+    AllChem.Compute2DCoords(last_mol)
+    last_mol = AllChem.AddHs(last_mol)
+    AllChem.EmbedMolecule(last_mol)
+    final_bond_list = []
+
+    for bond in last_mol.GetBonds():
+        final_bond_list.append((bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()))
+
+    return set(first_bond_list) == set(final_bond_list)

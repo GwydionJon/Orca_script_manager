@@ -62,9 +62,11 @@ def test_workmanager(clean_tmp_dir, job_dict, monkeypatch, fake_slurm_function):
 
     # check on returned jobs
     # manage finished jobs
-    _, walltime_error_jobs = work_manager.manage_returned_jobs(
+    fresh_finished, walltime_error_jobs = work_manager.manage_returned_jobs(
         current_job_dict["returned"]
     )
+
+    work_manager.manage_finished_jobs(fresh_finished)
 
     restarted_jobs, non_resetted_jobs = work_manager.restart_walltime_error_jobs(
         walltime_error_jobs
@@ -89,9 +91,11 @@ def test_workmanager(clean_tmp_dir, job_dict, monkeypatch, fake_slurm_function):
     current_job_dict["returned"].extend(
         work_manager.check_submitted_jobs(current_job_dict["submitted"])
     )
-    _, walltime_error_jobs = work_manager.manage_returned_jobs(
+    fresh_finished, walltime_error_jobs = work_manager.manage_returned_jobs(
         current_job_dict["returned"]
     )
+
+    work_manager.manage_finished_jobs(fresh_finished)
 
     assert len(walltime_error_jobs) == 4
 

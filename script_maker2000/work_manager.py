@@ -307,7 +307,10 @@ class WorkManager:
         # collect the orca output data for all jobs
 
         for job in finished_jobs:
-            self.workModule.collect_results(job, self.config_key)
+            result_dict = self.workModule.collect_results(job, self.config_key)
+
+            if result_dict and result_dict["connectivity_check"] is False:
+                self.log.warning(f"Connectivity check for {job} was not successfull!")
 
         collection_format_arguments = [
             "JobID",
