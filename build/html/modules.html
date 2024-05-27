@@ -21,7 +21,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="script_maker2000" href="script_maker2000.html" />
+    <link rel="next" title="script_maker2000.cli" href="script_maker2000_cli.html" />
     <link rel="prev" title="Welcome to script_maker2000’s documentation!" href="index.html" /> 
 </head>
 
@@ -47,7 +47,11 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Modules</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="script_maker2000.html">script_maker2000</a></li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_cli.html">script_maker2000.cli</a></li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_crest.html">script_maker2000.crest</a></li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_files.html">script_maker2000.files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_orca.html">script_maker2000.orca</a></li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_slurm.html">script_maker2000.slurm</a></li>
 </ul>
 </li>
 </ul>
@@ -80,55 +84,67 @@
 <h1>Modules<a class="headerlink" href="#modules" title="Link to this heading"></a></h1>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="script_maker2000.html">script_maker2000</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="script_maker2000.html#script_maker2000.cli.enable_profiling"><code class="docutils literal notranslate"><span class="pre">enable_profiling()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="script_maker2000.html#script_maker2000.cli.extract_zipfile"><code class="docutils literal notranslate"><span class="pre">extract_zipfile()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="script_maker2000.html#script_maker2000.cli.find_json_files"><code class="docutils literal notranslate"><span class="pre">find_json_files()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="script_maker2000.html#script_maker2000.cli.load_and_update_config"><code class="docutils literal notranslate"><span class="pre">load_and_update_config()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="script_maker2000.html#script_maker2000.cli.open_browser"><code class="docutils literal notranslate"><span class="pre">open_browser()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="script_maker2000.html#script_maker2000.cli.prepare_extract_path"><code class="docutils literal notranslate"><span class="pre">prepare_extract_path()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="script_maker2000.html#script_maker2000.cli.update_mol_json"><code class="docutils literal notranslate"><span class="pre">update_mol_json()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="script_maker2000.html#script_maker2000.orca.OrcaModule"><code class="docutils literal notranslate"><span class="pre">OrcaModule</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="script_maker2000.html#script_maker2000.orca.OrcaModule.check_job_status"><code class="docutils literal notranslate"><span class="pre">OrcaModule.check_job_status()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="script_maker2000.html#script_maker2000.orca.OrcaModule.collect_results"><code class="docutils literal notranslate"><span class="pre">OrcaModule.collect_results()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="script_maker2000.html#script_maker2000.orca.OrcaModule.create_orca_input_files"><code class="docutils literal notranslate"><span class="pre">OrcaModule.create_orca_input_files()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="script_maker2000.html#script_maker2000.orca.OrcaModule.create_slurm_scripts"><code class="docutils literal notranslate"><span class="pre">OrcaModule.create_slurm_scripts()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="script_maker2000.html#script_maker2000.orca.OrcaModule.prepare_jobs"><code class="docutils literal notranslate"><span class="pre">OrcaModule.prepare_jobs()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="script_maker2000.html#script_maker2000.orca.OrcaModule.prepare_slurm_script"><code class="docutils literal notranslate"><span class="pre">OrcaModule.prepare_slurm_script()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="script_maker2000.html#script_maker2000.orca.OrcaModule.read_xyzs"><code class="docutils literal notranslate"><span class="pre">OrcaModule.read_xyzs()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="script_maker2000.html#script_maker2000.orca.OrcaModule.restart_jobs"><code class="docutils literal notranslate"><span class="pre">OrcaModule.restart_jobs()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="script_maker2000.html#script_maker2000.orca.OrcaModule.run_job"><code class="docutils literal notranslate"><span class="pre">OrcaModule.run_job()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="script_maker2000.html#script_maker2000.orca.OrcaModule.write_orca_scripts"><code class="docutils literal notranslate"><span class="pre">OrcaModule.write_orca_scripts()</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="script_maker2000_cli.html">script_maker2000.cli</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_cli.html#script_maker2000.cli.enable_profiling"><code class="docutils literal notranslate"><span class="pre">enable_profiling()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_cli.html#script_maker2000.cli.extract_zipfile"><code class="docutils literal notranslate"><span class="pre">extract_zipfile()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_cli.html#script_maker2000.cli.find_json_files"><code class="docutils literal notranslate"><span class="pre">find_json_files()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_cli.html#script_maker2000.cli.load_and_update_config"><code class="docutils literal notranslate"><span class="pre">load_and_update_config()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_cli.html#script_maker2000.cli.open_browser"><code class="docutils literal notranslate"><span class="pre">open_browser()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_cli.html#script_maker2000.cli.prepare_extract_path"><code class="docutils literal notranslate"><span class="pre">prepare_extract_path()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_cli.html#script_maker2000.cli.update_mol_json"><code class="docutils literal notranslate"><span class="pre">update_mol_json()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="script_maker2000.html#script_maker2000.crest.CrestModule"><code class="docutils literal notranslate"><span class="pre">CrestModule</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="script_maker2000.html#script_maker2000.crest.CrestModule.check_result_integrity"><code class="docutils literal notranslate"><span class="pre">CrestModule.check_result_integrity()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="script_maker2000.html#script_maker2000.crest.CrestModule.create_slurm_script"><code class="docutils literal notranslate"><span class="pre">CrestModule.create_slurm_script()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="script_maker2000.html#script_maker2000.crest.CrestModule.run_job"><code class="docutils literal notranslate"><span class="pre">CrestModule.run_job()</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="script_maker2000_crest.html">script_maker2000.crest</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_crest.html#script_maker2000.crest.CrestModule"><code class="docutils literal notranslate"><span class="pre">CrestModule</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="script_maker2000_crest.html#script_maker2000.crest.CrestModule.check_result_integrity"><code class="docutils literal notranslate"><span class="pre">CrestModule.check_result_integrity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="script_maker2000_crest.html#script_maker2000.crest.CrestModule.create_slurm_script"><code class="docutils literal notranslate"><span class="pre">CrestModule.create_slurm_script()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="script_maker2000_crest.html#script_maker2000.crest.CrestModule.run_job"><code class="docutils literal notranslate"><span class="pre">CrestModule.run_job()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="script_maker2000.html#script_maker2000.slurm.Slurm_Script"><code class="docutils literal notranslate"><span class="pre">Slurm_Script</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="script_maker2000.html#script_maker2000.slurm.Slurm_Script.ceate_slurm_config"><code class="docutils literal notranslate"><span class="pre">Slurm_Script.ceate_slurm_config()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="script_maker2000.html#script_maker2000.slurm.Slurm_Script.submit_slurm_script"><code class="docutils literal notranslate"><span class="pre">Slurm_Script.submit_slurm_script()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="script_maker2000.html#script_maker2000.files.add_dir_to_config"><code class="docutils literal notranslate"><span class="pre">add_dir_to_config()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="script_maker2000.html#script_maker2000.files.add_premade_config"><code class="docutils literal notranslate"><span class="pre">add_premade_config()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="script_maker2000.html#script_maker2000.files.automatic_ressource_allocation"><code class="docutils literal notranslate"><span class="pre">automatic_ressource_allocation()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="script_maker2000.html#script_maker2000.files.change_entry_in_batch_config"><code class="docutils literal notranslate"><span class="pre">change_entry_in_batch_config()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="script_maker2000.html#script_maker2000.files.check_config"><code class="docutils literal notranslate"><span class="pre">check_config()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="script_maker2000.html#script_maker2000.files.check_dir_in_batch_config"><code class="docutils literal notranslate"><span class="pre">check_dir_in_batch_config()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="script_maker2000.html#script_maker2000.files.check_input_files"><code class="docutils literal notranslate"><span class="pre">check_input_files()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="script_maker2000.html#script_maker2000.files.collect_input_files"><code class="docutils literal notranslate"><span class="pre">collect_input_files()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="script_maker2000.html#script_maker2000.files.collect_results_"><code class="docutils literal notranslate"><span class="pre">collect_results_()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="script_maker2000.html#script_maker2000.files.collect_xyz_files_to_dict"><code class="docutils literal notranslate"><span class="pre">collect_xyz_files_to_dict()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="script_maker2000.html#script_maker2000.files.create_working_dir_structure"><code class="docutils literal notranslate"><span class="pre">create_working_dir_structure()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="script_maker2000.html#script_maker2000.files.read_batch_config_file"><code class="docutils literal notranslate"><span class="pre">read_batch_config_file()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="script_maker2000.html#script_maker2000.files.read_config"><code class="docutils literal notranslate"><span class="pre">read_config()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="script_maker2000.html#script_maker2000.files.read_mol_input_json"><code class="docutils literal notranslate"><span class="pre">read_mol_input_json()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="script_maker2000.html#script_maker2000.files.read_premade_config"><code class="docutils literal notranslate"><span class="pre">read_premade_config()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="script_maker2000.html#script_maker2000.files.remove_premade_config"><code class="docutils literal notranslate"><span class="pre">remove_premade_config()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="script_maker2000.html#script_maker2000.files.replace_empty_with_empty_string"><code class="docutils literal notranslate"><span class="pre">replace_empty_with_empty_string()</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="script_maker2000_files.html">script_maker2000.files</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_files.html#script_maker2000.files.add_dir_to_config"><code class="docutils literal notranslate"><span class="pre">add_dir_to_config()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_files.html#script_maker2000.files.add_premade_config"><code class="docutils literal notranslate"><span class="pre">add_premade_config()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_files.html#script_maker2000.files.automatic_ressource_allocation"><code class="docutils literal notranslate"><span class="pre">automatic_ressource_allocation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_files.html#script_maker2000.files.change_entry_in_batch_config"><code class="docutils literal notranslate"><span class="pre">change_entry_in_batch_config()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_files.html#script_maker2000.files.check_config"><code class="docutils literal notranslate"><span class="pre">check_config()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_files.html#script_maker2000.files.check_dir_in_batch_config"><code class="docutils literal notranslate"><span class="pre">check_dir_in_batch_config()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_files.html#script_maker2000.files.check_input_files"><code class="docutils literal notranslate"><span class="pre">check_input_files()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_files.html#script_maker2000.files.collect_input_files"><code class="docutils literal notranslate"><span class="pre">collect_input_files()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_files.html#script_maker2000.files.collect_results_"><code class="docutils literal notranslate"><span class="pre">collect_results_()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_files.html#script_maker2000.files.collect_xyz_files_to_dict"><code class="docutils literal notranslate"><span class="pre">collect_xyz_files_to_dict()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_files.html#script_maker2000.files.create_working_dir_structure"><code class="docutils literal notranslate"><span class="pre">create_working_dir_structure()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_files.html#script_maker2000.files.read_batch_config_file"><code class="docutils literal notranslate"><span class="pre">read_batch_config_file()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_files.html#script_maker2000.files.read_config"><code class="docutils literal notranslate"><span class="pre">read_config()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_files.html#script_maker2000.files.read_mol_input_json"><code class="docutils literal notranslate"><span class="pre">read_mol_input_json()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_files.html#script_maker2000.files.read_premade_config"><code class="docutils literal notranslate"><span class="pre">read_premade_config()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_files.html#script_maker2000.files.remove_premade_config"><code class="docutils literal notranslate"><span class="pre">remove_premade_config()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_files.html#script_maker2000.files.replace_empty_with_empty_string"><code class="docutils literal notranslate"><span class="pre">replace_empty_with_empty_string()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="script_maker2000_orca.html">script_maker2000.orca</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_orca.html#script_maker2000.orca.OrcaModule"><code class="docutils literal notranslate"><span class="pre">OrcaModule</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="script_maker2000_orca.html#script_maker2000.orca.OrcaModule.check_job_status"><code class="docutils literal notranslate"><span class="pre">OrcaModule.check_job_status()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="script_maker2000_orca.html#script_maker2000.orca.OrcaModule.collect_results"><code class="docutils literal notranslate"><span class="pre">OrcaModule.collect_results()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="script_maker2000_orca.html#script_maker2000.orca.OrcaModule.create_orca_input_files"><code class="docutils literal notranslate"><span class="pre">OrcaModule.create_orca_input_files()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="script_maker2000_orca.html#script_maker2000.orca.OrcaModule.create_slurm_scripts"><code class="docutils literal notranslate"><span class="pre">OrcaModule.create_slurm_scripts()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="script_maker2000_orca.html#script_maker2000.orca.OrcaModule.prepare_jobs"><code class="docutils literal notranslate"><span class="pre">OrcaModule.prepare_jobs()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="script_maker2000_orca.html#script_maker2000.orca.OrcaModule.prepare_slurm_script"><code class="docutils literal notranslate"><span class="pre">OrcaModule.prepare_slurm_script()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="script_maker2000_orca.html#script_maker2000.orca.OrcaModule.read_xyzs"><code class="docutils literal notranslate"><span class="pre">OrcaModule.read_xyzs()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="script_maker2000_orca.html#script_maker2000.orca.OrcaModule.restart_jobs"><code class="docutils literal notranslate"><span class="pre">OrcaModule.restart_jobs()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="script_maker2000_orca.html#script_maker2000.orca.OrcaModule.run_job"><code class="docutils literal notranslate"><span class="pre">OrcaModule.run_job()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="script_maker2000_orca.html#script_maker2000.orca.OrcaModule.write_orca_scripts"><code class="docutils literal notranslate"><span class="pre">OrcaModule.write_orca_scripts()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="script_maker2000_slurm.html">script_maker2000.slurm</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_slurm.html#script_maker2000.slurm.Slurm_Script"><code class="docutils literal notranslate"><span class="pre">Slurm_Script</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="script_maker2000_slurm.html#script_maker2000.slurm.Slurm_Script.ceate_slurm_config"><code class="docutils literal notranslate"><span class="pre">Slurm_Script.ceate_slurm_config()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="script_maker2000_slurm.html#script_maker2000.slurm.Slurm_Script.submit_slurm_script"><code class="docutils literal notranslate"><span class="pre">Slurm_Script.submit_slurm_script()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -140,7 +156,7 @@
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="index.html" class="btn btn-neutral float-left" title="Welcome to script_maker2000’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="script_maker2000.html" class="btn btn-neutral float-right" title="script_maker2000" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="script_maker2000_cli.html" class="btn btn-neutral float-right" title="script_maker2000.cli" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

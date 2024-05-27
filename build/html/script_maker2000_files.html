@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>script_maker2000.files &mdash; script_maker2000 2024 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=6fefd858"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="script_maker2000.orca" href="script_maker2000_orca.html" />
+    <link rel="prev" title="script_maker2000.crest" href="script_maker2000_crest.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            script_maker2000
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">Modules</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_cli.html">script_maker2000.cli</a></li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_crest.html">script_maker2000.crest</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">script_maker2000.files</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.add_dir_to_config"><code class="docutils literal notranslate"><span class="pre">add_dir_to_config()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.add_premade_config"><code class="docutils literal notranslate"><span class="pre">add_premade_config()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.automatic_ressource_allocation"><code class="docutils literal notranslate"><span class="pre">automatic_ressource_allocation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.change_entry_in_batch_config"><code class="docutils literal notranslate"><span class="pre">change_entry_in_batch_config()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.check_config"><code class="docutils literal notranslate"><span class="pre">check_config()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.check_dir_in_batch_config"><code class="docutils literal notranslate"><span class="pre">check_dir_in_batch_config()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.check_input_files"><code class="docutils literal notranslate"><span class="pre">check_input_files()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.collect_input_files"><code class="docutils literal notranslate"><span class="pre">collect_input_files()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.collect_results_"><code class="docutils literal notranslate"><span class="pre">collect_results_()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.collect_xyz_files_to_dict"><code class="docutils literal notranslate"><span class="pre">collect_xyz_files_to_dict()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.create_working_dir_structure"><code class="docutils literal notranslate"><span class="pre">create_working_dir_structure()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.read_batch_config_file"><code class="docutils literal notranslate"><span class="pre">read_batch_config_file()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.read_config"><code class="docutils literal notranslate"><span class="pre">read_config()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.read_mol_input_json"><code class="docutils literal notranslate"><span class="pre">read_mol_input_json()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.read_premade_config"><code class="docutils literal notranslate"><span class="pre">read_premade_config()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.remove_premade_config"><code class="docutils literal notranslate"><span class="pre">remove_premade_config()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.files.replace_empty_with_empty_string"><code class="docutils literal notranslate"><span class="pre">replace_empty_with_empty_string()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_orca.html">script_maker2000.orca</a></li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_slurm.html">script_maker2000.slurm</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">script_maker2000</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">Modules</a></li>
+      <li class="breadcrumb-item active">script_maker2000.files</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/script_maker2000_files.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-script_maker2000.files">
+<span id="script-maker2000-files"></span><h1>script_maker2000.files<a class="headerlink" href="#module-script_maker2000.files" title="Link to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="script_maker2000.files.add_dir_to_config">
+<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">add_dir_to_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_output_dir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.add_dir_to_config" title="Link to this definition"></a></dt>
+<dd><p>Add a new output directory to the batch config.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>new_output_dir (str): The path to the new output directory.</p>
+</dd>
+<dt>Returns:</dt><dd><p>str: A message indicating whether the directory was successfully added to the config or not.</p>
+</dd>
+<dt>Raises:</dt><dd><p>FileNotFoundError: If the new output directory or any required subfolders/files are not found.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="script_maker2000.files.add_premade_config">
+<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">add_premade_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_config_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">override_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.add_premade_config" title="Link to this definition"></a></dt>
+<dd><p>Adds a premade configuration to the existing premade configurations.</p>
+<dl>
+<dt>Args:</dt><dd><p>config_path (str or dict): The path to the configuration file or
+a dictionary containing the configuration.
+return_config_name (bool, optional): Whether to return the name of the added configuration.
+Defaults to False.
+override_config (bool, optional): Whether to override an existing configuration with the same name.
+Defaults to False.</p>
+</dd>
+<dt>Returns:</dt><dd><p>str or tuple: If <cite>return_config_name</cite> is True, returns a tuple containing the output
+text and the name of the added configuration.</p>
+<blockquote>
+<div><p>Otherwise, returns the output text as a string.</p>
+</div></blockquote>
+</dd>
+<dt>Raises:</dt><dd><p>FileNotFoundError: If the specified configuration file does not exist.
+JSONDecodeError: If the configuration file is not a valid JSON file.
+KeyError: If the configuration file does not contain the required keys.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="script_maker2000.files.automatic_ressource_allocation">
+<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">automatic_ressource_allocation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">main_config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.automatic_ressource_allocation" title="Link to this definition"></a></dt>
+<dd><p>Automatically allocates resources for job execution based on the provided main configuration.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>main_config (dict): The main configuration containing input file path, loop configuration, and resource limits.</p>
+</dd>
+<dt>Returns:</dt><dd><p>tuple: A tuple containing the updated main configuration and a dictionary of changes made.</p>
+</dd>
+<dt>Raises:</dt><dd><p>FileNotFoundError: If the input file path is not found.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="script_maker2000.files.change_entry_in_batch_config">
+<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">change_entry_in_batch_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_status</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.change_entry_in_batch_config" title="Link to this definition"></a></dt>
+<dd><p>Change the status of an entry in the batch config.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>config_name (str): Name of the config.
+new_status (str): New status of the entry. Must be either ‘running’, ‘finished’, or ‘deleted’.
+output_dir (str): Output directory of the entry.</p>
+</dd>
+<dt>Returns:</dt><dd><p>str: Message indicating that the entry has been changed in the batch config.</p>
+</dd>
+<dt>Raises:</dt><dd><p>KeyError: If the config name is not found in the batch config.
+ValueError: If the new status is not ‘running’, ‘finished’, or ‘deleted’.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="script_maker2000.files.check_config">
+<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">check_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">main_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_file_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">override_continue_job</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.check_config" title="Link to this definition"></a></dt>
+<dd><p>This function checks the main configuration for the necessary keys and values.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>main_config (dict or str): The main configuration dictionary or the path to the configuration file.
+skip_file_check (bool, optional): Whether to skip the file path and format checks. Defaults to False.
+override_continue_job (bool, optional): Whether to override the “continue_previous_run”
+option in the main config. Defaults to False.</p>
+</dd>
+<dt>Raises:</dt><dd><p>ValueError: If the main configuration is missing required keys or has invalid values.
+FileExistsError: If the output directory already has subfolders setup and “continue_previous_run” is False.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="script_maker2000.files.check_dir_in_batch_config">
+<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">check_dir_in_batch_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.check_dir_in_batch_config" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="script_maker2000.files.check_input_files">
+<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">check_input_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">main_config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.check_input_files" title="Link to this definition"></a></dt>
+<dd><p>Check if the input files specified in the main configuration exist and have the correct format.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>main_config (dict): The main configuration dictionary.</p>
+</dd>
+<dt>Raises:</dt><dd><p>FileNotFoundError: If the input file path is not provided or the input files cannot be found.
+ValueError: If the input file is not in JSON format or if no XYZ files are found in the input directory.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="script_maker2000.files.collect_input_files">
+<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">collect_input_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preparation_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zip_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.collect_input_files" title="Link to this definition"></a></dt>
+<dd><p>Collects all input files (xyz, config, csv) and puts them into a single zipball.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>config_path (str): Path to the config file.
+preparation_dir (str): Path to the directory where the input files will be prepared.
+config_name (str, optional): Name of the config file. If not provided, the original name will be used.
+Defaults to None.
+zip_name (str, optional): Name of the zipball. If not provided, a default name will be used. Defaults to None.</p>
+</dd>
+<dt>Returns:</dt><dd><p>pathlib.Path: Path to the created zipball.</p>
+</dd>
+<dt>Raises:</dt><dd><p>ValueError: If config is given as a dict, but config_name is not provided.
+FileNotFoundError: If no input files are provided.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="script_maker2000.files.collect_results_">
+<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">collect_results_</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude_patterns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.collect_results_" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="script_maker2000.files.collect_xyz_files_to_dict">
+<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">collect_xyz_files_to_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xyz_dir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.collect_xyz_files_to_dict" title="Link to this definition"></a></dt>
+<dd><p>Collects all xyz files in a directory and returns them as a dictionary.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>xyz_dir (str): Path to the directory containing the xyz files.</p>
+</dd>
+<dt>Returns:</dt><dd><p>dict: Dictionary with the xyz files, where the keys are the file names without the extension
+and the values are dictionaries containing the file path, key, charge, and multiplicity.</p>
+</dd>
+<dt>Raises:</dt><dd><p>FileNotFoundError: If the specified directory does not exist.
+ValueError: If a file in the directory does not match the expected pattern.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="script_maker2000.files.create_working_dir_structure">
+<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">create_working_dir_structure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">main_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.create_working_dir_structure" title="Link to this definition"></a></dt>
+<dd><p>This function generates the data structure for further calculations.
+It creates a main folder with subfolders for crest, optimization, sp, and result.
+Each subfolder contains an input and an output folder.
+These folders store molecule files and slurm files.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>main_config (dict): The main configuration dictionary containing the necessary information.</p>
+</dd>
+<dt>Returns:</dt><dd><p>output_dir (pathlib.Path): The path to the main output directory.
+new_input_path (pathlib.Path): The path to the new input folder.
+new_json_file (pathlib.Path): The path to the new JSON file.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="script_maker2000.files.read_batch_config_file">
+<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">read_batch_config_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.read_batch_config_file" title="Link to this definition"></a></dt>
+<dd><p>Read the global config file and check if any paths are pointing to non-existing files.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>mode (str): path or dict</p>
+</dd>
+<dt>Returns:</dt><dd><p>str|dict: either the config path or the config dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="script_maker2000.files.read_config">
+<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">read_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">perform_validation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">override_continue_job</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.read_config" title="Link to this definition"></a></dt>
+<dd><p>Read and provide the main configuration from a file or dictionary.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>config_file (str or dict): Path to the configuration file or the configuration dictionary.
+perform_validation (bool, optional): Whether to perform validation on the configuration. Defaults to True.
+override_continue_job (bool, optional): Whether to override the “continue_previous_run”
+option in the main config. Defaults to False.</p>
+</dd>
+<dt>Returns:</dt><dd><p>dict: The main configuration dictionary.</p>
+</dd>
+<dt>Raises:</dt><dd><p>FileNotFoundError: If the configuration file cannot be found.
+ValueError: If the configuration file is not in JSON format.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="script_maker2000.files.read_mol_input_json">
+<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">read_mol_input_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_json</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_file_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.read_mol_input_json" title="Link to this definition"></a></dt>
+<dd><p>Read the molecule input JSON file and perform consistency checks on the file paths and values.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>input_json (str): The path to the molecule input JSON file.
+skip_file_check (bool, optional): Whether to skip the file path and format checks. Defaults to False.</p>
+</dd>
+<dt>Returns:</dt><dd><p>dict: The molecule input dictionary.</p>
+</dd>
+<dt>Raises:</dt><dd><p>FileNotFoundError: If a file specified in the JSON does not exist.
+ValueError: If the file format is not XYZ or if the file name
+does not match the specified key, charge, or multiplicity.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="script_maker2000.files.read_premade_config">
+<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">read_premade_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.read_premade_config" title="Link to this definition"></a></dt>
+<dd><p>Reads a premade configuration file and returns the configuration data.</p>
+<p>Parameters:
+- mode (str): The mode in which to read the configuration file. Must be one of “path”, “dict”, or “both”.</p>
+<p>Returns:
+- If mode is “path”, returns the path to the configuration file.
+- If mode is “dict”, returns the configuration data as a dictionary.
+- If mode is “both”, returns a tuple containing the path to the configuration file and the configuration data.</p>
+<p>Raises:
+- ValueError: If the mode is not one of “path”, “dict”, or “both”.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="script_maker2000.files.remove_premade_config">
+<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">remove_premade_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.remove_premade_config" title="Link to this definition"></a></dt>
+<dd><p>Removes a premade config from the list of premade configs.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>config_name (str): The name of the config to be removed.</p>
+</dd>
+<dt>Returns:</dt><dd><p>str: A message indicating whether the config was successfully removed or not.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="script_maker2000.files.replace_empty_with_empty_string">
+<span class="sig-prename descclassname"><span class="pre">script_maker2000.files.</span></span><span class="sig-name descname"><span class="pre">replace_empty_with_empty_string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.files.replace_empty_with_empty_string" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="script_maker2000_crest.html" class="btn btn-neutral float-left" title="script_maker2000.crest" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="script_maker2000_orca.html" class="btn btn-neutral float-right" title="script_maker2000.orca" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Gwydion Daskalakis, Manuel Schmitt.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

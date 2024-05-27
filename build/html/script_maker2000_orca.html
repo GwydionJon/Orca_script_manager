@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>script_maker2000.orca &mdash; script_maker2000 2024 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=6fefd858"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="script_maker2000.slurm" href="script_maker2000_slurm.html" />
+    <link rel="prev" title="script_maker2000.files" href="script_maker2000_files.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            script_maker2000
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">Modules</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_cli.html">script_maker2000.cli</a></li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_crest.html">script_maker2000.crest</a></li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_files.html">script_maker2000.files</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">script_maker2000.orca</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#script_maker2000.orca.OrcaModule"><code class="docutils literal notranslate"><span class="pre">OrcaModule</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.OrcaModule.check_job_status"><code class="docutils literal notranslate"><span class="pre">OrcaModule.check_job_status()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.OrcaModule.collect_results"><code class="docutils literal notranslate"><span class="pre">OrcaModule.collect_results()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.OrcaModule.create_orca_input_files"><code class="docutils literal notranslate"><span class="pre">OrcaModule.create_orca_input_files()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.OrcaModule.create_slurm_scripts"><code class="docutils literal notranslate"><span class="pre">OrcaModule.create_slurm_scripts()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.OrcaModule.prepare_jobs"><code class="docutils literal notranslate"><span class="pre">OrcaModule.prepare_jobs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.OrcaModule.prepare_slurm_script"><code class="docutils literal notranslate"><span class="pre">OrcaModule.prepare_slurm_script()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.OrcaModule.read_xyzs"><code class="docutils literal notranslate"><span class="pre">OrcaModule.read_xyzs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.OrcaModule.restart_jobs"><code class="docutils literal notranslate"><span class="pre">OrcaModule.restart_jobs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.OrcaModule.run_job"><code class="docutils literal notranslate"><span class="pre">OrcaModule.run_job()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#script_maker2000.orca.OrcaModule.write_orca_scripts"><code class="docutils literal notranslate"><span class="pre">OrcaModule.write_orca_scripts()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_slurm.html">script_maker2000.slurm</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">script_maker2000</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">Modules</a></li>
+      <li class="breadcrumb-item active">script_maker2000.orca</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/script_maker2000_orca.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-script_maker2000.orca">
+<span id="script-maker2000-orca"></span><h1>script_maker2000.orca<a class="headerlink" href="#module-script_maker2000.orca" title="Link to this heading"></a></h1>
+<p>This module provides functionality for working with ORCA files and preparing jobs for the ORCA module.</p>
+<p>The module contains the following classes:
+- OrcaModule: A class for setting up ORCA files and preparing jobs for the ORCA module.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="script_maker2000.orca.OrcaModule">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">script_maker2000.orca.</span></span><span class="sig-name descname"><span class="pre">OrcaModule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">main_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.orca.OrcaModule" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">TemplateModule</span></code></p>
+<p>Initializes an OrcaModule object.</p>
+<p>This method sets up the orca files from the main config.
+Since different orca setups can be defined in the config,
+we need to pass the corresponding keyword (e.g., optimization or single_point).</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>main_config (dict): The main configuration dictionary containing all the setup information.
+config_key (str): The key corresponding to the specific orca setup in the main configuration.</p>
+</dd>
+<dt>Raises:</dt><dd><p>NotImplementedError: If a required method or feature is not implemented in a subclass.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="script_maker2000.orca.OrcaModule.check_job_status">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">check_job_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">job</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Job</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#script_maker2000.orca.OrcaModule.check_job_status" title="Link to this definition"></a></dt>
+<dd><p>Checks the status of a job by examining the ORCA output file and the SLURM file.</p>
+<p>This function checks for various types of errors in the ORCA output file and the SLURM file.
+It returns a string indicating the status of the job: “success”, “missing_ram_error”, “walltime_error”,
+“missing_files_error”, or “unknown_error”.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>job (Job): The job object to check the status of.</p>
+</dd>
+<dt>Returns:</dt><dd><p>str: A string indicating the status of the job.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="script_maker2000.orca.OrcaModule.collect_results">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">collect_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">job</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">results_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'finished'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#script_maker2000.orca.OrcaModule.collect_results" title="Link to this definition"></a></dt>
+<dd><p>Uses the cclib library to extract the results from the ORCA output file.</p>
+<p>This function checks if the job’s status for the given key is
+“finished” and if the results directory is “finished”.
+If both conditions are met, it parses the output file and extracts the results.
+The results are then returned as a dictionary.
+If the conditions are not met, the function returns None.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>job (Job): The current job object to collect results from.
+key (str): The key of the job to collect results from.
+results_dir (str, optional): The directory where the results are stored. Defaults to “finished”.</p>
+</dd>
+<dt>Returns:</dt><dd><p>dict: A dictionary containing the results extracted from the ORCA output file.
+If the job’s status for the given key
+is not “finished” or the results directory is not “finished”, returns None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="script_maker2000.orca.OrcaModule.create_orca_input_files">
+<span class="sig-name descname"><span class="pre">create_orca_input_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xyz_dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.orca.OrcaModule.create_orca_input_files" title="Link to this definition"></a></dt>
+<dd><p>Creates ORCA input files based on the provided XYZ dictionary and internal configuration.</p>
+<p>The internal configuration should include the following options:</p>
+<ul class="simple">
+<li><p>method: The computational method to use.</p></li>
+<li><p>basisset: The basis set to use.</p></li>
+<li><p>additional_settings: Any additional settings for the calculation.</p></li>
+<li><p>ram_per_core: The amount of RAM to allocate per core.</p></li>
+<li><p>n_cores_per_calculation: The number of cores to use for the calculation.</p></li>
+<li><p>args: Any additional arguments for the calculation.</p></li>
+</ul>
+<dl class="simple">
+<dt>Args:</dt><dd><p>xyz_dict (dict): A dictionary containing XYZ coordinates for the molecules.</p>
+</dd>
+<dt>Example for additional arguments in the internal configuration:</dt><dd><p>{“scf”: [“MAXITER 0”], “elprop”: [“Polar 1”,”Solver C”] }</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="script_maker2000.orca.OrcaModule.create_slurm_scripts">
+<span class="sig-name descname"><span class="pre">create_slurm_scripts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slurm_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span></span></span><a class="headerlink" href="#script_maker2000.orca.OrcaModule.create_slurm_scripts" title="Link to this definition"></a></dt>
+<dd><p>Creates slurm scripts for each configuration in the slurm_config dictionary.</p>
+<p>This function reads a slurm template file,
+replaces placeholders in the template with values from the slurm_config dictionary,
+and writes the resulting slurm script to a new file in the working directory.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>slurm_config (dict, optional): A dictionary containing slurm configurations.
+Each key is a filename stem and each value is a dictionary of placeholders and their replacements.</p>
+</dd>
+<dt>Returns:</dt><dd><p>dict: A dictionary mapping filename stems to the paths of the created slurm scripts.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="script_maker2000.orca.OrcaModule.prepare_jobs">
+<span class="sig-name descname"><span class="pre">prepare_jobs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_dirs</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#script_maker2000.orca.OrcaModule.prepare_jobs" title="Link to this definition"></a></dt>
+<dd><p>Prepares the jobs for the Orca module.</p>
+<p>This method reads XYZ files from the input directories,
+creates ORCA input files and slurm scripts,
+and returns a dictionary mapping directory stems to directory paths.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>input_dirs (list): A list of directories to read the XYZ files from.
+kwargs: Arbitrary keyword arguments.</p>
+</dd>
+<dt>Returns:</dt><dd><p>dict: A dictionary mapping directory stems to directory paths.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="script_maker2000.orca.OrcaModule.prepare_slurm_script">
+<span class="sig-name descname"><span class="pre">prepare_slurm_script</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">orca_file_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">override_settings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#script_maker2000.orca.OrcaModule.prepare_slurm_script" title="Link to this definition"></a></dt>
+<dd><p>Prepares a dictionary with the necessary variables to fill for a SLURM script.</p>
+<p>Variables to fill:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>__jobname (str): Job name.</p></li>
+<li><p>__ntasks (int): Number of tasks.</p></li>
+<li><p>__memcore (int): Memory per core.</p></li>
+<li><p>__walltime (str): Wall time.</p></li>
+<li><p>__scratchsize (int): Scratch size.</p></li>
+<li><p>__input_dir (str): Full path to the original input directory.</p></li>
+<li><p>__output_dir (str): Full path to the original output directory.</p></li>
+<li><p>__input_file (str): Relative path to the input file (this gets copied).</p></li>
+<li><p>__output_file (str): Saves the ORCA output (full path to the original directory).</p></li>
+<li><p>__marked_files (str): File paths in the format “/home/usr/dir/{file1,file2,file3,file4}”.</p></li>
+</ul>
+</div></blockquote>
+<dl>
+<dt>Args:</dt><dd><p>orca_file_dict (dict): Dictionary with ORCA file information.
+override_settings (dict, optional): Dictionary with settings to override.</p>
+<p>Example: {“n_cores_per_calculation”: 8, “ram_per_core”: 8000, “walltime”: “24:00:00”}</p>
+</dd>
+<dt>Returns:</dt><dd><p>dict: Dictionary with the variables to fill for the SLURM script.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="script_maker2000.orca.OrcaModule.read_xyzs">
+<span class="sig-name descname"><span class="pre">read_xyzs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_files</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multiplicity_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.orca.OrcaModule.read_xyzs" title="Link to this definition"></a></dt>
+<dd><p>Reads XYZ files and returns a dictionary with the file information.</p>
+<p>This function reads each XYZ file in the input_files list, extracts the coordinates,
+and stores them in a dictionary along with the charge and multiplicity.
+The dictionary is keyed by the stem of the XYZ file path.
+Each XYZ file is then moved to a new directory in the working directory.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>input_files (list): A list of paths to the XYZ files.
+charge_list (list): A list of charges corresponding to the XYZ files.
+multiplicity_list (list): A list of multiplicities corresponding to the XYZ files.</p>
+</dd>
+<dt>Returns:</dt><dd><p>dict: A dictionary containing the coordinates, charge, and multiplicity for each XYZ file,
+keyed by the stem of the XYZ file path.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="script_maker2000.orca.OrcaModule.restart_jobs">
+<span class="sig-name descname"><span class="pre">restart_jobs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">job_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.orca.OrcaModule.restart_jobs" title="Link to this definition"></a></dt>
+<dd><p>Restarts a list of jobs that failed due to a walltime error.</p>
+<p>This function iterates over the provided list of jobs, resetting each job and collecting the results.
+If the job failed due to a walltime error, it is skipped. Otherwise, the function collects the results
+of the job, creates a new XYZ input file based on the last coordinates of the job, and appends the job
+to a list of reset jobs. After all jobs have been processed, the function creates new ORCA input files
+and SLURM scripts for the reset jobs, and returns a tuple containing the list of reset jobs and a list
+of jobs that were not reset.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>job_list (list): A list of Job objects to be restarted.
+key (str): The key to use when collecting the results of each job.</p>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>tuple: A tuple containing two lists. The first list contains the Job objects that were reset. The</dt><dd><p>second list contains the Job objects that were not reset.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="script_maker2000.orca.OrcaModule.run_job">
+<span class="sig-name descname"><span class="pre">run_job</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">job</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#script_maker2000.orca.OrcaModule.run_job" title="Link to this definition"></a></dt>
+<dd><p>Submits a job to the server using the SLURM workload manager.</p>
+<p>This function checks if the necessary SLURM and ORCA input files exist in the job’s input directory.
+If they do, it submits the job using the <cite>sbatch</cite> command. If the <cite>sbatch</cite> command is not found,
+it raises a ValueError. If the necessary input files are not found, it raises a FileNotFoundError.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>job (Job): The job object to be submitted. The job object should have a <cite>current_dirs</cite> attribute</dt><dd><p>that is a dictionary with a key “input” that maps to the directory containing the job’s
+input files. The name of the job is assumed to be the stem of this directory.</p>
+</dd>
+</dl>
+</dd>
+<dt>Raises:</dt><dd><p>ValueError: If the <cite>sbatch</cite> command is not found in the system’s PATH.
+FileNotFoundError: If the necessary SLURM or ORCA input files are not found in the job’s input directory.</p>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>subprocess.CompletedProcess: The process object that was created by the subprocess.run command.</dt><dd><p>This object can be used to check if the job was submitted successfully.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="script_maker2000.orca.OrcaModule.write_orca_scripts">
+<span class="sig-name descname"><span class="pre">write_orca_scripts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">orca_file_dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.orca.OrcaModule.write_orca_scripts" title="Link to this definition"></a></dt>
+<dd><p>Writes ORCA input files for each entry in the orca_file_dict dictionary.</p>
+<p>This function creates a new directory for each ORCA input file, writes the input data to the file,
+and stores the path of the created file in a dictionary.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>orca_file_dict (dict): A dictionary containing ORCA input data.
+Each key is a filename stem and each value is a list of lines to write to the file.</p>
+</dd>
+<dt>Returns:</dt><dd><p>dict: A dictionary mapping filename stems to the paths of the created ORCA input files.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="script_maker2000_files.html" class="btn btn-neutral float-left" title="script_maker2000.files" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="script_maker2000_slurm.html" class="btn btn-neutral float-right" title="script_maker2000.slurm" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Gwydion Daskalakis, Manuel Schmitt.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
