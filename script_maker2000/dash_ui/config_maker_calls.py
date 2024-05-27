@@ -268,7 +268,7 @@ def export_json(n_clicks, config_name_input, settings_dict):
     if ".json" not in config_name_input:
         config_name_input += ".json"
     with open(config_name_input, "w", encoding="utf-8") as f:
-        json.dump(_ordered_dict_recursive(settings_dict), f)
+        json.dump(_ordered_dict_recursive(settings_dict), f, indent=4)
 
     return f"Config file exported as {config_name_input}."
 

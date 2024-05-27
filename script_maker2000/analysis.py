@@ -208,7 +208,7 @@ def parse_output_file(output_dir):
         "w",
         encoding="utf-8",
     ) as f:
-        json.dump(result_dict, f)
+        json.dump(result_dict, f, indent=4)
     return json_file
 
 

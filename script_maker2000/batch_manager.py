@@ -282,7 +282,7 @@ class BatchManager:
         with open(
             self.working_dir / "job_backup.json", "w", encoding="utf-8"
         ) as json_file:
-            json.dump(job_backup, json_file)
+            json.dump(job_backup, json_file, indent=4)
 
     async def batch_processing_loop(self):
         """
