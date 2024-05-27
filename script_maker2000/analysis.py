@@ -286,7 +286,7 @@ def basic_connectivity_check(calc_results):
         first_xyz_str = f"{len(calc_results['atomlabels'])}\n\n"
 
         for atom, coords in zip(
-            calc_results["atomlabels"], calc_results["atomcoords"][-1]
+            calc_results["atomlabels"], calc_results["atomcoords"][0]
         ):
             first_xyz_str += f"{atom} {' '.join(map(str, coords))}\n"
 
