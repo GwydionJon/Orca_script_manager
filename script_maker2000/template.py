@@ -117,8 +117,3 @@ class TemplateModule:
 
         """
         raise NotImplementedError
-
-    @classmethod
-    def connectivity_check(cls):
-        """Check if the molecule connectivity has changed during the calculation."""
-        raise NotImplementedError
