@@ -17,24 +17,20 @@ possible_resource_settings = ["normal", "large", "custom"]
 
 
 class WorkManager:
-    """This class is used to manage the work of a WorkModule.
-    For this it will check if new files are available,
-      if so submit them to the server while keeping below the maximum number of jobs.
-    It will also check if jobs are finished and handle the output files.
-    Failed jobs will be collected and logged.
-    """
 
     def __init__(self, WorkModule, job_dict: Job) -> None:
         """
+        Initializes a WorkManager object.
+
         This class is used to manage the work of a WorkModule.
-        For this it will check if new files are available,
-          if so submit them to the server while keeping below the maximum number of jobs.
-        It will also check if jobs are finished and handle the output files.
-        Failed jobs will be collected and logged.
+        It checks if new files are available and submits them to the server while
+        keeping below the maximum number of jobs.
+        It also checks if jobs are finished and handles the output files.
+        Failed jobs are collected and logged.
 
         Args:
-            WorkModule (_type_): _description_
-            n_total_jobs (_type_): _description_
+            WorkModule (type): The WorkModule object associated with this WorkManager.
+            job_dict (Job): The dictionary of jobs associated with this WorkManager.
         """
 
         self.main_config = WorkModule.main_config
@@ -55,10 +51,10 @@ class WorkManager:
 
         self.is_finished = False
 
-        # this way the wait time can be adjusted with monkeypatch for faster testing
+        # This way the wait time can be adjusted with monkeypatch for faster testing
         self.wait_time = self.main_config["main_config"]["wait_for_results_time"]
         self.max_loop = -1  # -1 means infinite loop until all jobs are done
-        # change max loop with monkeypatch for testing
+        # Change max loop with monkeypatch for testing
 
     # check input dir
     # check output dir
@@ -114,7 +110,15 @@ class WorkManager:
         return found_jobs
 
     def submit_jobs(self, not_started_jobs):
+        """
+        Submits a list of jobs for execution.
 
+        Args:
+            not_started_jobs (list): A list of Job objects that have not been started yet.
+
+        Returns:
+            list: A list of Job objects that have been submitted for execution.
+        """
         # check if the total number of submitted jobs is below the maximum
         total_running_jobs = 0
         max_jobs = self.main_config["main_config"]["max_n_jobs"]
@@ -178,8 +182,16 @@ class WorkManager:
         return df
 
     def check_submitted_jobs(self, submitted_jobs):
-        """find new jobs in output dir and check if they have returned."""
+        """
+        Find new jobs in the output directory and check if they have returned.
 
+        Args:
+            submitted_jobs (list): A list of submitted jobs.
+
+        Returns:
+            list: A list of finished jobs.
+
+        """
         job_slurm_ids = {
             job.slurm_id_per_key[self.config_key]: job for job in submitted_jobs
         }
@@ -209,25 +221,34 @@ class WorkManager:
                 finished_jobs.append(job)
 
         self.log.info(
-            f"Collected {len(finished_jobs)} returned jobs from {len(submitted_jobs)} submitted jobs."
+            "Collected %d returned jobs from %d submitted jobs.",
+            len(finished_jobs),
+            len(submitted_jobs),
         )
 
         return finished_jobs
 
     def manage_returned_jobs(self, returned_jobs):
+        """
+        Manages the returned jobs by checking their status and performing necessary actions.
 
+        Args:
+            returned_jobs (list): A list of Job objects representing the returned jobs.
+
+        Returns:
+            tuple: A tuple containing two lists:
+                - The first list contains the remaining returned jobs after processing.
+                - The second list contains the jobs that encountered walltime errors and need to be restarted.
+        """
         # get job status from work module
         return_status_dict = defaultdict(lambda: 0)
         overlapping_jobs_info = []
         non_existing_output = []
-
         wall_time_error_jobs = []
 
         for job in returned_jobs:
-
             # first check if the job was successful and
             # if the job was already performed by an overlapping job
-
             if job.check_status_for_key(self.config_key) != "returned":
                 overlapping_jobs_info.append(
                     f"Job {job.unique_job_id} was already handled due to overlapping jobs."
@@ -236,15 +257,16 @@ class WorkManager:
 
             if not job.current_dirs["output"].exists():
                 non_existing_output.append(job)
-                print(
-                    f"Job {job.unique_job_id} has no output dir under {job.current_dirs['output']}."
+                self.log.warning(
+                    "Job %s has no output dir under %s.",
+                    job.unique_job_id,
+                    job.current_dirs["output"],
                 )
                 continue
 
             work_module_status = self.workModule.check_job_status(job)
 
             # check if status is walltime error, if skip the return manager
-
             if work_module_status == "walltime_error":
                 wall_time_error_jobs.append(job)
 
@@ -260,24 +282,23 @@ class WorkManager:
             returned_jobs.remove(job)
 
         self.log.info(
-            f"Skipped {len(overlapping_jobs_info)} overlapping jobs as they are already done."
+            "Skipped %d overlapping jobs as they are already done.",
+            len(overlapping_jobs_info),
         )
 
         if non_existing_output:
-            self.log.warning(
-                f"Caught {len(non_existing_output)} non existing output dirs after slurm was finished."
-                + f"\n\t{non_existing_output}"
+            error_message = (
+                "Caught %d non existing output dirs after slurm was finished."
             )
-            raise FileNotFoundError(
-                f"Caught {len(non_existing_output)} non existing output dirs after slurm was finished."
-            )
+            self.log.warning(error_message, len(non_existing_output))
+            raise FileNotFoundError(error_message, len(non_existing_output))
 
         output_info = "\n\t".join(
-            [f"{key}: {value}" for key, value in return_status_dict.items()]
+            ["%s: %s" % (key, value) for key, value in return_status_dict.items()]
         )
 
         self.log.warning(
-            f"Managed {len(returned_jobs)} returned jobs.\n\t" + output_info
+            "Managed %d returned jobs.\n\t%s", len(returned_jobs), output_info
         )
         return returned_jobs, wall_time_error_jobs
 
@@ -290,7 +311,12 @@ class WorkManager:
         return reset_jobs_list, non_reset_jobs
 
     def manage_finished_jobs(self, finished_jobs):
+        """
+        Manage the finished jobs by collecting the orca output data and performing connectivity checks.
 
+        Args:
+            finished_jobs (list): List of finished jobs.
+        """
         if finished_jobs is None:
             return
 
@@ -310,7 +336,7 @@ class WorkManager:
             result_dict = self.workModule.collect_results(job, self.config_key)
 
             if result_dict and result_dict["connectivity_check"] is False:
-                self.log.warning(f"Connectivity check for {job} was not successfull!")
+                self.log.warning("Connectivity check for %s was not successful!", job)
 
         collection_format_arguments = [
             "JobID",

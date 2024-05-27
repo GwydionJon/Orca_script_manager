@@ -1,3 +1,10 @@
+"""
+This module provides functionality for working with ORCA files and preparing jobs for the ORCA module.
+
+The module contains the following classes:
+- OrcaModule: A class for setting up ORCA files and preparing jobs for the ORCA module.
+"""
+
 from pathlib import Path
 import copy
 import datetime
@@ -16,6 +23,16 @@ orca_ram_scaling = (
 
 
 class OrcaModule(TemplateModule):
+    """
+    A class representing an Orca module.
+
+    This class provides methods to set up Orca files from a main configuration,
+    prepare jobs for the Orca module, and create slurm scripts for each configuration.
+
+    Attributes:
+        main_config (dict): The main configuration dictionary containing all the setup information.
+        config_key (str): The key corresponding to the specific Orca setup in the main configuration.
+    """
 
     def __init__(
         self,
@@ -48,12 +65,13 @@ class OrcaModule(TemplateModule):
         """
         Prepares the jobs for the Orca module.
 
-        This method reads XYZ files from the input directories, creates ORCA input files and slurm scripts,
+        This method reads XYZ files from the input directories,
+        creates ORCA input files and slurm scripts,
         and returns a dictionary mapping directory stems to directory paths.
 
         Args:
             input_dirs (list): A list of directories to read the XYZ files from.
-            **kwargs: Arbitrary keyword arguments.
+            kwargs: Arbitrary keyword arguments.
 
         Returns:
             dict: A dictionary mapping directory stems to directory paths.
@@ -495,7 +513,7 @@ class OrcaModule(TemplateModule):
         Returns:
             dict: A dictionary containing the results extracted from the ORCA output file.
             If the job's status for the given key
-                is not "finished" or the results directory is not "finished", returns None.
+            is not "finished" or the results directory is not "finished", returns None.
         """
 
         # Check if the job's status for the given key is "finished" and if the results directory is "finished"

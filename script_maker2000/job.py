@@ -5,7 +5,7 @@ import pint
 
 class Job:
     """This class will save all necessary information for a job.
-    This inculdes current and past results, output and input files, and the main settings.
+    This includes current and past results, output and input files, and the main settings.
     """
 
     def __init__(
@@ -17,11 +17,15 @@ class Job:
         multiplicity,
         input_file_types=[".xyz"],
     ):
-        """_summary_
+        """Initialize a new Job instance.
 
         Args:
-            input_file (str|Path): Location of the original input file.
+            input_id (str): The ID of the input file.
             all_keys (list[str]): A list of all the calculation steps that will be performed by this job.
+            working_dir (str|Path): The working directory for the job.
+            charge (int): The charge of the job.
+            multiplicity (int): The multiplicity of the job.
+            input_file_types (list[str], optional): A list of input file types to consider. Defaults to [".xyz"].
         """
 
         # public attributes
@@ -94,15 +98,14 @@ class Job:
         working_dir,
         all_keys,
     ):
-        """_summary_
+        """Initialize dictionaries for storing directories related to each calculation step.
 
         Args:
-            input_file (str|Path): Location of the original input file.
+            working_dir (str|Path): The working directory where the directories will be created.
             all_keys (list[str]): A list of all the calculation steps that will be performed by this job.
         """
 
         for i, key in enumerate(all_keys):
-
             id_for_step = "__".join(all_keys[: i + 1]) + "___" + self.mol_id
             self.input_dir_per_key[key] = (
                 working_dir / "working" / key / "input" / id_for_step
@@ -123,6 +126,14 @@ class Job:
 
     @current_status.setter
     def current_status(self, value):
+        """Set the current status of the job.
+
+        Args:
+            value (str): The new status value.
+
+        Returns:
+            None
+        """
         self._current_status = value
         self.status_per_key[self.current_key] = value
 
@@ -162,7 +173,8 @@ class Job:
         self._overlapping_jobs = value
 
     def check_status_for_key(self, key, ignore_overlapping_jobs=True):
-        """Check the status of the job for the given key.
+        """
+        Check the status of the job for the given key.
 
         Possible outputs are:
         - not_assigned
@@ -175,10 +187,15 @@ class Job:
         - failed
         - finished
         - missing_output
-        Args:
-            key (str): config key
-        """
 
+        Args:
+            key (str): The config key for the job.
+
+            ignore_overlapping_jobs (bool, optional): Whether to ignore overlapping jobs. Defaults to True.
+
+        Returns:
+            str: The status of the job for the given key.
+        """
         if key not in self.all_keys:
             return "not_assigned"
 
@@ -200,15 +217,18 @@ class Job:
                 return "submitted"
             return self.status_per_key[key]
 
-        else:
-
-            return "not_found"
+        return "not_found"
 
     def start_new_key(self, key, step):
-        """This sets all current attributes when the job is found by a new key.
-            Will be called by the batch manager when copying the job to the new key.
+        """This method sets all current attributes when the job is found by a new key.
+        It will be called by the batch manager when copying the job to the new key.
+
         Args:
-            key (str): config key
+            key (str): The config key.
+            step (int): The current step.
+
+        Returns:
+            None
         """
 
         self.current_key = key
@@ -219,7 +239,6 @@ class Job:
 
         checked_status = self.check_status_for_key(key)
         if checked_status != "submitted":
-
             self.current_status = "found"
             self.status_per_key[key] = "found"
 
@@ -242,9 +261,19 @@ class Job:
         }
 
     def reset_key(self, key):
+        """
+        Resets the key and updates the job status.
 
+        Args:
+            key (str): The key to reset.
+
+        Returns:
+            str: The status after resetting the key. Possible values are:
+                - "reset" if no walltime error has been encountered and the job will be resubmitted.
+                - "walltime_error" if a walltime error has been encountered.
+        """
         if self.iterations_per_key.get(key, 0) == 0:
-            # if no walltime error has been encountered zet the job will be resubmitted
+            # if no walltime error has been encountered, the job will be resubmitted
             self.failed_reason = None
             self.current_status = "found"
             self.status_per_key[key] = "found"
@@ -256,14 +285,16 @@ class Job:
 
     def manage_return(self, return_str):
         """
-        Currently the possible return_str are:
-        - success
-        - missing_ram_error
-        - walltime_error
-        - unknown_error
+        Manages the return status of the job.
+
+        Currently, the possible return_str values are:
+        - success: Indicates that the job completed successfully.
+        - missing_ram_error: Indicates an error due to insufficient RAM.
+        - walltime_error: Indicates an error due to exceeding the allocated walltime.
+        - unknown_error: Indicates an unknown error occurred.
 
         Args:
-            return_str (str): error string from the work module
+            return_str (str): The error string from the work module.
         """
 
         if return_str == "success":
@@ -275,7 +306,6 @@ class Job:
             self.failed_reason = return_str
 
             if not self.current_dirs[self.failed_reason].exists():
-
                 shutil.move(
                     self.current_dirs["output"], self.current_dirs[self.failed_reason]
                 )
@@ -290,8 +320,15 @@ class Job:
             current_key (str): The current key.
             next_key (str): The next key to advance to.
             input_file_types (list, optional): A list of input file types to consider. Defaults to [".xyz"].
-        """
 
+        Returns:
+            str: The result of advancing to the next key. Possible return values are:
+                - "success" if the current key is finished and the next key is successfully started.
+                - "file_exists" if the input file for the current key already exists for the next key.
+                - "not_finished" if the current key is not finished.
+                - The failed reason if the current key is failed.
+                - The wrap-up result if the current key is the last key in the job.
+        """
         current_key = self.current_key
 
         self.status_per_key[current_key] = self.current_status
@@ -369,7 +406,12 @@ class Job:
                 shutil.rmtree(dir)
 
     def wrap_up_combined(self):
+        """
+        Wrap up the combined job by moving finished or failed directories to the final directory.
 
+        Returns:
+            str: The wrap up status, either "finalized" or the reason for failure.
+        """
         wrap_up_return_str = "finalized"
 
         final_dir = self.raw_success_dir
@@ -411,9 +453,11 @@ class Job:
             # check if overlapping jobs have already started the next key. if not skip
             for overlapping_job in self.overlapping_jobs:
                 continuing = False
-                if overlapping_job.current_key == key:
-                    if overlapping_job.current_status == "found":
-                        continuing = True
+                if (
+                    overlapping_job.current_key == key
+                    and overlapping_job.current_status == "found"
+                ):
+                    continuing = True
                 if continuing:
                     continue
 

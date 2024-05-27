@@ -7,8 +7,10 @@ import cProfile
 import atexit
 import webbrowser
 from threading import Timer
-
 from script_maker2000.dash_ui.dash_main_gui import create_main_app
+from script_maker2000 import BatchManager
+from script_maker2000.remote_connection import RemoteConnection
+
 from script_maker2000.files import (
     check_config,
     collect_input_files,
@@ -16,8 +18,6 @@ from script_maker2000.files import (
     collect_results_,
     read_batch_config_file,
 )
-from script_maker2000 import BatchManager
-from script_maker2000.remote_connection import RemoteConnection
 
 
 def open_browser(port):
@@ -48,7 +48,6 @@ def script_maker_cli():
     default="justus2.uni-ulm.de",
     help="Hostname of the remote server.",
 )
-# Add the username option and prompt the user for the username
 @click.option("--username", "-u", help="Username of the remote server.", prompt=True)
 @click.option(
     "--password",
@@ -58,7 +57,7 @@ def script_maker_cli():
     hide_input=True,
 )
 def config_creator(port, config, hostname, username, password):
-    """ "This tool is used to create a new config file for the script_maker2000" """
+    """Create a new config file for the script_maker2000 tool."""
 
     if config is None:
         # by default read the empty config from data
@@ -76,6 +75,7 @@ def config_creator(port, config, hostname, username, password):
 @script_maker_cli.command()
 @click.option("--config", "-c", default="config.json", help="Path to the config file")
 def config_check(config):
+    """Check the validity of the config file."""
     check_config(main_config=config)
     return 0
 
@@ -268,8 +268,22 @@ def update_mol_json(mol_json_path: Path, extract_path: Path):
 def start_zip(
     zip, extract_path, remove_extracted, profile: bool, hide_job_status: bool = False
 ):
-    """Start the batch processing with the given zip file."""
+    """Start the batch processing with the given zip file.
 
+    Args:
+        zip (str): The path to the zip file containing the input files.
+        extract_path (str): The path to extract the contents of the zip file.
+        remove_extracted (bool): Flag indicating whether to remove the extracted files after processing.
+        profile (bool): Flag indicating whether to enable profiling.
+        hide_job_status (bool, optional): Flag indicating whether to hide the job status. Defaults to False.
+
+    Returns:
+        int: The exit code of the batch processing.
+
+    Raises:
+        Exception: If there is an error reading the molecule json file or creating the batch manager.
+
+    """
     if profile:
         enable_profiling(extract_path)
 
@@ -323,7 +337,7 @@ def start_zip(
 
 
 @script_maker_cli.command()
-@click.option("--config", "-c", default="config.json", help="Path to the config file")
+@click.option("--config", "-c", default="config.json", help="Path to the config file.")
 @click.option(
     "--output", "-o", default="input_files", help="Path where the zipball is created."
 )
@@ -334,8 +348,18 @@ def start_zip(
     help="Name of the zipball with the input files.",
 )
 def collect_input(config, output, zip_name):
-    """Will search the config file for input files and prepares a zipball with all the files."""
+    """
+    Search the config file for input files and prepare a zipball with all the files.
 
+    Args:
+        config (str): The path to the config file.
+        output (str): The path to the output directory where the zipball will be created.
+        zip_name (str): The name of the zipball.
+
+    Returns:
+        int: The return value indicating the success of the function (always 0).
+
+    """
     prep_path = Path(output)
     prep_path = prep_path.resolve()
     prep_path.mkdir(exist_ok=True, parents=True)
@@ -371,6 +395,7 @@ def collect_input(config, output, zip_name):
     "--as_json", is_flag=True, help="If the config should be returned as json."
 )
 def return_batch_config(as_json=False):
+    """Return the batch config file."""
 
     if as_json:
         try:
@@ -393,9 +418,10 @@ def return_batch_config(as_json=False):
     "--exclude_patterns",
     "-e",
     default=None,
-    help="Comma seperated list of patterns to exclude from the zip file.",
+    help="Comma separated list of patterns to exclude from the zip file.",
 )
 def collect_results(results_path, exclude_patterns=None):
+    """Collect the results from the specified path and create a zip file."""
 
     results_path = Path(results_path)
     results_path = results_path.resolve()

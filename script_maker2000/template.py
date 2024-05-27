@@ -1,5 +1,8 @@
-# this module is onlz intendet to be used as a template class and provides necessary function
-# for another module to be properly useful in the scope of this program.
+"""
+This module is intended to be used as a template class and provides necessary functions
+for another module to be properly useful in the scope of this program.
+"""
+
 from pathlib import Path
 import logging
 from typing import Union
@@ -8,6 +11,9 @@ from abc import abstractmethod
 
 
 class TemplateModule:
+    """
+    This class is only used as a template guide to have all derived classes follow the same general layout.
+    """
 
     def __init__(
         self,
@@ -15,20 +21,14 @@ class TemplateModule:
         config_key: str,
     ) -> None:
         """
-        This class is only used as a template guide to have all derived classes follow the same generell layout.
-
-
-        The init should handle the setup process.
-        This includes setting up any necessary files (slurm script etc.)
-
-        In addition to these functions you can use any number of helper functions, as long as they are contained within.
+        Initializes the TemplateModule object.
 
         Args:
-            main_config (dict): The main config file
-            config_key (str): which loop_config key this object is handling.
+            main_config (dict): The main config file.
+            config_key (str): The loop_config key this object is handling.
 
         Raises:
-            NotImplementedError: This is just a template
+            NotImplementedError: This is just a template.
         """
         # please default to these naming conventions:
 
@@ -55,36 +55,39 @@ class TemplateModule:
 
     def create_internal_config(self, main_config, config_key) -> dict:
         """
-        extract the necessary informations from the main config and store them.
+        Extracts the necessary information from the main config and stores them.
 
         Returns:
-            dict: a dict of the sub config.
+            dict: A dict of the sub config.
         """
         internal_config = main_config["loop_config"][config_key]
         return internal_config
 
     @abstractmethod
     def create_slurm_scripts(self, slurm_config=None) -> Union[str, Path]:
-        """Create the slurm script that is used to submit this calculation run to the server.
+        """
+        Create the slurm script that is used to submit this calculation run to the server.
         This should use the slurm class provided in this module.
         """
         raise NotImplementedError
 
     @abstractmethod
     def prepare_jobs(self, input_dirs, **kwargs) -> dict:
-        """prepare the job files for submission.
+        """
+        Prepare the job files for submission.
 
         Args:
-            input_files (list): list of input files.
+            input_files (list): List of input files.
 
         Returns:
-            dict: a dict of the sub config.
+            dict: A dict of the sub config.
         """
         raise NotImplementedError
 
     @abstractmethod
     def run_job(self, job) -> None:
-        """Interface to send the job to the server.
+        """
+        Interface to send the job to the server.
 
         Raises:
             NotImplementedError: _description_
@@ -93,17 +96,19 @@ class TemplateModule:
 
     @abstractmethod
     def restart_jobs(self, job_list, key):
-        """restart a job that failed.
+        """
+        Restart a job that failed.
 
         Args:
-            job_list (list): list of jobs that failed.
-            key (str): the key of the job that failed.
+            job_list (list): List of jobs that failed.
+            key (str): The key of the job that failed.
         """
         raise NotImplementedError
 
     @classmethod
     def collect_results(cls, job, key, results_dir="finished") -> dict:
-        """Collect the results of the calculation and save in a {mol_id}_calc_result.json file in each subfolder.
+        """
+        Collect the results of the calculation and save in a {mol_id}_calc_result.json file in each subfolder.
 
         Raises:
             NotImplementedError: _description_
@@ -112,8 +117,8 @@ class TemplateModule:
 
     @classmethod
     def check_job_status(cls, job) -> bool:
-        """provide some method to verify if a single calculation was succesful.
-        This should be handled indepentendly from the existence of this class object.
-
+        """
+        Provide some method to verify if a single calculation was successful.
+        This should be handled independently from the existence of this class object.
         """
         raise NotImplementedError
