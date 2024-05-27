@@ -832,7 +832,7 @@ def add_dir_to_config(new_output_dir):
 
     batch_config_path = read_batch_config_file("path")
     with open(batch_config_path, "w", encoding="utf-8") as f:
-        json.dump(batch_config, f)
+        json.dump(batch_config, f, indent=4)
 
     return "added to config."
 

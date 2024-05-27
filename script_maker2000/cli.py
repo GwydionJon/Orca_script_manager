@@ -209,7 +209,7 @@ def load_and_update_config(config_path: Path, extract_path: Path):
     )
 
     with open(config_path, "w", encoding="utf-8") as f:
-        json.dump(config, f)
+        json.dump(config, f, indent=4)
 
     return config
 
@@ -230,7 +230,7 @@ def update_mol_json(mol_json_path: Path, extract_path: Path):
             mol_json[xyz_id]["path"] = str(xyz_path)
 
     with open(mol_json_path, "w", encoding="utf-8") as f:
-        json.dump(mol_json, f)
+        json.dump(mol_json, f, indent=4)
 
     return mol_json
 

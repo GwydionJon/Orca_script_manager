@@ -45,14 +45,14 @@ def clean_tmp_dir():
                 mol_dict[key]["path"] = str(new_file)
 
     with open(tmp_dir / "example_xyz" / "example_molecules.json", "w") as f:
-        json.dump(mol_dict, f)
+        json.dump(mol_dict, f, indent=4)
 
     main_dict["main_config"]["input_file_path"] = str(
         tmp_dir / "example_xyz" / "example_molecules.json"
     )
 
     with open(tmp_dir / "example_config.json", "w") as json_file:
-        json.dump(main_dict, json_file)
+        json.dump(main_dict, json_file, indent=4)
 
     return tmp_dir
 
@@ -69,14 +69,14 @@ def test_setup_work_dir(clean_tmp_dir):
     new_config2 = copy.deepcopy(main_dict)
     new_config2["main_config"]["input_file_path"] = "does_not_exist.csv"
     with open(tmp_dir / "example_config3.json", "w") as json_file:
-        json.dump(new_config2, json_file)
+        json.dump(new_config2, json_file, indent=4)
 
     # add new loop step without changing output dir
     new_config3 = copy.deepcopy(main_dict)
     new_config3["loop_config"]["opt_config"]["type"] = "test"
     new_config3["loop_config"]["opt_config"]["step_id"] = 0
     with open(tmp_dir / "example_config4.json", "w") as json_file:
-        json.dump(new_config3, json_file)
+        json.dump(new_config3, json_file, indent=4)
 
     # add new loop step and change output dir
     new_config4 = copy.deepcopy(main_dict)
@@ -85,14 +85,14 @@ def test_setup_work_dir(clean_tmp_dir):
     new_config4["loop_config"]["sp_config"]["step_id"] = 1
 
     with open(tmp_dir / "example_config5.json", "w") as json_file:
-        json.dump(new_config4, json_file)
+        json.dump(new_config4, json_file, indent=4)
 
     new_config5 = copy.deepcopy(main_dict)
     new_config5["main_config"]["output_dir"] = "new_output2"
     new_config5["loop_config"]["sp2_config"] = {}
     new_config5["loop_config"]["sp2_config"]["step_id"] = 1
     with open(tmp_dir / "example_config6.json", "w") as json_file:
-        json.dump(new_config5, json_file)
+        json.dump(new_config5, json_file, indent=4)
 
     return tmp_dir
 
@@ -133,10 +133,10 @@ def pre_config_tmp_dir():
                 mol_dict[key]["path"] = str(new_file)
 
     with open(tmp_dir / "example_xyz" / "example_molecules.json", "w") as f:
-        json.dump(mol_dict, f)
+        json.dump(mol_dict, f, indent=4)
 
     with open(tmp_dir / "example_config.json", "w") as json_file:
-        json.dump(main_dict, json_file)
+        json.dump(main_dict, json_file, indent=4)
 
     main_config = read_config(tmp_dir / "example_config.json")
 
@@ -185,14 +185,14 @@ def multilayer_tmp_dir():
                 mol_dict[key]["path"] = str(new_file)
 
     with open(tmp_dir / "example_xyz" / "example_molecules.json", "w") as f:
-        json.dump(mol_dict, f)
+        json.dump(mol_dict, f, indent=4)
 
     main_dict["main_config"]["input_file_path"] = str(
         tmp_dir / "example_xyz" / "example_molecules.json"
     )
 
     with open(tmp_dir / "example_config.json", "w") as json_file:
-        json.dump(main_dict, json_file)
+        json.dump(main_dict, json_file, indent=4)
 
     return tmp_dir
 
@@ -215,7 +215,7 @@ def pre_started_dir(multilayer_tmp_dir):
     config["main_config"]["config_name"] = "continue_run"
 
     with open(multilayer_tmp_dir / "output" / "config__example_config.json", "w") as f:
-        json.dump(config, f)
+        json.dump(config, f, indent=4)
 
     # src_dirs
     src_dirs = [
@@ -236,7 +236,7 @@ def pre_started_dir(multilayer_tmp_dir):
         job_backup[key]["final_dirs"] = {}
 
     with open(multilayer_tmp_dir / "output" / "job_backup.json", "w") as f:
-        json.dump(job_backup, f)
+        json.dump(job_backup, f, indent=4)
 
     return multilayer_tmp_dir
 
