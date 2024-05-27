@@ -900,16 +900,17 @@ def read_premade_config(mode):
     """
     Reads a premade configuration file and returns the configuration data.
 
-    Parameters:
-    - mode (str): The mode in which to read the configuration file. Must be one of "path", "dict", or "both".
+    Args:
+        mode (str): The mode in which to read the configuration file. Must be one of "path", "dict", or "both".
 
     Returns:
-    - If mode is "path", returns the path to the configuration file.
-    - If mode is "dict", returns the configuration data as a dictionary.
-    - If mode is "both", returns a tuple containing the path to the configuration file and the configuration data.
+        path|dict|tuple: Return object can be:
+        - If mode is "path", returns the path to the configuration file.
+        - If mode is "dict", returns the configuration data as a dictionary.
+        - If mode is "both", returns a tuple containing the path to the configuration file and the configuration data.
 
     Raises:
-    - ValueError: If the mode is not one of "path", "dict", or "both".
+        ValueError: If the mode is not one of "path", "dict", or "both".
     """
 
     if mode not in ["path", "dict", "both"]:
@@ -970,7 +971,7 @@ def add_premade_config(config_path, return_config_name=False, override_config=Fa
     Returns:
         str or tuple: If `return_config_name` is True, returns a tuple containing the output
         text and the name of the added configuration.
-                      Otherwise, returns the output text as a string.
+        Otherwise, returns the output text as a string.
 
     Raises:
         FileNotFoundError: If the specified configuration file does not exist.
