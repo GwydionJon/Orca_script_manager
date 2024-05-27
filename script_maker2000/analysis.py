@@ -280,10 +280,21 @@ def basic_connectivity_check(calc_results):
         )
 
     original_coords = calc_results["metadata"]["coords"]
-    first_xyz_str = f"{len(original_coords)}\n\n"
-    for row in original_coords:
-        atom, *coords = row
-        first_xyz_str += f"{atom} {' '.join(map(str, coords))}\n"
+    # coords are only present when orca didn't use an xyz file for the coord input
+    # if this is the case the first coordinates from the atom coordinate list will be used.
+    if original_coords == []:
+        first_xyz_str = f"{len(calc_results['atomlabels'])}\n\n"
+
+        for atom, coords in zip(
+            calc_results["atomlabels"], calc_results["atomcoords"][-1]
+        ):
+            first_xyz_str += f"{atom} {' '.join(map(str, coords))}\n"
+
+    else:
+        first_xyz_str = f"{len(original_coords)}\n\n"
+        for row in original_coords:
+            atom, *coords = row
+            first_xyz_str += f"{atom} {' '.join(map(str, coords))}\n"
 
     first_xyz_str = first_xyz_str.strip()
 
@@ -304,6 +315,8 @@ def basic_connectivity_check(calc_results):
             final_xyz_str += f"{atom} {' '.join(map(str, coords))}\n"
 
     final_xyz_str = final_xyz_str.strip()
+
+    print(first_xyz_str)
 
     # bonds of the input structure
     first_mol = Chem.rdmolfiles.MolFromXYZBlock(first_xyz_str)
