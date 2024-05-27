@@ -287,7 +287,7 @@ def test_continue_run(pre_started_dir, monkeypatch, fake_slurm_function):
     assert len(failed) == 7
     assert len(not_failed) == 24
 
-    config_name = batch_manager.main_config["main_config"]["config_name"]
+    config_name = "continue_run"
 
     batch_config_path = read_batch_config_file("path")
 
