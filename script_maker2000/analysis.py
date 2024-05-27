@@ -268,6 +268,25 @@ def plot_ir_spectrum(
 def basic_connectivity_check(calc_results):
     """Check if the strucutre has changed during the calculation."""
 
+    def _coords_from_coords(calc_results, index):
+        coords = list(calc_results["coords"].values())[index]
+        xyz_str = f"{len(coords)}\n\n"
+
+        for row in coords:
+            atom, *_coords = row.values()
+            xyz_str += f"{atom} {' '.join(map(str, _coords))}\n"
+        return xyz_str.strip()
+
+    def _coords_from_atom_coords(calc_results, index):
+        xyz_str = f"{len(calc_results['atomlabels'])}\n\n"
+
+        for atom, coords in zip(
+            calc_results["atomlabels"], calc_results["atomcoords"][index]
+        ):
+            xyz_str += f"{atom} {' '.join(map(str, coords))}\n"
+
+        return xyz_str.strip()
+
     if isinstance(calc_results, str) or isinstance(calc_results, Path):
         calc_results = Path(calc_results)
         with open(calc_results, "r", encoding="utf-8") as f:
@@ -283,40 +302,24 @@ def basic_connectivity_check(calc_results):
     # coords are only present when orca didn't use an xyz file for the coord input
     # if this is the case the first coordinates from the atom coordinate list will be used.
     if original_coords == []:
-        first_xyz_str = f"{len(calc_results['atomlabels'])}\n\n"
+        if "coords" in calc_results:
+            first_xyz_str = _coords_from_coords(calc_results, index=0)
+        elif "atomcoords" in calc_results:
+            first_xyz_str = _coords_from_atom_coords(calc_results, index=0)
 
-        for atom, coords in zip(
-            calc_results["atomlabels"], calc_results["atomcoords"][0]
-        ):
-            first_xyz_str += f"{atom} {' '.join(map(str, coords))}\n"
-
-    else:
+    else:  # if the input file contained xyz coordinates use these
         first_xyz_str = f"{len(original_coords)}\n\n"
         for row in original_coords:
             atom, *coords = row
             first_xyz_str += f"{atom} {' '.join(map(str, coords))}\n"
 
-    first_xyz_str = first_xyz_str.strip()
+        first_xyz_str = first_xyz_str.strip()
 
     # differentiate wether the data is directly parsed from orca (atomcoords) or has been extracted first (coords)
     if "coords" in calc_results:
-        final_coords = list(calc_results["coords"].values())[-1]
-        final_xyz_str = f"{len(final_coords)}\n\n"
-
-        for row in final_coords:
-            atom, *coords = row.values()
-            final_xyz_str += f"{atom} {' '.join(map(str, coords))}\n"
+        final_xyz_str = _coords_from_coords(calc_results, index=-1)
     elif "atomcoords" in calc_results:
-        final_xyz_str = f"{len(calc_results['atomlabels'])}\n\n"
-
-        for atom, coords in zip(
-            calc_results["atomlabels"], calc_results["atomcoords"][-1]
-        ):
-            final_xyz_str += f"{atom} {' '.join(map(str, coords))}\n"
-
-    final_xyz_str = final_xyz_str.strip()
-
-    print(first_xyz_str)
+        final_xyz_str = _coords_from_atom_coords(calc_results, index=-1)
 
     # bonds of the input structure
     first_mol = Chem.rdmolfiles.MolFromXYZBlock(first_xyz_str)
