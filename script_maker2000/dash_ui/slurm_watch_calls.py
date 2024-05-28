@@ -13,12 +13,6 @@ sacct_dict = Path(__file__).parent / "sacct_options.json"
 def get_sacct_output(
     n_clicks, start_date, end_date, time_range, format_entries, remote_connection
 ):
-    print("n_clicks:", n_clicks)
-    print("start_date:", start_date)
-    print("end_date:", end_date)
-    print("time_range:", time_range)
-    print("format_entries:", format_entries)
-
     sacct_command = "sacct -p"
 
     if start_date:
@@ -32,7 +26,6 @@ def get_sacct_output(
 
     if format_entries:
         sacct_command += f" --format={','.join(format_entries)}"
-    print(sacct_command)
     slurm_output = remote_connection.run(sacct_command, hide=True).stdout
 
     split_rows = slurm_output.split("\n")
@@ -52,5 +45,4 @@ def get_sacct_output(
     df.reset_index(inplace=True)
     columns = [{"name": i, "id": i} for i in df.columns[:-1]]
 
-    print(df)
     return df.to_dict("records"), columns

@@ -49,53 +49,53 @@ def create_working_dir_structure(
     main_config: dict,
 ):
     """
-       This function generates the data structure for further calculations.
-        a main folder with a folder for crest, optimzation, sp and result sub folders
-        as well as the corresponding config files.
-        In each of these subfolders will be an input, and an output folder.
-        These always contain pairs of molecule files and slurm files.
+    This function generates the data structure for further calculations.
+    It creates a main folder with subfolders for crest, optimization, sp, and result.
+    Each subfolder contains an input and an output folder.
+    These folders store molecule files and slurm files.
 
     Args:
-        main_config (dict):The main working folder can be extracted from this config dict
+        main_config (dict): The main configuration dictionary containing the necessary information.
+
+    Returns:
+        output_dir (pathlib.Path): The path to the main output directory.
+        new_input_path (pathlib.Path): The path to the new input folder.
+        new_json_file (pathlib.Path): The path to the new JSON file.
 
     """
 
     output_dir = pathlib.Path(main_config["main_config"]["output_dir"])
     input_path = pathlib.Path(main_config["main_config"]["input_file_path"])
 
-    # create desired folder structure
+    # Create desired folder structure
     sub_dir_names = [pathlib.Path(key) for key in main_config["loop_config"]]
-    batchLogger.info(f"creating subfolders: {sub_dir_names} ")
+    batchLogger.info(f"Creating subfolders: {sub_dir_names}")
 
     for subfolder in sub_dir_names:
         if main_config["main_config"]["continue_previous_run"] is False:
-
+            # Create input, output, finished, and failed folders for each subfolder
             (output_dir / "working" / subfolder / "input").mkdir(parents=True)
             (output_dir / "working" / subfolder / "output").mkdir(parents=True)
             (output_dir / "working" / subfolder / "finished").mkdir(parents=True)
             (output_dir / "working" / subfolder / "failed").mkdir(parents=True)
 
-            # copy template files to sub-folder
+            # Copy template files to sub-folder if the type is "orca"
             if main_config["loop_config"][str(subfolder)]["type"] == "orca":
                 slurm_template_path = (
                     pathlib.Path(__file__).parent / "data/orca_template.sbatch"
                 )
-
                 shutil.copy(slurm_template_path, output_dir / "working" / subfolder)
 
+    # Create "raw_results" and "results" folders in the "finished" folder
     (output_dir / "finished" / "raw_results").mkdir(parents=True)
     (output_dir / "finished" / "results").mkdir(parents=True)
 
-    # move input files and main_settings in output folder
-    # save config into working dir
-
+    # Move input files and main_settings to the output folder
     new_config_name = "config__" + main_config["main_config"]["config_name"] + ".json"
-
     with open(output_dir / new_config_name, "w", encoding="utf-8") as json_file:
         json.dump(main_config, json_file, indent=4)
 
-    # save input csv in output folder
-
+    # Save input csv in output folder
     job_input = read_mol_input_json(input_path)
     found_files = [pathlib.Path(job_setup["path"]) for job_setup in job_input.values()]
 
@@ -106,7 +106,7 @@ def create_working_dir_structure(
 
     new_input_path = output_dir / "start_input_files"
     new_input_path.mkdir(parents=True, exist_ok=True)
-    # for orig_file in found_files:
+
     for key, entry in job_input.items():
         orig_file = pathlib.Path(entry["path"])
         batchLogger.info(orig_file)
@@ -119,12 +119,26 @@ def create_working_dir_structure(
     with open(new_json_file, "w", encoding="utf-8") as json_file:
         json.dump(job_input, json_file, indent=4)
 
-    # copy files to output folder
-
     return output_dir, new_input_path, new_json_file
 
 
 def read_mol_input_json(input_json, skip_file_check=False):
+    """
+    Read the molecule input JSON file and perform consistency checks on the file paths and values.
+
+    Args:
+        input_json (str): The path to the molecule input JSON file.
+        skip_file_check (bool, optional): Whether to skip the file path and format checks. Defaults to False.
+
+    Returns:
+        dict: The molecule input dictionary.
+
+    Raises:
+        FileNotFoundError: If a file specified in the JSON does not exist.
+        ValueError: If the file format is not XYZ or if the file name
+        does not match the specified key, charge, or multiplicity.
+
+    """
 
     with open(input_json, "r", encoding="utf-8") as f:
         mol_input = json.load(f)
@@ -159,61 +173,62 @@ def read_mol_input_json(input_json, skip_file_check=False):
                     raise FileNotFoundError(f"Can't find file {value}")
                 if new_path.suffix != ".xyz":
                     raise ValueError(
-                        f"Input files must be in xyz format. The following files are not: {value}"
+                        f"Input files must be in xyz format. The following file is not: {value}"
                     )
 
             if entry_key == "key":
                 if key not in file_path.stem:
-                    batchLogger.error(
-                        "Key in input file does not match the key in the file name. "
-                        + f"Please rename the file according to the following pattern: {key}_cXmX.xyz"
+                    error_message = (
+                        f"Key in input file does not match the key in the file name. "
+                        f"Please rename the file according to the following pattern: {key}_cXmX.xyz"
                     )
-                    raise ValueError(
-                        "Key in input file does not match the key in the file name. "
-                        + f"Please rename the file according to the following pattern: {key}_cXmX.xyz"
-                    )
+                    batchLogger.error(error_message)
+                    raise ValueError(error_message)
 
             if entry_key == "charge":
                 if not isinstance(value, int):
-                    batchLogger.error(
-                        f"Charge must be an integer. Found {value} of type {type(value)}"
-                    )
-                    raise ValueError(
-                        f"Charge must be an integer. Found {value} of type {type(value)}"
-                    )
+                    error_message = f"Charge must be an integer. Found {value} of type {type(value)}"
+                    batchLogger.error(error_message)
+                    raise ValueError(error_message)
                 if int(value) != charge:
-                    batchLogger.error(
-                        "Charge in input file does not match the charge in the file name. "
-                        + f"Please rename the file according to the following pattern: {key}_cXmX.xyz"
+                    error_message = (
+                        f"Charge in input file does not match the charge in the file name. "
+                        f"Please rename the file according to the following pattern: {key}_cXmX.xyz"
                     )
-                    raise ValueError(
-                        "Charge in input file does not match the charge in the file name. "
-                        + f"Please rename the file according to the following pattern: {key}_cXmX.xyz"
-                    )
+                    batchLogger.error(error_message)
+                    raise ValueError(error_message)
 
             if entry_key == "multiplicity":
                 if not isinstance(value, int):
-                    batchLogger.error(
-                        f"Multiplicity must be an integer. Found {value} of type {type(value)}"
-                    )
-                    raise ValueError(
-                        f"Multiplicity must be an integer. Found {value} of type {type(value)}"
-                    )
+                    error_message = f"Multiplicity must be an integer. Found {value} of type {type(value)}"
+                    batchLogger.error(error_message)
+                    raise ValueError(error_message)
                 if int(value) != mul:
-                    batchLogger.error(
-                        "Multiplicity in input file does not match the multiplicity in the file name. "
-                        + f"Please rename the file according to the following pattern: {key}_cXmX.xyz"
+                    error_message = (
+                        f"Multiplicity in input file does not match the multiplicity in the file name. "
+                        f"Please rename the file according to the following pattern: {key}_cXmX.xyz"
                     )
-                    raise ValueError(
-                        "Multiplicity in input file does not match the multiplicity in the file name. "
-                        + f"Please rename the file according to the following pattern: {key}_cXmX.xyz"
-                    )
+                    batchLogger.error(error_message)
+                    raise ValueError(error_message)
 
     return mol_input
 
 
 def check_config(main_config, skip_file_check=False, override_continue_job=False):
-    """This function checks the main config for the necessary keys and values."""
+    """
+    This function checks the main configuration for the necessary keys and values.
+
+    Args:
+        main_config (dict or str): The main configuration dictionary or the path to the configuration file.
+        skip_file_check (bool, optional): Whether to skip the file path and format checks. Defaults to False.
+        override_continue_job (bool, optional): Whether to override the "continue_previous_run"
+        option in the main config. Defaults to False.
+
+    Raises:
+        ValueError: If the main configuration is missing required keys or has invalid values.
+        FileExistsError: If the output directory already has subfolders setup and "continue_previous_run" is False.
+
+    """
 
     if isinstance(main_config, str):
         with open(main_config, "r", encoding="utf-8") as f:
@@ -228,7 +243,7 @@ def check_config(main_config, skip_file_check=False, override_continue_job=False
         output_dir = pathlib.Path(main_config["main_config"]["output_dir"])
         sub_dir_names = [pathlib.Path(key) for key in main_config["loop_config"]]
         if len(sub_dir_names) == 0:
-            raise ValueError("Can't find loop configs. ?")
+            raise ValueError("Can't find loop configs.")
 
         for sub_dir in sub_dir_names:
 
@@ -237,16 +252,13 @@ def check_config(main_config, skip_file_check=False, override_continue_job=False
                 and main_config["main_config"]["continue_previous_run"] is False
                 and override_continue_job is False
             ):
-                batchLogger.error(
+                error_message = (
                     f"The directory {output_dir} already has subfolders setup. "
-                    + "If you want to continue a previous run please change the "
-                    + "'continue_previous_run'-option in the main config"
+                    "If you want to continue a previous run please change the "
+                    "'continue_previous_run'-option in the main config"
                 )
-                raise FileExistsError(
-                    f"The directory {output_dir} already has subfolders setup. "
-                    + "If you want to continue a previous run please change the "
-                    + "'continue_previous_run'-option in the main config"
-                )
+                batchLogger.error(error_message)
+                raise FileExistsError(error_message)
 
     is_multilayer = main_config["main_config"]["parallel_layer_run"]
 
@@ -255,7 +267,7 @@ def check_config(main_config, skip_file_check=False, override_continue_job=False
     for loop_config in main_config["loop_config"]:
         layer_names.append(loop_config)
     if len(layer_names) != len(set(layer_names)):
-        raise ValueError(f"Layer snames must be unique but are {layer_names}.")
+        raise ValueError(f"Layer names must be unique but are {layer_names}.")
 
     step_list = []
     for loop_config in main_config["loop_config"]:
@@ -280,6 +292,18 @@ def check_config(main_config, skip_file_check=False, override_continue_job=False
 
 
 def check_input_files(main_config):
+    """
+    Check if the input files specified in the main configuration exist and have the correct format.
+
+    Args:
+        main_config (dict): The main configuration dictionary.
+
+    Raises:
+        FileNotFoundError: If the input file path is not provided or the input files cannot be found.
+        ValueError: If the input file is not in JSON format or if no XYZ files are found in the input directory.
+
+    """
+
     input_file_path = main_config["main_config"]["input_file_path"]
 
     if input_file_path is None:
@@ -304,6 +328,17 @@ def check_input_files(main_config):
 
 
 def _check_config_keys(main_config):
+    """
+    Check if the main configuration dictionary contains all the required keys.
+
+    Args:
+        main_config (dict): The main configuration dictionary.
+
+    Raises:
+        KeyError: If any of the required keys are missing.
+
+    """
+
     main_keys = [
         "main_config",
         "loop_config",
@@ -385,11 +420,20 @@ def _check_config_keys(main_config):
 
 def read_config(config_file, perform_validation=True, override_continue_job=False):
     """
-    This is a very import setup function as it not only reads and provides the main config,
-    it also sets the location for the logging files.
+    Read and provide the main configuration from a file or dictionary.
 
     Args:
-        config_file (_type_): _description_
+        config_file (str or dict): Path to the configuration file or the configuration dictionary.
+        perform_validation (bool, optional): Whether to perform validation on the configuration. Defaults to True.
+        override_continue_job (bool, optional): Whether to override the "continue_previous_run"
+        option in the main config. Defaults to False.
+
+    Returns:
+        dict: The main configuration dictionary.
+
+    Raises:
+        FileNotFoundError: If the configuration file cannot be found.
+        ValueError: If the configuration file is not in JSON format.
     """
 
     if not isinstance(config_file, dict):
@@ -403,7 +447,7 @@ def read_config(config_file, perform_validation=True, override_continue_job=Fals
     input_path = pathlib.Path(main_config["main_config"]["input_file_path"])
 
     # make relative paths absolute
-    if input_path.is_absolute() is False:
+    if not input_path.is_absolute():
         input_path = pathlib.Path(config_file).parent / input_path
         input_path = input_path.resolve()
         main_config["main_config"]["input_file_path"] = str(input_path)
@@ -413,8 +457,8 @@ def read_config(config_file, perform_validation=True, override_continue_job=Fals
         main_config["main_config"]["continue_previous_run"] = override_continue_job
 
     output_dir = pathlib.Path(main_config["main_config"]["output_dir"])
-    # when giving a relativ path resolve it in relation to the config file.
-    if output_dir.is_absolute() is False:
+    # when giving a relative path, resolve it in relation to the config file.
+    if not output_dir.is_absolute():
         if isinstance(config_file, dict):
             output_dir = os.getcwd() / output_dir
         else:
@@ -423,24 +467,29 @@ def read_config(config_file, perform_validation=True, override_continue_job=Fals
     output_dir = output_dir.resolve()
     main_config["main_config"]["output_dir"] = str(output_dir)
 
-    if perform_validation is True:
+    if perform_validation:
         check_config(main_config)
     else:
         batchLogger.info("Skipping config validation.")
-
-    # output_dir.mkdir(parents=True, exist_ok=True)
 
     return main_config
 
 
 def collect_xyz_files_to_dict(xyz_dir):
-    """This function collects all xyz files in a directory and returns them as a dictionary.
+    """
+    Collects all xyz files in a directory and returns them as a dictionary.
 
     Args:
-        xyz_dir (str): Path to the xyz files
+        xyz_dir (str): Path to the directory containing the xyz files.
 
     Returns:
-        dict: Dictionary with the xyz files
+        dict: Dictionary with the xyz files, where the keys are the file names without the extension
+        and the values are dictionaries containing the file path, key, charge, and multiplicity.
+
+    Raises:
+        FileNotFoundError: If the specified directory does not exist.
+        ValueError: If a file in the directory does not match the expected pattern.
+
     """
     xyz_dir = pathlib.Path(xyz_dir)
     if not xyz_dir.exists():
@@ -481,20 +530,24 @@ def replace_empty_with_empty_string(config_dict):
 
 def collect_input_files(config_path, preparation_dir, config_name=None, zip_name=None):
     """
-    This function collects all input files (xyz, config, csv) and puts them into a single zipball.
+    Collects all input files (xyz, config, csv) and puts them into a single zipball.
 
     Args:
-        config_path (str): Path to the config file
-        preparation_dir (str): Path to the directory where the input files will be prepared
+        config_path (str): Path to the config file.
+        preparation_dir (str): Path to the directory where the input files will be prepared.
         config_name (str, optional): Name of the config file. If not provided, the original name will be used.
         Defaults to None.
         zip_name (str, optional): Name of the zipball. If not provided, a default name will be used. Defaults to None.
 
     Returns:
-        pathlib.Path: Path to the created zipball
-    """
-    # check if config is valid
+        pathlib.Path: Path to the created zipball.
 
+    Raises:
+        ValueError: If config is given as a dict, but config_name is not provided.
+        FileNotFoundError: If no input files are provided.
+
+    """
+    # Check if config is valid
     if isinstance(config_path, dict) and config_name is None:
         raise ValueError(
             "If config is given as a dict, the config_name must be provided."
@@ -536,8 +589,7 @@ def collect_input_files(config_path, preparation_dir, config_name=None, zip_name
         main_config["main_config"]["output_dir"]
     ).stem
 
-    # replace all "empty" with "" in the main config and all sub configs
-
+    # Replace all "empty" with "" in the main config and all sub configs
     replace_empty_with_empty_string(main_config)
 
     preparation_dir = pathlib.Path(preparation_dir)
@@ -758,20 +810,21 @@ def add_dir_to_config(new_output_dir):
     Raises:
         FileNotFoundError: If the new output directory or any required subfolders/files are not found.
     """
-
+    # Convert the new_output_dir to a pathlib.Path object
     new_output_dir = pathlib.Path(new_output_dir)
 
+    # Resolve the absolute path of the new_output_dir
     if not new_output_dir.is_absolute():
         new_output_dir = new_output_dir.resolve()
 
+    # Read the batch config file as a dictionary
     batch_config = read_batch_config_file("dict")
 
-    # check if the new output dir is already in the config
+    # Check if the new output dir is already in the config
     if check_dir_in_batch_config(new_output_dir):
         return "Already in config."
 
-    # check if the output dir exists and has the necessary subfolders/files
-
+    # Check if the output dir exists and has the necessary subfolders/files
     if not new_output_dir.exists():
         raise FileNotFoundError(f"Can't find {new_output_dir}.")
 
@@ -782,14 +835,14 @@ def add_dir_to_config(new_output_dir):
         raise FileNotFoundError(f"Can't find raw_results folder in {new_output_dir}.")
 
     skipp_job_backup = False
-    # check job backup file only if at least one file is in the raw_results folder
+    # Check job backup file only if at least one file is in the raw_results folder
     if len(list((new_output_dir / "finished" / "raw_results").glob("*"))) > 0:
         if not (new_output_dir / "job_backup.json").exists():
             raise FileNotFoundError(f"Can't find job_backup.json in {new_output_dir}.")
     else:
         skipp_job_backup = True
 
-    # find the config file
+    # Find the config file
     config_file_list = list(new_output_dir.glob("config__*.json"))
 
     if len(config_file_list) == 0:
@@ -799,13 +852,17 @@ def add_dir_to_config(new_output_dir):
 
     config_file = config_file_list[0]
 
+    # Read the main config file
     with open(config_file, "r", encoding="utf-8") as f:
         main_config = json.load(f)
 
+    # Check the main config
     check_config(main_config, skip_file_check=True, override_continue_job=True)
-    # get config name
+
+    # Get the config name
     config_name = main_config["main_config"]["config_name"]
-    # check if job is finished
+
+    # Check if job is finished
     if not skipp_job_backup:
         with open(new_output_dir / "job_backup.json", "r", encoding="utf-8") as f:
             backup_dict = json.load(f)
@@ -822,6 +879,7 @@ def add_dir_to_config(new_output_dir):
     else:
         batch_status = "running"
 
+    # Update the batch config with the new output directory
     batch_config.get(config_name, {}).get(batch_status, []).append(str(new_output_dir))
     if config_name not in batch_config.keys():
         batch_config[config_name] = defaultdict(list)
@@ -830,6 +888,7 @@ def add_dir_to_config(new_output_dir):
     if batch_status not in batch_config[config_name].keys():
         batch_config[config_name][batch_status] = [str(new_output_dir)]
 
+    # Write the updated batch config to the file
     batch_config_path = read_batch_config_file("path")
     with open(batch_config_path, "w", encoding="utf-8") as f:
         json.dump(batch_config, f, indent=4)
@@ -838,6 +897,21 @@ def add_dir_to_config(new_output_dir):
 
 
 def read_premade_config(mode):
+    """
+    Reads a premade configuration file and returns the configuration data.
+
+    Args:
+        mode (str): The mode in which to read the configuration file. Must be one of "path", "dict", or "both".
+
+    Returns:
+        path|dict|tuple: Return object can be:
+        - If mode is "path", returns the path to the configuration file.
+        - If mode is "dict", returns the configuration data as a dictionary.
+        - If mode is "both", returns a tuple containing the path to the configuration file and the configuration data.
+
+    Raises:
+        ValueError: If the mode is not one of "path", "dict", or "both".
+    """
 
     if mode not in ["path", "dict", "both"]:
         raise ValueError(f"Mode must be either 'path', 'dict' or 'both' but is {mode}.")
@@ -883,6 +957,28 @@ def read_premade_config(mode):
 
 
 def add_premade_config(config_path, return_config_name=False, override_config=False):
+    """
+    Adds a premade configuration to the existing premade configurations.
+
+    Args:
+        config_path (str or dict): The path to the configuration file or
+        a dictionary containing the configuration.
+        return_config_name (bool, optional): Whether to return the name of the added configuration.
+        Defaults to False.
+        override_config (bool, optional): Whether to override an existing configuration with the same name.
+        Defaults to False.
+
+    Returns:
+        str or tuple: If `return_config_name` is True, returns a tuple containing the output
+        text and the name of the added configuration.
+        Otherwise, returns the output text as a string.
+
+    Raises:
+        FileNotFoundError: If the specified configuration file does not exist.
+        JSONDecodeError: If the configuration file is not a valid JSON file.
+        KeyError: If the configuration file does not contain the required keys.
+
+    """
     if isinstance(config_path, dict):
         new_config = config_path
 
@@ -920,6 +1016,15 @@ def add_premade_config(config_path, return_config_name=False, override_config=Fa
 
 
 def remove_premade_config(config_name):
+    """
+    Removes a premade config from the list of premade configs.
+
+    Args:
+        config_name (str): The name of the config to be removed.
+
+    Returns:
+        str: A message indicating whether the config was successfully removed or not.
+    """
 
     config_file, premade_configs = read_premade_config("both")
 
@@ -935,6 +1040,19 @@ def remove_premade_config(config_name):
 
 
 def automatic_ressource_allocation(main_config):
+    """
+    Automatically allocates resources for job execution based on the provided main configuration.
+
+    Args:
+        main_config (dict): The main configuration containing input file path, loop configuration, and resource limits.
+
+    Returns:
+        tuple: A tuple containing the updated main configuration and a dictionary of changes made.
+
+    Raises:
+        FileNotFoundError: If the input file path is not found.
+
+    """
 
     input_file = main_config["main_config"]["input_file_path"]
     input_path = pathlib.Path(input_file)
@@ -943,7 +1061,6 @@ def automatic_ressource_allocation(main_config):
         job_input = collect_xyz_files_to_dict(input_path)
     elif input_path.is_file():
         job_input = read_mol_input_json(input_path)
-
     else:
         raise FileNotFoundError(f"Test Can't find input files under {input_path}.")
 
@@ -951,7 +1068,6 @@ def automatic_ressource_allocation(main_config):
 
     parallel_layer_dict = defaultdict(lambda: 0)
     for loop_key, loop_config in main_config["loop_config"].items():
-
         parallel_layer_dict[loop_config["step_id"]] += 1
 
     max_parallel_layers = max(parallel_layer_dict.values())
@@ -970,19 +1086,14 @@ def automatic_ressource_allocation(main_config):
     active_jobs_per_node = active_jobs // max_compute_nodes
     if active_jobs_per_node <= 2:
         n_cores_per_calc = 24
-
     elif active_jobs_per_node <= 4:
         n_cores_per_calc = 12
-
     elif active_jobs_per_node <= 8:
         n_cores_per_calc = 6
-
     elif active_jobs_per_node <= 12:
         n_cores_per_calc = 4
-
     elif active_jobs_per_node <= 24:
         n_cores_per_calc = 2
-
     else:
         n_cores_per_calc = 1
 
@@ -1003,7 +1114,6 @@ def automatic_ressource_allocation(main_config):
 
         if loop_config["options"]["automatic_ressource_allocation"] == "normal":
             allocated_ram = 4000
-
         if loop_config["options"]["automatic_ressource_allocation"] == "large":
             allocated_ram = 8000
 
