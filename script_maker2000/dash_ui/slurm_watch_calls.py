@@ -15,22 +15,19 @@ def get_sacct_output(
 ):
     sacct_command = "sacct -p"
 
-    start_time = f"{time_range[0]}:00"
-    end_time = f"{time_range[1]}:00"
+    start_time = f"{start_date}T{time_range[0]}:00"
 
-    if start_date:
-        start_time = f"{start_date}T" + start_time
-    if end_date:
-        if time_range[1] == 24:
-            time_range[1] = "00"
-            end_date = end_date[:-1] + str(int(end_date[-1]) + 1)
-        end_time = f"{end_date}T" + end_time
+    if time_range[1] == 24:
+        time_range[1] = "00"
+        end_date = end_date[:-1] + str(int(end_date[-1]) + 1)
+    end_time = f"{end_date}T{time_range[1]}:00"
 
     sacct_command += f" -S {start_time} -E {end_time}"
 
     if format_entries:
         sacct_command += f" --format={','.join(format_entries)}"
-    slurm_output = remote_connection.run(sacct_command, hide=True).stdout
+
+    slurm_output = remote_connection.run(sacct_command, hide=False).stdout
 
     split_rows = slurm_output.split("\n")
     row_dict = defaultdict(dict)
