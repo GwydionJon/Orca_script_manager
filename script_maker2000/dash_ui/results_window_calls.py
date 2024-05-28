@@ -9,6 +9,7 @@ import cclib
 import numpy as np
 import plotly.graph_objects as go
 import os
+from invoke import CommandTimedOut
 
 from script_maker2000.files import (
     read_batch_config_file,
@@ -72,12 +73,21 @@ def update_results_config_(
                 "The orca script manager is not installed. Either install manually or submit a job to install it."
             )
         # return-batch-config
-        config_file_remote_str = remote_connection.run(
-            "ml devel/python/3.11.4 >/dev/null ;script_maker_cli return-batch-config --as_json",
-            hide=True,
-            warn=True,
-            timeout=120,
-        )
+        try:
+            config_file_remote_str = remote_connection.run(
+                "ml devel/python/3.11.4 >/dev/null ;script_maker_cli return-batch-config --as_json",
+                hide=True,
+                warn=True,
+                timeout=120,
+            )
+        except CommandTimedOut:
+            config_file_remote_str = remote_connection.run(
+                "ml devel/python/3.11.4 >/dev/null ;script_maker_cli return-batch-config --as_json",
+                hide=True,
+                warn=True,
+                timeout=120,
+            )
+
         if config_file_remote_str.return_code != 0:
             if "No config file found." in config_file_remote_str.stderr:
                 raise FileNotFoundError(
