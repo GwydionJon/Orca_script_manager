@@ -1,0 +1,225 @@
+ 
+### Setting up shell environment and defaults for environment vars ...
+ 
+ 
+### Printing basic job infos to stdout ...
+ 
+START_TIME             = 24-03-07 14:01:01 1709816461
+HOSTNAME               = n1424
+USER                   = hd_uo452
+SLURM_JOB_NAME         = sp_config_START_a001_b004_2
+SLURM_JOB_ID           = 12289886
+SLURM_SUBMIT_DIR       = /lustre/work/ws/ws1/hd_uo452-ac_forschi/AC-Forschi
+SLURM_JOB_NUM_NODES    = 1
+SLURM_CPUS_ON_NODE     = 1
+SLURM_NTASKS           = 1
+SLURM_JOB_NODELIST     = n1424
+---------------- ulimit -a -S ----------------
+core file size          (blocks, -c) 0
+data seg size           (kbytes, -d) unlimited
+scheduling priority             (-e) 0
+file size               (blocks, -f) unlimited
+pending signals                 (-i) 1535293
+max locked memory       (kbytes, -l) unlimited
+max memory size         (kbytes, -m) 20480
+open files                      (-n) 4096
+pipe size            (512 bytes, -p) 8
+POSIX message queues     (bytes, -q) 819200
+real-time priority              (-r) 0
+stack size              (kbytes, -s) 200000
+cpu time               (seconds, -t) unlimited
+max user processes              (-u) 16384
+virtual memory          (kbytes, -v) unlimited
+file locks                      (-x) unlimited
+---------------- ulimit -a -H ----------------
+core file size          (blocks, -c) unlimited
+data seg size           (kbytes, -d) unlimited
+scheduling priority             (-e) 0
+file size               (blocks, -f) unlimited
+pending signals                 (-i) 1535293
+max locked memory       (kbytes, -l) unlimited
+max memory size         (kbytes, -m) 20480
+open files                      (-n) 131072
+pipe size            (512 bytes, -p) 8
+POSIX message queues     (bytes, -q) 819200
+real-time priority              (-r) 0
+stack size              (kbytes, -s) 200000
+cpu time               (seconds, -t) unlimited
+max user processes              (-u) 1535293
+virtual memory          (kbytes, -v) unlimited
+file locks                      (-x) unlimited
+----------------------------------------------
+ 
+### Creating TMP_WORK_DIR directory and changing to it ...
+ 
+TMP_BASE_DIR           = /tmp/hd_uo452.12289886
+JOB_WORK_DIR           = sp_config_START_a001_b004_2.12289886.240307_140101
+TMP_WORK_DIR           = /tmp/hd_uo452.12289886/sp_config_START_a001_b004_2.12289886.240307_140101
+mkdir: created directory '/tmp/hd_uo452.12289886/sp_config_START_a001_b004_2.12289886.240307_140101'
+ 
+### Loading software module:
+ 
+
+Note: the module "chem/orca" cannot be unloaded because it was not loaded.
+
+
+	 Module chem/orca/5.0.2 has been loaded
+
+	 Activated primary packages:
+		 ORCA version 5.0.2
+
+	 Activated secondary packages:
+		 OpenMPI version 4.0
+		 Intel Compiler version 19.1.2
+
+	 WARNING: This module is provisional! It can be erased/modified/exchanged any
+time in near future.
+
+
+Currently Loaded Modules:
+  1) devel/python/3.11.4     3) mpi/openmpi/4.0
+  2) compiler/intel/19.1.2   4) chem/orca/5.0.2
+
+ 
+
+ 
+### Display internal Orca environments...
+ 
+ORCA_BIN_DIR  = /opt/bwhpc/common/chem/orca/5.0.2_static
+ORCA_EXA_DIR  = /opt/bwhpc/common/chem/orca/5.0.2_static/bwhpc-examples
+ORCA_VERSION  = 5.0.2
+
+ 
+### Copying input files to TMP_WORK_DIR.
+ 
+'/lustre/work/ws/ws1/hd_uo452-ac_forschi/AC-Forschi/script_maker2000/tests/tests_dir/tmp45mvhmwv/example_xyz_output/sp_config/input/START_a001_b004_2/START_a001_b004_2.inp' -> '/tmp/hd_uo452.12289886/sp_config_START_a001_b004_2.12289886.240307_140101/START_a001_b004_2.inp'
+ 
+### Running application ...
+ 
+
+### backup function called.
+###Checkpointing ... at Thu Mar  7 14:01:05 CET 2024
+
+mkdir: created directory '/lustre/work/ws/ws1/hd_uo452-ac_forschi/AC-Forschi/script_maker2000/tests/tests_dir/tmp45mvhmwv/example_xyz_output/sp_config/output/START_a001_b004_2/backup_results'
+Creating tgz-file '/lustre/work/ws/ws1/hd_uo452-ac_forschi/AC-Forschi/script_maker2000/tests/tests_dir/tmp45mvhmwv/example_xyz_output/sp_config/input/START_a001_b004_2/backup_results_12289886.tgz' ...
+START_a001_b004_2.E.tmp
+START_a001_b004_2.EIJ.tmp
+START_a001_b004_2.H.tmp
+START_a001_b004_2.K.tmp
+START_a001_b004_2.PDAT.tmp
+START_a001_b004_2.S.tmp
+START_a001_b004_2.SHARK.K.tmp
+START_a001_b004_2.SHARKINP.tmp
+START_a001_b004_2.SM12.tmp
+START_a001_b004_2.SP12.tmp
+START_a001_b004_2.T.tmp
+START_a001_b004_2.V.tmp
+START_a001_b004_2.gbw
+START_a001_b004_2.inp
+START_a001_b004_2.int.tmp
+START_a001_b004_2.xyz
+START_a001_b004_2_property.txt
+
+### backup function finished at Thu Mar  7 14:01:06 CET 2024
+
+ 
+### Cleaning up files ... removing unnecessary scratch files ...
+ 
+ 
+### Removing orca input file ...
+ 
+removed '/tmp/hd_uo452.12289886/sp_config_START_a001_b004_2.12289886.240307_140101/START_a001_b004_2.inp'
+ 
+### Copying back tgz-archive of results to SLURM_OUTPUT_DIR ...
+ 
+Creating result tgz-file 'sp_config_START_a001_b004_2.tgz' ...
+./
+./START_a001_b004_2.diis.tmp
+./START_a001_b004_2.VM1EXT.tmp
+./START_a001_b004_2.SQRTVEXT.tmp
+./START_a001_b004_2.VEXT.tmp
+./START_a001_b004_2.SM12.tmp
+./START_a001_b004_2.SP12.tmp
+./START_a001_b004_2.E.tmp
+./START_a001_b004_2.V.tmp
+./START_a001_b004_2.T.tmp
+./START_a001_b004_2.H.tmp
+./START_a001_b004_2.S.tmp
+./START_a001_b004_2.K.tmp
+./START_a001_b004_2.SHARK.K.tmp
+./START_a001_b004_2.PDAT.tmp
+./START_a001_b004_2.EIJ.tmp
+./START_a001_b004_2.int.tmp
+./START_a001_b004_2.gbw
+./START_a001_b004_2.xyz
+./START_a001_b004_2_property.txt
+./START_a001_b004_2.SHARKINP.tmp
+tar: .: file changed as we read it
+'sp_config_START_a001_b004_2.tgz' -> '/lustre/work/ws/ws1/hd_uo452-ac_forschi/AC-Forschi/script_maker2000/tests/tests_dir/tmp45mvhmwv/example_xyz_output/sp_config/output/START_a001_b004_2/sp_config_START_a001_b004_2.tgz'
+./
+./START_a001_b004_2.diis.tmp
+./START_a001_b004_2.VM1EXT.tmp
+./START_a001_b004_2.SQRTVEXT.tmp
+./START_a001_b004_2.VEXT.tmp
+./START_a001_b004_2.SM12.tmp
+./START_a001_b004_2.SP12.tmp
+./START_a001_b004_2.E.tmp
+./START_a001_b004_2.V.tmp
+./START_a001_b004_2.T.tmp
+./START_a001_b004_2.H.tmp
+./START_a001_b004_2.S.tmp
+./START_a001_b004_2.K.tmp
+./START_a001_b004_2.SHARK.K.tmp
+./START_a001_b004_2.PDAT.tmp
+./START_a001_b004_2.EIJ.tmp
+./START_a001_b004_2.int.tmp
+./START_a001_b004_2.gbw
+./START_a001_b004_2.xyz
+./START_a001_b004_2_property.txt
+./START_a001_b004_2.SHARKINP.tmp
+ 
+Remove tgz file from SLURM_OUTPUT_DIR ...
+ 
+removed 'sp_config_START_a001_b004_2.tgz'
+ 
+### Final cleanup: Remove TMP_WORK_DIR ...
+ 
+removed '/tmp/hd_uo452.12289886/sp_config_START_a001_b004_2.12289886.240307_140101/sp_config_START_a001_b004_2.tgz'
+removed '/tmp/hd_uo452.12289886/sp_config_START_a001_b004_2.12289886.240307_140101/START_a001_b004_2.diis.tmp'
+removed '/tmp/hd_uo452.12289886/sp_config_START_a001_b004_2.12289886.240307_140101/START_a001_b004_2.VM1EXT.tmp'
+removed '/tmp/hd_uo452.12289886/sp_config_START_a001_b004_2.12289886.240307_140101/START_a001_b004_2.SQRTVEXT.tmp'
+removed '/tmp/hd_uo452.12289886/sp_config_START_a001_b004_2.12289886.240307_140101/START_a001_b004_2.VEXT.tmp'
+removed '/tmp/hd_uo452.12289886/sp_config_START_a001_b004_2.12289886.240307_140101/START_a001_b004_2.SM12.tmp'
+removed '/tmp/hd_uo452.12289886/sp_config_START_a001_b004_2.12289886.240307_140101/START_a001_b004_2.SP12.tmp'
+removed '/tmp/hd_uo452.12289886/sp_config_START_a001_b004_2.12289886.240307_140101/START_a001_b004_2.E.tmp'
+removed '/tmp/hd_uo452.12289886/sp_config_START_a001_b004_2.12289886.240307_140101/START_a001_b004_2.V.tmp'
+removed '/tmp/hd_uo452.12289886/sp_config_START_a001_b004_2.12289886.240307_140101/START_a001_b004_2.T.tmp'
+removed '/tmp/hd_uo452.12289886/sp_config_START_a001_b004_2.12289886.240307_140101/START_a001_b004_2.H.tmp'
+removed '/tmp/hd_uo452.12289886/sp_config_START_a001_b004_2.12289886.240307_140101/START_a001_b004_2.S.tmp'
+removed '/tmp/hd_uo452.12289886/sp_config_START_a001_b004_2.12289886.240307_140101/START_a001_b004_2.K.tmp'
+removed '/tmp/hd_uo452.12289886/sp_config_START_a001_b004_2.12289886.240307_140101/START_a001_b004_2.SHARK.K.tmp'
+removed '/tmp/hd_uo452.12289886/sp_config_START_a001_b004_2.12289886.240307_140101/START_a001_b004_2.PDAT.tmp'
+removed '/tmp/hd_uo452.12289886/sp_config_START_a001_b004_2.12289886.240307_140101/START_a001_b004_2.EIJ.tmp'
+removed '/tmp/hd_uo452.12289886/sp_config_START_a001_b004_2.12289886.240307_140101/START_a001_b004_2.int.tmp'
+removed '/tmp/hd_uo452.12289886/sp_config_START_a001_b004_2.12289886.240307_140101/START_a001_b004_2.gbw'
+removed '/tmp/hd_uo452.12289886/sp_config_START_a001_b004_2.12289886.240307_140101/START_a001_b004_2.xyz'
+removed '/tmp/hd_uo452.12289886/sp_config_START_a001_b004_2.12289886.240307_140101/START_a001_b004_2_property.txt'
+removed '/tmp/hd_uo452.12289886/sp_config_START_a001_b004_2.12289886.240307_140101/START_a001_b004_2.SHARKINP.tmp'
+removed directory '/tmp/hd_uo452.12289886/sp_config_START_a001_b004_2.12289886.240307_140101'
+END_TIME               = 24-03-07 14:01:24 1709816484
+ 
+### Exiting with exit code...
+ 
+Orca exit-coode: 
+
+======================== JOB EFFICIENCY REPORT ========================
+Job ID: 12289886
+Cluster: justus2
+User/Group: hd_uo452/hd_hd
+State: COMPLETED (exit code 0)
+Cores: 1
+CPU Utilized: 00:00:15
+CPU Efficiency: 60.00% of 00:00:25 core-walltime
+Job Wall-clock time: 00:00:25
+Memory Utilized: 746.00 KB
+Memory Efficiency: 3.64% of 20.00 MB
