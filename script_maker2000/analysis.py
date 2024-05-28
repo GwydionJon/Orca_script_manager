@@ -1,13 +1,13 @@
 import json
 from collections import defaultdict
-
 from pathlib import Path
 import cclib
 import numpy as np
 import datetime
-import plotly.graph_objects as go
 from rdkit import Chem
 from rdkit.Chem import AllChem
+
+import plotly.graph_objects as go
 
 single_value_entries = [
     "charge",
@@ -38,11 +38,16 @@ special_entries = ["vibfreqs", "atomcoords", "vibirs"]
 def extract_infos_from_results(raw_output_files: list) -> tuple:
     """
     Extracts the information from the output files and adds it to the job_dict.
+
+    Args:
+        raw_output_files (list): List of output file paths or directories containing output files.
+
+    Returns:
+        tuple: A tuple containing the result dictionary and a list of corrections.
     """
 
     if isinstance(raw_output_files, str):
         raw_output_files = Path(raw_output_files)
-
         out_files = list(raw_output_files.glob("**/*_calc_result.json"))
 
     elif isinstance(raw_output_files, list):
@@ -53,12 +58,9 @@ def extract_infos_from_results(raw_output_files: list) -> tuple:
             out_files.extend(list(Path(output_dir).glob("**/*_calc_result.json")))
 
     elif isinstance(raw_output_files, Path):
-
         if raw_output_files.is_dir():
             out_files = list(raw_output_files.glob("**/*_calc_result.json"))
-
         elif raw_output_files.is_file():
-
             if raw_output_files.name.endswith("_calc_result.json"):
                 out_files = [raw_output_files]
             else:
@@ -78,7 +80,6 @@ def extract_infos_from_results(raw_output_files: list) -> tuple:
     corrections_list = []
 
     for out_file in out_files:
-
         with open(out_file, "r", encoding="utf-8") as f:
             data = json.load(f)
         filename = out_file.name.split("_calc_result.json")[0]
@@ -97,6 +98,15 @@ def extract_infos_from_results(raw_output_files: list) -> tuple:
 
 
 def extract_result_data(data):
+    """
+    Extracts result data from a JSON object.
+
+    Args:
+        data (dict): JSON object containing the result data.
+
+    Returns:
+        tuple: A tuple containing the file dictionary and a list of corrections.
+    """
 
     file_dict = {}
     corrections_list = []
@@ -167,6 +177,15 @@ def extract_result_data(data):
 
 
 def parse_output_file(output_dir):
+    """
+    Parses the output file and saves the results in a JSON file.
+
+    Args:
+        output_dir (str or Path): Path to the output file or directory containing the output file.
+
+    Returns:
+        str: Path to the JSON file containing the parsed results.
+    """
 
     def _convert_np_to_list(item):
         if isinstance(item, dict):
@@ -193,7 +212,7 @@ def parse_output_file(output_dir):
     try:
         cclib_results = cclib.io.ccread(str(output_file))
     except Exception as e:
-        print(f"Error: {e}")  # cclib_results = cclib_results.parse()
+        print(f"Error: {e}")
         raise e
     cclib_attr = cclib_results.getattributes()
 
@@ -201,14 +220,9 @@ def parse_output_file(output_dir):
 
     result_dict["connectivity_check"] = basic_connectivity_check(result_dict)
 
-    # print("should write file")
-    # save the results in a json file
-    with open(
-        json_file,
-        "w",
-        encoding="utf-8",
-    ) as f:
-        json.dump(result_dict, f)
+    # Save the results in a JSON file
+    with open(json_file, "w", encoding="utf-8") as f:
+        json.dump(result_dict, f, indent=4)
     return json_file
 
 
@@ -219,12 +233,26 @@ def add_broadening(
     line_param=10,
     step=10,
 ):
+    """
+    Adds broadening to the given energy and intensity lists.
+
+    Args:
+        list_ex_energy (list): List of excitation energies.
+        list_osci_strength (list): List of oscillator strengths.
+        line_profile (str, optional): Line profile type. Defaults to "Lorentzian".
+        line_param (int, optional): Line parameter. Defaults to 10.
+        step (int, optional): Step size. Defaults to 10.
+
+    Returns:
+        tuple: A tuple containing the broadened energy and intensity lists.
+    """
+
     x_min = np.amin(list_ex_energy) - 50
     x_max = np.amax(list_ex_energy) + 50
     x = np.arange(x_min, x_max, step)
     y = np.zeros((len(x)))
 
-    # go through the frames and calculate the spectrum for each frame
+    # Go through the frames and calculate the spectrum for each frame
     for xp in range(len(x)):
         for e, f in zip(list_ex_energy, list_osci_strength):
             if line_profile == "Gaussian":
@@ -242,10 +270,24 @@ def add_broadening(
 def plot_ir_spectrum(
     mol_name, vib_freq, vib_int, broadening="Lorentzian", line_param=10, step=10
 ):
+    """
+    Plots the IR spectrum.
+
+    Args:
+        mol_name (str): Name of the molecule.
+        vib_freq (list): List of vibrational frequencies.
+        vib_int (list): List of vibrational intensities.
+        broadening (str, optional): Broadening type. Defaults to "Lorentzian".
+        line_param (int, optional): Line parameter. Defaults to 10.
+        step (int, optional): Step size. Defaults to 10.
+
+    Returns:
+        go.Figure: Plotly figure object.
+    """
 
     x, y = add_broadening(vib_freq, vib_int, broadening, line_param, step)
 
-    # transform to transmission spectrum
+    # Transform to transmission spectrum
     y = 1 - y / np.max(y)
 
     fig = go.Figure()
@@ -266,7 +308,15 @@ def plot_ir_spectrum(
 
 
 def basic_connectivity_check(calc_results):
-    """Check if the strucutre has changed during the calculation."""
+    """
+    Checks if the structure has changed during the calculation.
+
+    Args:
+        calc_results (str, Path or dict): Path to the JSON file or JSON object containing the calculation results.
+
+    Returns:
+        bool: True if the structure has not changed, False otherwise.
+    """
 
     def _coords_from_coords(calc_results, index):
         coords = list(calc_results["coords"].values())[index]
@@ -299,15 +349,15 @@ def basic_connectivity_check(calc_results):
         )
 
     original_coords = calc_results["metadata"]["coords"]
-    # coords are only present when orca didn't use an xyz file for the coord input
-    # if this is the case the first coordinates from the atom coordinate list will be used.
+    # Coords are only present when ORCA didn't use an XYZ file for the coord input.
+    # If this is the case, the first coordinates from the atom coordinate list will be used.
     if original_coords == []:
         if "coords" in calc_results:
             first_xyz_str = _coords_from_coords(calc_results, index=0)
         elif "atomcoords" in calc_results:
             first_xyz_str = _coords_from_atom_coords(calc_results, index=0)
 
-    else:  # if the input file contained xyz coordinates use these
+    else:  # If the input file contained XYZ coordinates, use these
         first_xyz_str = f"{len(original_coords)}\n\n"
         for row in original_coords:
             atom, *coords = row
@@ -315,13 +365,13 @@ def basic_connectivity_check(calc_results):
 
         first_xyz_str = first_xyz_str.strip()
 
-    # differentiate wether the data is directly parsed from orca (atomcoords) or has been extracted first (coords)
+    # Differentiate whether the data is directly parsed from ORCA (atomcoords) or has been extracted first (coords)
     if "coords" in calc_results:
         final_xyz_str = _coords_from_coords(calc_results, index=-1)
     elif "atomcoords" in calc_results:
         final_xyz_str = _coords_from_atom_coords(calc_results, index=-1)
 
-    # bonds of the input structure
+    # Bonds of the input structure
     first_mol = Chem.rdmolfiles.MolFromXYZBlock(first_xyz_str)
     AllChem.Compute2DCoords(first_mol)
     first_mol = AllChem.AddHs(first_mol)
@@ -331,7 +381,7 @@ def basic_connectivity_check(calc_results):
     for bond in first_mol.GetBonds():
         first_bond_list.append((bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()))
 
-    # bonds of the last iteration
+    # Bonds of the last iteration
     last_mol = Chem.rdmolfiles.MolFromXYZBlock(final_xyz_str)
     AllChem.Compute2DCoords(last_mol)
     last_mol = AllChem.AddHs(last_mol)

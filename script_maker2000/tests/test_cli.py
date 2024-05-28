@@ -26,7 +26,7 @@ def test_config_check(clean_tmp_dir, monkeypatch):
     del config["main_config"]
 
     with open(faulty_config_path, "w") as f:
-        json.dump(config, f)
+        json.dump(config, f, indent=4)
 
     result = runner.invoke(config_check, ["--config", faulty_config_path])
     assert result.exit_code == 1
@@ -38,7 +38,7 @@ def test_config_check(clean_tmp_dir, monkeypatch):
     del config["main_config"]["input_file_path"]
 
     with open(faulty_config_path, "w") as f:
-        json.dump(config, f)
+        json.dump(config, f, indent=4)
 
     result = runner.invoke(config_check, ["--config", faulty_config_path])
     assert result.exit_code == 1
@@ -50,7 +50,7 @@ def test_config_check(clean_tmp_dir, monkeypatch):
     config["main_config"]["input_file_path"] = "not_a_path"
 
     with open(faulty_config_path, "w") as f:
-        json.dump(config, f)
+        json.dump(config, f, indent=4)
 
     result = runner.invoke(config_check, ["--config", faulty_config_path])
     assert result.exit_code == 1
@@ -80,7 +80,7 @@ def test_start_config_local(clean_tmp_dir, monkeypatch):
     config["main_config"]["wait_for_results_time"] = 0.1
 
     with open(main_config_path, "w") as f:
-        json.dump(config, f)
+        json.dump(config, f, indent=4)
 
     original_init = BatchManager.__init__
     BatchManager.__init__ = new_init
@@ -114,7 +114,7 @@ def test_start_config_remote(clean_tmp_dir):
     config["main_config"]["wait_for_results_time"] = 10
 
     with open(main_config_path, "w") as f:
-        json.dump(config, f)
+        json.dump(config, f, indent=4)
 
     runner = CliRunner()
     result = runner.invoke(start_config, ["--config", main_config_path])
