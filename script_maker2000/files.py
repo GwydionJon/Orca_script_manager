@@ -16,7 +16,7 @@ batchLogger = logging.getLogger("BatchManager")
 main_config_keys = [
     "config_name",
     "input_file_path",
-    "output_dir",
+    # "output_dir",
     "parallel_layer_run",
     "wait_for_results_time",
     "continue_previous_run",
@@ -418,7 +418,12 @@ def _check_config_keys(main_config):
                     )
 
 
-def read_config(config_file, perform_validation=True, override_continue_job=False):
+def read_config(
+    config_file,
+    perform_validation=True,
+    override_continue_job=False,
+    change_output_dir=True,
+):
     """
     Read and provide the main configuration from a file or dictionary.
 
@@ -458,11 +463,18 @@ def read_config(config_file, perform_validation=True, override_continue_job=Fals
 
     output_dir = pathlib.Path(main_config["main_config"]["output_dir"])
     # when giving a relative path, resolve it in relation to the config file.
-    if not output_dir.is_absolute():
-        if isinstance(config_file, dict):
-            output_dir = os.getcwd() / output_dir
-        else:
-            output_dir = pathlib.Path(config_file).parent / output_dir
+
+    if change_output_dir:
+        if str(output_dir) == "use_current_dir" and (
+            isinstance(config_file, str) or isinstance(config_file, pathlib.Path)
+        ):
+            output_dir = pathlib.Path(config_file).parents[0]
+
+        elif not output_dir.is_absolute():
+            if isinstance(config_file, dict):
+                output_dir = os.getcwd() / output_dir
+            else:
+                output_dir = pathlib.Path(config_file).parent / output_dir
 
     output_dir = output_dir.resolve()
     main_config["main_config"]["output_dir"] = str(output_dir)
@@ -557,7 +569,9 @@ def collect_input_files(config_path, preparation_dir, config_name=None, zip_name
         if not config_name.endswith(".json"):
             config_name = config_name + ".json"
 
-    main_config = read_config(config_path, perform_validation=True)
+    main_config = read_config(
+        config_path, perform_validation=True, change_output_dir=False
+    )
 
     input_path = pathlib.Path(main_config["main_config"]["input_file_path"])
 
@@ -585,9 +599,12 @@ def collect_input_files(config_path, preparation_dir, config_name=None, zip_name
 
     main_config["main_config"]["input_file_path"] = str(input_json.name)
 
-    main_config["main_config"]["output_dir"] = pathlib.Path(
-        main_config["main_config"]["output_dir"]
-    ).stem
+    # Replace output_dir with output_dir name if it is not "."
+    # as that is used for choosing a specific folder through the gui
+    if main_config["main_config"]["output_dir"] != ".":
+        main_config["main_config"]["output_dir"] = pathlib.Path(
+            main_config["main_config"]["output_dir"]
+        ).stem
 
     # Replace all "empty" with "" in the main config and all sub configs
     replace_empty_with_empty_string(main_config)

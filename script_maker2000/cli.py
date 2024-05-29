@@ -204,9 +204,14 @@ def load_and_update_config(config_path: Path, extract_path: Path):
         config = json.load(f)
 
     current_output_path = config["main_config"]["output_dir"]
-    config["main_config"]["output_dir"] = str(
-        extract_path.parents[0] / current_output_path
-    )
+
+    if current_output_path == "use_current_dir":
+        config["main_config"]["output_dir"] = str(extract_path.parents[0])
+    else:
+
+        config["main_config"]["output_dir"] = str(
+            extract_path.parents[0] / current_output_path
+        )
 
     with open(config_path, "w", encoding="utf-8") as f:
         json.dump(config, f, indent=4)
