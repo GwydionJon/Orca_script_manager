@@ -167,7 +167,7 @@ def create_layer_cyto_graph(settings_dict):
                     "label": layer_name,
                     "type": layer_settings["type"],
                     "step_id": layer_settings["step_id"],
-                    "additional_input_files": layer_settings["additional_input_files"],
+                    # "additional_input_files": layer_settings["additional_input_files"],
                     "options": layer_settings["options"],
                 }
             }
