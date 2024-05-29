@@ -72,7 +72,7 @@ def create_config_load_row() -> dbc.Row:
         style={"margin": "20px", "width": "50%"},
     )
 
-    custom_config_path_input = create_new_intput(
+    custom_config_path_input = create_new_input(
         "Add a custom config path.",
         "",
         id_="custom_config_path_input",
@@ -121,64 +121,96 @@ def create_config_load_row() -> dbc.Row:
 
 
 def create_config_accordion_from_json(json_path: dict) -> dbc.Accordion:
+    """
+    Create a configuration accordion from a JSON file or dictionary.
 
+    Args:
+        json_path (Union[str, Path, dict]): The path to the JSON file or a dictionary.
+
+    Returns:
+        dbc.Accordion: The created configuration accordion.
+    """
+    # If json_path is a dictionary, assign it to json_dict
+    # Otherwise, assume it is a file path and load the JSON file into json_dict
     if isinstance(json_path, dict):
         json_dict = json_path
     else:
         json_path = Path(json_path)
 
-        with open(json_path, "r") as f:
+        with open(json_path, "r", encoding="utf-8") as f:
             json_dict = json.load(f)
 
-    # load empty config as backup
-
-    with open(Path(__file__).parents[1] / "data" / "empty_config.json", "r") as f:
+    # Load empty config as backup
+    with open(
+        Path(__file__).parents[1] / "data" / "empty_config.json", "r", encoding="utf-8"
+    ) as f:
         backup_dict = json.load(f)
 
+    # Create an empty accordion
     accordion = dbc.Accordion(
         children=[],
         style={"width": "90%"},
         id="accordion",
     )
+
+    # Iterate over the main keys in the json_dict
     for main_key, main_value in json_dict.items():
 
+        # Create a new accordion item for each main key
         new_accordion_item = dbc.AccordionItem(
             children=[], title=main_key, id=f"{main_key}_accordion_item"
         )
 
+        # Check if the main key is "main_config"
         if main_key == "main_config":
+            # Iterate over the keys in main_config_keys
             for key in main_config_keys:
                 if key in main_value.keys():
-                    new_input = create_new_intput(key, main_value[key], debounce=True)
+                    # Create a new input with the value from the json_dict
+                    new_input = create_new_input(key, main_value[key], debounce=True)
                     new_accordion_item.children.append(new_input)
                 else:
-                    new_input = create_new_intput(key, backup_dict[key], debounce=True)
+                    # Create a new input with the value from the backup_dict
+                    new_input = create_new_input(key, backup_dict[key], debounce=True)
                     new_accordion_item.children.append(new_input)
+
+        # Check if the main key is "structure_check_config"
         if main_key == "structure_check_config":
+            # Iterate over the keys in structure_check_config_keys
             for key in structure_check_config_keys:
                 if key in main_value.keys():
-                    new_input = create_new_intput(key, main_value[key], debounce=True)
+                    # Create a new input with the value from the json_dict
+                    new_input = create_new_input(key, main_value[key], debounce=True)
                     new_accordion_item.children.append(new_input)
                 else:
-                    new_input = create_new_intput(key, backup_dict[key], debounce=True)
+                    # Create a new input with the value from the backup_dict
+                    new_input = create_new_input(key, backup_dict[key], debounce=True)
                     new_accordion_item.children.append(new_input)
+
+        # Check if the main key is "analysis_config"
         if main_key == "analysis_config":
+            # Iterate over the keys in analysis_config_keys
             for key in analysis_config_keys:
                 if key in main_value.keys():
-                    new_input = create_new_intput(key, main_value[key], debounce=True)
+                    # Create a new input with the value from the json_dict
+                    new_input = create_new_input(key, main_value[key], debounce=True)
                     new_accordion_item.children.append(new_input)
                 else:
-                    new_input = create_new_intput(key, backup_dict[key], debounce=True)
+                    # Create a new input with the value from the backup_dict
+                    new_input = create_new_input(key, backup_dict[key], debounce=True)
                     new_accordion_item.children.append(new_input)
 
+        # Check if the main key is "loop_config"
         if main_key == "loop_config":
-
+            # Create a new accordion for the layer configurations
             layer_accordion = dbc.Accordion(
                 children=[],
                 id="layer_accordion",
             )
 
+            # Iterate over the loop configurations in main_value
             for i, (loop_key, loop_value) in enumerate(main_value.items()):
+                # Create a new accordion item for each loop configuration
                 layer_accordion_item = dbc.AccordionItem(
                     children=add_single_layer_config(
                         i, options_dict={loop_key: loop_value}
@@ -187,8 +219,10 @@ def create_config_accordion_from_json(json_path: dict) -> dbc.Accordion:
                 )
                 layer_accordion.children.append(layer_accordion_item)
 
+            # Add the layer configurations to the new accordion item
             new_accordion_item.children.append(add_layer_config_layout(layer_accordion))
 
+        # Add the new accordion item to the accordion
         accordion.children.append(new_accordion_item)
 
     return accordion
@@ -285,7 +319,7 @@ def create_cyto_graph_layout() -> dbc.Col:
     return cyto_col
 
 
-def create_new_intput(
+def create_new_input(
     key: str,
     value: str,
     id_=None,
@@ -354,7 +388,7 @@ def create_new_intput(
     # filter out nested lists if they are only 1 element long
     elif isinstance(value, list):
         if len(value) == 1 and keep_list is False:
-            new_input = create_new_intput(key, value[0])
+            new_input = create_new_input(key, value[0])
         else:
             new_input = dbc.Row(
                 children=[
@@ -410,7 +444,9 @@ def add_single_layer_config(i: int = None, options_dict: dict = None):
         raise ValueError("Either i or options_dict must be provided.")
     # load empty config as backup
 
-    with open(Path(__file__).parents[1] / "data" / "empty_config.json", "r") as f:
+    with open(
+        Path(__file__).parents[1] / "data" / "empty_config.json", "r", encoding="utf-8"
+    ) as f:
         backup_dict = json.load(f)
 
     if options_dict is None:
@@ -425,7 +461,7 @@ def add_single_layer_config(i: int = None, options_dict: dict = None):
     layer_layout = []
 
     new_id = {"type": "layer_name_input", "index": f"{i}"}
-    new_input = create_new_intput(
+    new_input = create_new_input(
         "Layer Name", list(options_dict.keys())[0], new_id, debounce=True
     )
     layer_layout.append(new_input)
@@ -441,12 +477,12 @@ def add_single_layer_config(i: int = None, options_dict: dict = None):
 
         if key not in ["options", "type"]:
             new_id = {"type": f"{key}_input", "index": f"{i}"}
-            new_input = create_new_intput(key, value, new_id, debounce=True)
+            new_input = create_new_input(key, value, new_id, debounce=True)
             layer_layout.append(new_input)
 
         elif key == "type":
             new_id = {"type": f"{key}_input", "index": f"{i}"}
-            new_input = create_new_intput(
+            new_input = create_new_input(
                 key,
                 possible_layer_types,
                 new_id,
@@ -465,7 +501,7 @@ def add_single_layer_config(i: int = None, options_dict: dict = None):
 
                 if options_key not in ["args", "automatic_ressource_allocation"]:
                     new_id = {"type": f"{options_key}_input", "index": f"{i}"}
-                    new_input = create_new_intput(
+                    new_input = create_new_input(
                         options_key, options_value, new_id, debounce=True
                     )
                     layer_layout.append(new_input)
@@ -473,7 +509,7 @@ def add_single_layer_config(i: int = None, options_dict: dict = None):
                 if options_key == "automatic_ressource_allocation":
                     new_id = {"type": f"{options_key}_input", "index": f"{i}"}
 
-                    new_input = create_new_intput(
+                    new_input = create_new_input(
                         options_key, possible_resource_settings, new_id
                     )
                     layer_layout.append(new_input)
@@ -513,73 +549,72 @@ def add_single_layer_config(i: int = None, options_dict: dict = None):
                             args_key = None
                         if args_value == "" or args_value == "empty":
                             args_value = None
-
                         layer_layout.append(
-                            dbc.Row(
-                                [
-                                    dbc.Col(
-                                        [
-                                            dbc.Row(
-                                                dbc.InputGroupText(
-                                                    "Add settings block "
-                                                ),
-                                            ),
-                                            dbc.Row(
-                                                dbc.Input(
-                                                    value=args_key,
-                                                    placeholder="option group, for example scf",
-                                                    type="text",
-                                                    id={
-                                                        "type": "additional_settings_block_input",
-                                                        "index": f"{i}",
-                                                        "n_clicks": j,
-                                                    },
-                                                    style={"width": "100%"},
-                                                    debounce=True,
-                                                ),
-                                            ),
-                                        ],
-                                        style=default_style,
-                                        id={
-                                            "type": "additional_settings_block_col",
-                                            "index": f"{i}",
-                                        },
-                                    ),
-                                    dbc.Col(
-                                        [
-                                            dbc.Row(
-                                                dbc.InputGroupText(
-                                                    "Additional settings"
-                                                ),
-                                            ),
-                                            dbc.Row(
-                                                [
-                                                    dbc.Input(
-                                                        value=args_value,
-                                                        type="text",
-                                                        placeholder="option value, for example MAXITER 0",
-                                                        id={
-                                                            "type": "additional_settings_value_input",
-                                                            "index": f"{i}",
-                                                            "n_clicks": j,
-                                                        },
-                                                        style={"width": "100%"},
-                                                        debounce=True,
-                                                    ),
-                                                ]
-                                            ),
-                                        ],
-                                        style=default_style,
-                                        id={
-                                            "type": "additional_settings_value_col",
-                                            "index": f"{i}",
-                                        },
-                                    ),
-                                ]
-                            )
+                            create_additional_settings_block(args_key, args_value, i, j)
                         )
 
     return layer_layout
+
+
+def create_additional_settings_block(args_key, args_value, i, j):
+    return dbc.Row(
+        [
+            dbc.Col(
+                [
+                    dbc.Row(
+                        dbc.InputGroupText("Add settings block "),
+                    ),
+                    dbc.Row(
+                        dbc.Input(
+                            value=args_key,
+                            placeholder="option group, for example scf",
+                            type="text",
+                            id={
+                                "type": "additional_settings_block_input",
+                                "index": f"{i}",
+                                "n_clicks": j,
+                            },
+                            style={"width": "100%"},
+                            debounce=True,
+                        ),
+                    ),
+                ],
+                style=default_style,
+                id={
+                    "type": "additional_settings_block_col",
+                    "index": f"{i}",
+                },
+            ),
+            dbc.Col(
+                [
+                    dbc.Row(
+                        dbc.InputGroupText("Additional settings"),
+                    ),
+                    dbc.Row(
+                        [
+                            dbc.Input(
+                                value=args_value,
+                                type="text",
+                                placeholder="option value, for example MAXITER 0",
+                                id={
+                                    "type": "additional_settings_value_input",
+                                    "index": f"{i}",
+                                    "n_clicks": j,
+                                },
+                                style={"width": "100%"},
+                                debounce=True,
+                            ),
+                        ]
+                    ),
+                ],
+                style=default_style,
+                id={
+                    "type": "additional_settings_value_col",
+                    "index": f"{i}",
+                },
+            ),
+        ]
+    )
 
 
 def add_layer_config_rows(

@@ -1,7 +1,7 @@
 import dash_bootstrap_components as dbc
 from dash import html, dcc, Input, Output, State
 import dash_treeview_antd as dta
-from script_maker2000.dash_ui.config_maker_ui import create_new_intput
+from script_maker2000.dash_ui.config_maker_ui import create_new_input
 from script_maker2000.dash_ui.remote_explorer_calls import (
     print_selected_path,
     return_selected_path,
@@ -85,7 +85,7 @@ def create_remote_explorer_layout(mode):
                 header_text,
                 style={"margin": "10px", "width": "100%", "height": "100px"},
             ),
-            create_new_intput(input_label, input_value, input_id, input_placeholder),
+            create_new_input(input_label, input_value, input_id, input_placeholder),
             # text field to show wich path is selected
             html.P(
                 id=f"{mode}_path_output",
@@ -132,14 +132,14 @@ def create_job_submission_layout():
                 ],
                 style=default_style,
             ),
-            create_new_intput(
+            create_new_input(
                 "Select the zip file of your calculation. (See Config tab)",
                 "",
                 "valid_input_file",
                 placeholder_local,
                 True,
             ),
-            create_new_intput(
+            create_new_input(
                 "Select the parent dir for your calculation.",
                 "",
                 "valid_target_dir",

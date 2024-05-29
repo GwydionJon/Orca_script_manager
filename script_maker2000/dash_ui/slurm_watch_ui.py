@@ -15,14 +15,13 @@ def create_slurm_watcher_layout():
     # start/end date - date picker
     # job id - text input
     sacct_dict = Path(__file__).parent / "sacct_options.json"
-    with open(sacct_dict, "r") as f:
+    with open(sacct_dict, "r", encoding="utf-8") as f:
         sacct_dict = json.load(f)
 
+    # Time Picker Section
     time_picker = dbc.Col(
         [
-            dbc.Row(
-                html.H4("Pick a time range to search for jobs:"),
-            ),
+            dbc.Row(html.H4("Pick a time range to search for jobs:")),
             dbc.Row(
                 dcc.DatePickerRange(
                     id="date_picker_range",
@@ -51,15 +50,17 @@ def create_slurm_watcher_layout():
         style=default_style,
     )
 
+    # Format Option Picker Section
     format_option_picker = dbc.Col(
         [
-            dbc.Row(
-                html.H4("Pick which entries to display:"),
-            ),
+            dbc.Row(html.H4("Pick which entries to display:")),
             dbc.Row(
                 dbc.Checklist(
                     id="format_option_picker",
-                    options={value: value for value in sacct_dict["sacct_format"]},
+                    options=[
+                        {"label": value, "value": value}
+                        for value in sacct_dict["sacct_format"]
+                    ],
                     value=[
                         "JobID",
                         "JobName",
@@ -77,6 +78,7 @@ def create_slurm_watcher_layout():
         style=default_style,
     )
 
+    # Update Button Section
     slurm_update_button = dbc.Col(
         [
             dbc.Row(
@@ -84,15 +86,13 @@ def create_slurm_watcher_layout():
                     "Get Slurm Output",
                     id="slurm_update_button",
                     color="primary",
-                    style={
-                        "margin": "10px",
-                        "width": "20%",
-                    },
+                    style={"margin": "10px", "width": "20%"},
                 ),
             ),
         ],
     )
 
+    # Table Explanation Section
     table_explanation = dbc.Col(
         [
             dbc.Row(
@@ -100,8 +100,8 @@ def create_slurm_watcher_layout():
                     html.H4("Slurm Output:"),
                     html.Br(),
                     html.P(
-                        "This table shows the output of the sacct command. ",
-                        "You sort the table by clicking on the column headers.",
+                        "This table shows the output of the sacct command. "
+                        "You sort the table by clicking on the column headers."
                     ),
                     html.Br(),
                     html.P(
@@ -119,59 +119,39 @@ def create_slurm_watcher_layout():
                         ]
                     ),
                     html.Br(),
+                    html.P("The most relevant state values are:"),
+                    html.Br(),
                     html.P(
-                        "The most relevant state values are:",
-                        " CANCELLED, COMPLETED, OUT_OF_MEMORY, PENDING, RUNNING, TIMEOUT",
+                        "CANCELLED, COMPLETED, OUT_OF_MEMORY, PENDING, RUNNING, TIMEOUT"
                     ),
                 ]
             )
         ]
     )
 
+    # Slurm Table Section
     slurm_table = dash_table.DataTable(
         id="slurm_table",
         filter_action="native",
-        # filter_options={"placeholder_text": "Filter column..."},
         sort_action="native",
         sort_mode="multi",
-        style_table={
-            "overflowX": "auto",
-            "overflowY": "auto",
-            "height": "500px",
-        },
+        style_table={"overflowX": "auto", "overflowY": "auto", "height": "500px"},
     )
 
+    # Main Layout
     main_layout = dbc.Col(
         [
             dcc.Store(id="sacct_output"),
-            dbc.Row(
-                html.H2("Slurm Watcher"),
-            ),
+            dbc.Row(html.H2("Slurm Watcher")),
             dbc.Row(
                 [
-                    dbc.Col(
-                        [
-                            time_picker,
-                        ],
-                        width=3,
-                    ),
-                    dbc.Col(
-                        [
-                            format_option_picker,
-                        ],
-                        width=9,
-                    ),
+                    dbc.Col(time_picker, width=3),
+                    dbc.Col(format_option_picker, width=9),
                 ]
             ),
-            dbc.Row(
-                slurm_update_button,
-            ),
-            dbc.Row(
-                table_explanation,
-            ),
-            dbc.Row(
-                slurm_table,
-            ),
+            dbc.Row(slurm_update_button),
+            dbc.Row(table_explanation),
+            dbc.Row(slurm_table),
         ],
         style=default_style,
     )
