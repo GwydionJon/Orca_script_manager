@@ -412,7 +412,7 @@ class OrcaModule(TemplateModule):
             )
         return process
 
-    def restart_jobs(self, job_list, key):
+    def restart_jobs(self, reset_job_list, key):
         """
         Restarts a list of jobs that failed due to a walltime error.
 
@@ -434,19 +434,12 @@ class OrcaModule(TemplateModule):
 
         # Initialize dictionaries and lists
         new_xyz_dict = {}
-        reset_jobs_list = []
 
         # Log the number of jobs being restarted
-        self.log.info(f"Restarting {len(job_list)} jobs")
+        self.log.info(f"Restarting {len(reset_job_list)} jobs")
 
         # Iterate over the list of jobs
-        for job in job_list:
-
-            # Reset the job and check the result
-            reset_result = job.reset_key(self.config_key)
-            if reset_result == "walltime_error":
-                # If the job failed due to a walltime error, skip it
-                continue
+        for job in reset_job_list:
 
             # Collect the results of the job
             result_dict = OrcaModule.collect_results(job, key, "walltime_error")
@@ -470,9 +463,6 @@ class OrcaModule(TemplateModule):
             for file in job.current_dirs["input"].glob("*"):
                 file.unlink()
 
-            # Add the job to the list of reset jobs
-            reset_jobs_list.append(job)
-
         # Override the walltime setting
         override_slurm_settings = {
             "walltime": self.main_config["main_config"]["max_run_time"]
@@ -488,11 +478,8 @@ class OrcaModule(TemplateModule):
         self.write_orca_scripts(new_orca_file_dict)
         self.create_slurm_scripts(new_slurm_config)
 
-        # Get a list of jobs that were not reset
-        non_reset_jobs = [job for job in job_list if job not in reset_jobs_list]
-
-        # Return the list of reset jobs and the list of jobs that were not reset
-        return reset_jobs_list, non_reset_jobs
+        # Return the list of reset jobs
+        return reset_job_list
 
     @classmethod
     def collect_results(cls, job, key, results_dir="finished") -> dict:

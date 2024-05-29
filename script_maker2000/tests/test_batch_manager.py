@@ -193,7 +193,6 @@ def test_parallel_steps(multilayer_tmp_dir, monkeypatch, fake_slurm_function):
     assert len(all_results) == 11
     assert len(failed) == 14
     assert len(not_failed) == 24
-
     # assert zip exists
     zip_file = batch_manager.working_dir / "output.zip"
     assert zip_file.exists()
@@ -231,6 +230,104 @@ def perform_checks(batch_manager):
         assert "dirname" in test_dict[key].keys()
         assert "mult" in test_dict[key].keys()
         assert "charge" in test_dict[key].keys()
+
+
+@pytest.mark.skipif(shutil.which("sbatch") is not None, reason="Only run locally.")
+def test_multilayer_sucess_resubmit(
+    multilayer_tmp_dir, monkeypatch, fake_slurm_function
+):
+
+    # input_json_mol = multilayer_tmp_dir /"example_xyz"/ "example_molecules.json"
+
+    # with open(input_json_mol, "r") as f:
+    #     mol_json = json.load(f)
+
+    # mol_keys = list(mol_json.keys())
+    # for key in mol_keys:
+    #     if key != "a007_b022_2":
+    #         mol_json.pop(key)
+
+    # with open(input_json_mol, "w") as f:
+    #     json.dump(mol_json, f, indent=4)
+
+    main_config_path = multilayer_tmp_dir / "example_config.json"
+
+    with open(main_config_path, "r") as f:
+        main_config = json.load(f)
+
+    loop_config_keys = list(main_config["loop_config"].keys())
+
+    for key in loop_config_keys:
+
+        main_config["loop_config"][f"re_{key}"] = main_config["loop_config"].pop(key)
+
+    with open(main_config_path, "w") as f:
+        json.dump(main_config, f, indent=4)
+
+    batch_manager = BatchManager(main_config_path)
+
+    monkeypatch.setattr("shutil.which", lambda x: x)
+
+    # monkeypatch the job dict into the monkeypatched slurm function
+    job_dict = batch_manager.job_dict
+
+    def new_fake_slurm_function(*args, monkey_patch_job_dict=job_dict, **kwargs):
+        return fake_slurm_function(
+            *args, monkey_patch_job_dict=monkey_patch_job_dict, **kwargs
+        )
+
+    monkeypatch.setattr("subprocess.run", new_fake_slurm_function)
+
+    monkeypatch.setattr(batch_manager, "wait_time", 0.1)
+    monkeypatch.setattr(batch_manager, "max_loop", 10)
+
+    for work_manager_list in batch_manager.work_managers.values():
+        for work_manager in work_manager_list:
+            monkeypatch.setattr(work_manager, "wait_time", 0.1)
+            monkeypatch.setattr(work_manager, "max_loop", 8)
+
+    # first_worker = list(batch_manager.work_managers.values())[0][0]
+    # #worker_output = asyncio.run(first_worker.loop())
+
+    # current_job_dict = first_worker.check_job_status()
+    # print(current_job_dict)
+
+    # current_job_dict["not_started"].extend(
+    #     first_worker.prepare_jobs(current_job_dict["found"])
+    # )
+
+    # current_job_dict["submitted"].extend(
+    #     first_worker.submit_jobs(current_job_dict["not_started"])
+    # )
+
+    # current_job_dict["returned"].extend(
+    #     first_worker.check_submitted_jobs(current_job_dict["submitted"])
+    # )
+
+    # fresh_finished, reset_jobs = first_worker.manage_returned_jobs(
+    #     current_job_dict["returned"]
+    # )
+
+    # current_job_dict = first_worker.check_job_status()
+    # print(current_job_dict)
+    # #first_worker.manage_finished_jobs(fresh_finished)
+
+    # first_worker.restart_walltime_error_jobs(reset_jobs)
+
+    exit_code, task_results = batch_manager.run_batch_processing(
+        supress_exceptions=True
+    )
+
+    assert exit_code == 1
+    for task_result in task_results:
+        assert task_result.done() is True
+        assert "All jobs done after" in task_result.result()
+
+    results = batch_manager.collect_result_overview()
+
+    assert results["finished"] == 42
+    assert results["walltime_error"] == 2
+    assert results["failed"] == 2
 
 
 def test_continue_run(pre_started_dir, monkeypatch, fake_slurm_function):

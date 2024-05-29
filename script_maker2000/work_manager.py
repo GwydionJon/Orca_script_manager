@@ -144,13 +144,24 @@ class WorkManager:
                 overlapping_jobs.append(job)
 
         self.log.info(
-            f"Submitted {len(started_jobs)} new jobs with {len(overlapping_jobs)} overlapping jobs."
+            "Only %d (+%d overlapping jobs) out of %d jobs were submitted due to max job limit of %d."
+            % (
+                len(started_jobs),
+                len(overlapping_jobs),
+                len(not_started_jobs),
+                max_jobs,
+            )
+        )
+
+        self.log.info(
+            "Submitted %d new jobs with %d overlapping jobs."
+            % (len(started_jobs), len(overlapping_jobs))
         )
 
         if len(started_jobs) != len(not_started_jobs):
             self.log.info(
                 f"Only {len(started_jobs)} (+{len(overlapping_jobs)} overlapping jobs) out of {len(not_started_jobs)} "
-                + "jobs were submitted due to max job limit of {max_jobs}."
+                + f"jobs were submitted due to max job limit of {max_jobs}."
             )
 
         total_started_jobs = started_jobs + overlapping_jobs
@@ -244,7 +255,7 @@ class WorkManager:
         return_status_dict = defaultdict(lambda: 0)
         overlapping_jobs_info = []
         non_existing_output = []
-        wall_time_error_jobs = []
+        reset_jobs = []
 
         for job in returned_jobs:
             # first check if the job was successful and
@@ -267,10 +278,14 @@ class WorkManager:
             work_module_status = self.workModule.check_job_status(job)
 
             # check if status is walltime error, if skip the return manager
-            if work_module_status == "walltime_error":
-                wall_time_error_jobs.append(job)
 
-            job.manage_return(work_module_status)
+            job_reset = job.manage_return(work_module_status)
+
+            if job_reset:
+                reset_jobs.append(job)
+                return_status_dict["reset"] += 1
+                continue
+
             return_status_dict[work_module_status] += 1
 
         # remove empty jobs
@@ -278,7 +293,7 @@ class WorkManager:
             returned_jobs.remove(job)
 
         # remove walltime error jobs that will be restarted
-        for job in wall_time_error_jobs:
+        for job in reset_jobs:
             returned_jobs.remove(job)
 
         self.log.info(
@@ -298,17 +313,18 @@ class WorkManager:
         )
 
         self.log.warning(
-            "Managed %d returned jobs.\n\t%s", len(returned_jobs), output_info
-        )
-        return returned_jobs, wall_time_error_jobs
-
-    def restart_walltime_error_jobs(self, wall_time_error_jobs):
-
-        reset_jobs_list, non_reset_jobs = self.workModule.restart_jobs(
-            wall_time_error_jobs, self.config_key
+            "Managed %d returned jobs.\n\t%s",
+            len(returned_jobs) + len(reset_jobs),
+            output_info,
         )
 
-        return reset_jobs_list, non_reset_jobs
+        return returned_jobs, reset_jobs
+
+    def restart_walltime_error_jobs(self, reset_jobs):
+
+        reset_jobs_list = self.workModule.restart_jobs(reset_jobs, self.config_key)
+
+        return reset_jobs_list
 
     def manage_finished_jobs(self, finished_jobs):
         """
@@ -333,10 +349,10 @@ class WorkManager:
         # collect the orca output data for all jobs
 
         for job in finished_jobs:
-            result_dict = self.workModule.collect_results(job, self.config_key)
+            self.workModule.collect_results(job, self.config_key)
 
-            if result_dict and result_dict["connectivity_check"] is False:
-                self.log.warning("Connectivity check for %s was not successful!", job)
+            # if result_dict and result_dict["connectivity_check"] is False:
+            #     self.log.warning("Connectivity check for %s was not successful!", job)
 
         collection_format_arguments = [
             "JobID",
@@ -435,17 +451,15 @@ class WorkManager:
             )
 
             # manage finished jobs
-            fresh_finished, wall_time_error_jobs = self.manage_returned_jobs(
+            fresh_finished, reset_jobs = self.manage_returned_jobs(
                 current_job_dict["returned"]
             )
 
             # restart walltime error jobs
             # will be resubmitted in the next loop
-            current_job_dict["restarted_jobs"], non_resetted_jobs = (
-                self.restart_walltime_error_jobs(wall_time_error_jobs)
+            current_job_dict["restarted_jobs"] = self.restart_walltime_error_jobs(
+                reset_jobs
             )
-
-            fresh_finished.extend(non_resetted_jobs)
 
             # check on newly finished jobs to collect efficiency data
             self.manage_finished_jobs(fresh_finished)
