@@ -56,6 +56,42 @@ def check_local_zip_file(file_path):
     return input_valid, not input_valid, not input_valid
 
 
+def _check_remote_dir(target_dir, remote_connection):
+
+    result = remote_connection.run(f"test -d {target_dir}", warn=True)
+
+    # if the directory does not exist, it can't already be used for a calculation.
+    if result.exited != 0:
+        return True, False, False
+
+    check_existing_working_dir = remote_connection.run(f"ls {target_dir}", hide=True)
+
+    check_existing_working_dir = check_existing_working_dir.stdout
+
+    exists_already = False
+    for file in check_existing_working_dir.strip().split("\n"):
+        if "config__" in file:
+            exists_already = True
+            break
+        if "finished" == file:
+            exists_already = True
+            break
+        if "working" == file:
+            exists_already = True
+            break
+        if "_molecules.json" in file:
+            exists_already = True
+            break
+        if "job_backup.json" == file:
+            exists_already = True
+            break
+
+    if exists_already:
+        return False, True, True
+
+    return True, False, False
+
+
 def get_local_paths(n_clicks, path):
 
     output = Path(path).rglob("[!.]*.zip")
@@ -193,7 +229,9 @@ def _prepare_submission(
     )
 
     result = remote_connection.put(input_file, target_dir)
-    remote_connection.run(f"echo 'File copied to {result}'  >> {output_tracking_file} ")
+    remote_connection.run(
+        f"echo 'File {result.local} copied to {result.remote}'  >> {output_tracking_file} "
+    )
 
     # check if the script manager has already been installed by the user, if not do so.
     remote_connection.run(
@@ -233,6 +271,8 @@ def _submit_job(n_clicks, input_file, target_dir, remote_connection):
         remote_connection.run(f"screen -dmS {Path(input_file).stem}")
 
     # start the calculation using nohup
+
+    print(f"script_maker_cli start-zip --zip {str(file_to_extract)} -e {target_dir}")
     result = remote_connection.run(
         f'screen -S {Path(input_file).stem} -X stuff "ml devel/python/3.11.4 ; '
         + f" script_maker_cli start-zip --zip {str(file_to_extract)} -e {target_dir} --hide_job_status "

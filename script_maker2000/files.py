@@ -16,22 +16,26 @@ batchLogger = logging.getLogger("BatchManager")
 main_config_keys = [
     "config_name",
     "input_file_path",
-    # "output_dir",
+    # "output_dir", # automatically set in the gui
     "parallel_layer_run",
     "wait_for_results_time",
     "continue_previous_run",
     "max_n_jobs",
-    "max_ram_per_core",
     "max_compute_nodes",
     "max_cores_per_node",
+    "max_ram_per_core",
     "max_run_time",
-    "input_type",
+    # "input_type", # Not yet implemented
     "orca_version",
-    "common_input_files",
+    # "common_input_files", # Not yet implemented
 ]
 structure_check_config_keys = ["run_checks"]
 analysis_config_keys = ["run_benchmark"]
-loop_config_keys = ["type", "step_id", "additional_input_files", "options"]
+loop_config_keys = [
+    "type",
+    "step_id",
+    "options",
+]  # "additional_input_files" Not yet implemented
 options_keys = [
     "method",
     "basisset",

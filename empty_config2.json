@@ -1,0 +1,68 @@
+{
+    "main_config": {
+        "config_name": "empty_config2",
+        "input_file_path": "C:\\Users\\AK\\Documents\\Daskalakis_Gwydion\\AC-Forschi\\script_maker2000\\data\\example_xyz",
+        "parallel_layer_run": true,
+        "wait_for_results_time": 30,
+        "continue_previous_run": false,
+        "max_n_jobs": 2000,
+        "max_ram_per_core": 2500,
+        "max_compute_nodes": 4,
+        "max_cores_per_node": 24,
+        "max_run_time": "60:00:00",
+        "input_type": "xyz",
+        "orca_version": "5.0.2",
+        "common_input_files": [
+            "xyz"
+        ],
+        "output_dir": "use_current_dir"
+    },
+    "structure_check_config": {
+        "run_checks": true
+    },
+    "analysis_config": {
+        "run_benchmark": true
+    },
+    "loop_config": {
+        "opt_config": {
+            "options": {
+                "method": "HF",
+                "basisset": " DEF2-SVP",
+                "additional_settings": "empty",
+                "automatic_ressource_allocation": "normal",
+                "ram_per_core": 2500,
+                "n_cores_per_calculation": 24,
+                "disk_storage": 0,
+                "walltime": "0:2:00",
+                "args": {
+                    "scf": [
+                        "MAXITER 0"
+                    ]
+                }
+            },
+            "type": "orca",
+            "step_id": 0,
+            "additional_input_files": "empty"
+        },
+        "sp_config": {
+            "options": {
+                "method": "HF",
+                "basisset": " DEF2-SVP",
+                "additional_settings": "empty",
+                "automatic_ressource_allocation": "normal",
+                "ram_per_core": 2500,
+                "n_cores_per_calculation": 24,
+                "disk_storage": 0,
+                "walltime": "0:2:00",
+                "args": {
+                    "scf": [
+                        "MAXITER 0"
+                    ]
+                }
+            },
+            "type": "orca",
+            "step_id": 1,
+            "additional_input_files": "empty"
+        }
+    }
+}

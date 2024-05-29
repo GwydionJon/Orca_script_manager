@@ -192,4 +192,5 @@ Valentin_example/
 script_maker2000/notebooks/test_connectivity.ipynb
 produce_walltime_output_results/
 just_a_test/
-tests_dir
+tests_dir/
+empty_config2/

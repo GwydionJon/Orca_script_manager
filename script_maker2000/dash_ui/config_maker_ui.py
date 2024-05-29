@@ -177,9 +177,13 @@ def create_config_accordion_from_json(json_path: dict) -> dbc.Accordion:
         # Check if the main key is "structure_check_config"
         if main_key == "structure_check_config":
             # Iterate over the keys in structure_check_config_keys
+
+            key = key + "_NotImplementedYet"
+
             for key in structure_check_config_keys:
                 if key in main_value.keys():
                     # Create a new input with the value from the json_dict
+
                     new_input = create_new_input(key, main_value[key], debounce=True)
                     new_accordion_item.children.append(new_input)
                 else:
@@ -189,6 +193,8 @@ def create_config_accordion_from_json(json_path: dict) -> dbc.Accordion:
 
         # Check if the main key is "analysis_config"
         if main_key == "analysis_config":
+            key = key + "_NotImplementedYet"
+
             # Iterate over the keys in analysis_config_keys
             for key in analysis_config_keys:
                 if key in main_value.keys():
@@ -336,12 +342,13 @@ def create_new_input(
 
         if value == "" or value == "empty":
             value = None
-            if key == "output_dir":
-                placeholder = (
-                    "Dir name where the actual calculation on the server will happen"
-                )
-            elif key == "input_file_path":
-                placeholder = "Path to the molecule json file"
+
+        if key == "output_dir":
+            placeholder = (
+                "Dir name where the actual calculation on the server will happen"
+            )
+        elif key == "input_file_path":
+            placeholder = "Path to the molecule json file"
 
         new_input = dbc.Row(
             children=[
@@ -729,7 +736,7 @@ def add_callbacks(app: Dash) -> Dash:
             "main_config_inputs": {
                 "config_name": Input("config_name_input", "value"),
                 "input_file_path": Input("input_file_path_input", "value"),
-                "output_dir": Input("output_dir_input", "value"),
+                # "output_dir": Input("output_dir_input", "value"), #automatically set
                 "parallel_layer_run": Input("parallel_layer_run_input", "value"),
                 "wait_for_results_time": Input("wait_for_results_time_input", "value"),
                 "continue_previous_run": Input("continue_previous_run_input", "value"),
@@ -737,11 +744,10 @@ def add_callbacks(app: Dash) -> Dash:
                 "max_ram_per_core": Input("max_ram_per_core_input", "value"),
                 "max_compute_nodes": Input("max_compute_nodes_input", "value"),
                 "max_cores_per_node": Input("max_cores_per_node_input", "value"),
-                # "max_nodes": Input("max_nodes_input", "value"),
                 "max_run_time": Input("max_run_time_input", "value"),
-                "input_type": Input("input_type_input", "value"),
+                # "input_type": Input("input_type_input", "value"), # not yet implemented
                 "orca_version": Input("orca_version_input", "value"),
-                "common_input_files": Input("common_input_files_input", "value"),
+                # "common_input_files": Input("common_input_files_input", "value"),# not yet implemented
             },
             "structure_check_config_inputs": {
                 "run_checks": Input("run_checks_input", "value"),
@@ -755,9 +761,10 @@ def add_callbacks(app: Dash) -> Dash:
                 ),
                 "type": Input({"type": "type_input", "index": ALL}, "value"),
                 "step_id": Input({"type": "step_id_input", "index": ALL}, "value"),
-                "additional_input_files": Input(
-                    {"type": "additional_input_files_input", "index": ALL}, "value"
-                ),
+                # not yet implemented
+                # "additional_input_files": Input(
+                #     {"type": "additional_input_files_input", "index": ALL}, "value"
+                # ),
                 "method": Input({"type": "method_input", "index": ALL}, "value"),
                 "basisset": Input({"type": "basisset_input", "index": ALL}, "value"),
                 "additional_settings": Input(

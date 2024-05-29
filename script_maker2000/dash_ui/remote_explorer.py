@@ -11,6 +11,7 @@ from script_maker2000.dash_ui.remote_explorer_calls import (
     _get_live_updates,
     _submit_job,
     _get_remote_paths,
+    _check_remote_dir,
 )
 
 default_style = {"margin": "10px", "width": "100%"}
@@ -144,7 +145,8 @@ def create_job_submission_layout():
                 "",
                 "valid_target_dir",
                 placeholder_remote,
-                False,
+                readonly=False,
+                debounce=True,
             ),
             html.P(
                 [
@@ -209,6 +211,9 @@ def add_callbacks_remote_explorer(app, remote_connection):
         """
 
         return _submit_job(n_clicks, input_file, target_dir, remote_connection)
+
+    def check_remote_dir(target_dir):
+        return _check_remote_dir(target_dir, remote_connection)
 
     app.callback(
         Output("job_output", "value"),
@@ -281,4 +286,11 @@ def add_callbacks_remote_explorer(app, remote_connection):
         prevent_initial_call=True,
     )(check_local_zip_file)
 
+    app.callback(
+        Output("valid_target_dir", "valid"),
+        Output("valid_target_dir", "invalid"),
+        Output("submit_new_job", "disabled", allow_duplicate=True),
+        Input("valid_target_dir", "value"),
+        prevent_initial_call=True,
+    )(check_remote_dir)
     return app

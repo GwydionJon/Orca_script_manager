@@ -27,7 +27,7 @@ def get_sacct_output(
     if format_entries:
         sacct_command += f" --format={','.join(format_entries)}"
 
-    slurm_output = remote_connection.run(sacct_command, hide=False).stdout
+    slurm_output = remote_connection.run(sacct_command, hide=True).stdout
 
     split_rows = slurm_output.split("\n")
     row_dict = defaultdict(dict)

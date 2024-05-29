@@ -27,7 +27,7 @@ def create_slurm_watcher_layout():
                     id="date_picker_range",
                     start_date_placeholder_text="Start Date",
                     start_date=datetime.date.today(),
-                    end_date=datetime.date.today(),
+                    end_date=datetime.date.today() + datetime.timedelta(days=1),
                     end_date_placeholder_text="End Date",
                     calendar_orientation="horizontal",
                     display_format="YYYY-MM-DD",
