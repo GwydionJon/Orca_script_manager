@@ -10,6 +10,7 @@ import datetime
 
 import plotly.graph_objects as go
 
+
 single_value_entries = [
     "charge",
     "enthalpy",
