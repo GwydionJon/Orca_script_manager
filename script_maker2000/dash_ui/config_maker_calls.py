@@ -22,6 +22,7 @@ def create_config_file(
     settings_dict = defaultdict(OrderedDict)
 
     for key, value in main_config_inputs.items():
+
         if value is None:
             value = "empty"
 
@@ -68,6 +69,8 @@ def create_config_file(
 
     config_check_output = "All seems in order with the config shown below."
     disbale_input_files_button = False
+
+    settings_dict["main_config"]["output_dir"] = "use_current_dir"
 
     try:
         check_config(settings_dict, skip_file_check=False)
@@ -164,7 +167,7 @@ def create_layer_cyto_graph(settings_dict):
                     "label": layer_name,
                     "type": layer_settings["type"],
                     "step_id": layer_settings["step_id"],
-                    "additional_input_files": layer_settings["additional_input_files"],
+                    # "additional_input_files": layer_settings["additional_input_files"],
                     "options": layer_settings["options"],
                 }
             }
@@ -267,6 +270,7 @@ def export_json(n_clicks, config_name_input, settings_dict):
 
     if ".json" not in config_name_input:
         config_name_input += ".json"
+
     with open(config_name_input, "w", encoding="utf-8") as f:
         json.dump(_ordered_dict_recursive(settings_dict), f, indent=4)
 

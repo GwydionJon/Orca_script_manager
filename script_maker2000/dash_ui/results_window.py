@@ -6,7 +6,7 @@ from dash_bio import Speck
 import dash_treeview_antd as dta
 
 
-from script_maker2000.dash_ui.config_maker_ui import create_new_intput
+from script_maker2000.dash_ui.config_maker_ui import create_new_input
 
 from script_maker2000.dash_ui.results_window_calls import (
     update_results_config_,
@@ -82,7 +82,7 @@ def create_top_row_layout():
                             ),
                         ]
                     ),
-                    create_new_intput(
+                    create_new_input(
                         "Custom Output Directoy (takes priority!)",
                         "",
                         id_="custom_output_dir_input",
@@ -107,13 +107,13 @@ def create_top_row_layout():
             dbc.Col(
                 [
                     html.H4("Download Results", style=default_style),
-                    create_new_intput(
+                    create_new_input(
                         "Local Target Directory",
                         "",
                         id_="local_target_dir_input",
                         placeholder="Choose a folder (relative or absolute path). Empty means the cwd.",
                     ),
-                    create_new_intput(
+                    create_new_input(
                         "Exlude pattern from zip (seperate by comma)",
                         ".gbw,",
                         id_="exclude_pattern_input",
@@ -355,7 +355,7 @@ def create_results_table_row():
                 [
                     dbc.Row(
                         [
-                            create_new_intput(
+                            create_new_input(
                                 "Filter files",
                                 "",
                                 "results_file_filter_input",

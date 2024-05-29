@@ -32,6 +32,12 @@ class BatchManager:
         show_current_job_status=True,
     ) -> None:
 
+        if not isinstance(main_config_path, str) and not isinstance(
+            main_config_path, Path
+        ):
+            raise TypeError(
+                f"main_config_path should be a string, not {type(main_config_path)}."
+            )
         if Path(main_config_path).is_dir():
             main_config_path = Path(main_config_path) / "example_config.json"
 
@@ -379,7 +385,7 @@ class BatchManager:
             output_dir=self.working_dir,
         )
 
-    def run_batch_processing(self):
+    def run_batch_processing(self, supress_exceptions=False):
         """
         Starts the batch processing loop and returns the results.
         It will block until all tasks are done.
@@ -446,19 +452,22 @@ class BatchManager:
                 + f"Errors: {all_errors} \n \n"
                 + f"Adding Traceback: {all_error_traceback}"
             )
-            raise RuntimeError(
-                f"There was an error in the batch processing loop in task {all_error_tasks}."
-                + f"Errors: {all_errors}"
-                + f"Adding Traceback: {all_error_traceback}"
-            )
+            if not supress_exceptions:
+                raise RuntimeError(
+                    f"There was an error in the batch processing loop in task {all_error_tasks}."
+                    + f"Errors: {all_errors}"
+                    + f"Adding Traceback: {all_error_traceback}"
+                )
 
         if "failed" in result_dict.keys():
             exit_code = 1
             self.log.error("Jobs have failed, please check log. Exiting with code 1.")
-            raise RuntimeError(
-                "Jobs have failed, please check status overview in log. "
-                + "See job_backup.json for more detailed information per job. Exiting with code 1. "
-            )
+
+            if not supress_exceptions:
+                raise RuntimeError(
+                    "Jobs have failed, please check status overview in log. "
+                    + "See job_backup.json for more detailed information per job. Exiting with code 1. "
+                )
         else:
             self.log.info(f"Batch processing loop finished with exit code {exit_code}.")
 

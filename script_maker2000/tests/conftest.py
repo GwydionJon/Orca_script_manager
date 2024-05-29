@@ -13,14 +13,22 @@ from script_maker2000.batch_manager import BatchManager
 
 
 @pytest.fixture
-def clean_tmp_dir():
+def tmp_dir():
+
+    current_path = pathlib.Path(__file__)
+    tmp_dir_path = Path(current_path.parents[0] / ".." / ".." / "tests_dir").resolve()
+    tmp_dir_path.mkdir(exist_ok=True)
+    tmp_dir = pathlib.Path(mkdtemp(dir=(tmp_dir_path)))
+
+    return tmp_dir
+
+
+@pytest.fixture
+def clean_tmp_dir(tmp_dir):
 
     # tmp_dir = pathlib.Path(mkdtemp())
 
     current_path = pathlib.Path(__file__)
-    (current_path.parents[0] / "tests_dir").mkdir(exist_ok=True)
-    tmp_dir = pathlib.Path(mkdtemp(dir=(current_path.parents[0] / "tests_dir")))
-
     # load example config
     example_config_path = (
         current_path / ".." / ".." / "data" / "example_config_xyz.json"
@@ -98,13 +106,11 @@ def test_setup_work_dir(clean_tmp_dir):
 
 
 @pytest.fixture
-def pre_config_tmp_dir():
+def pre_config_tmp_dir(tmp_dir):
 
     # tmp_dir = pathlib.Path(mkdtemp())
 
     current_path = pathlib.Path(__file__)
-    (current_path.parents[0] / "tests_dir").mkdir(exist_ok=True)
-    tmp_dir = pathlib.Path(mkdtemp(dir=(current_path.parents[0] / "tests_dir")))
 
     # load example config
     example_config_path = (
@@ -153,12 +159,10 @@ def pre_config_tmp_dir():
 
 
 @pytest.fixture
-def multilayer_tmp_dir():
+def multilayer_tmp_dir(tmp_dir):
     # tmp_dir = pathlib.Path(mkdtemp())
 
     current_path = pathlib.Path(__file__)
-    (current_path.parents[0] / "tests_dir").mkdir(exist_ok=True)
-    tmp_dir = pathlib.Path(mkdtemp(dir=(current_path.parents[0] / "tests_dir")))
 
     # load example config
     example_config_path = (
@@ -352,13 +356,38 @@ def expected_df_second_log_jobs(expected_df_first_log_jobs):
 original_subprocess_run = subprocess.run
 
 
-def model_sbatch_output(args, cache_list):
-    example_output_dir = Path(__file__).parent / "test_data" / "example_outputs"
+special_return_dict = {
+    "re_opt_config1___a001_b001": ["success"],
+    "re_opt_config1___a001_b004_2": ["success"],
+    "re_opt_config1___a002_b006": ["success"],
+    "re_opt_config1___a003_b004": ["success"],
+    "re_opt_config1___a004_b007": ["walltime_errors", "success"],
+    "re_opt_config1___a007_b021_2": ["success"],
+    "re_opt_config1___a007_b022_2": ["walltime_errors", "success"],
+    "re_opt_config1___a007_b026": ["success"],
+    "re_opt_config1___a007_b027": ["walltime_errors", "success"],
+    "re_opt_config1___a007_b027_2": ["success"],
+    "re_opt_config1___a007_b069": ["success"],
+    "re_opt_config2___a001_b001": ["success"],
+    "re_opt_config2___a001_b004_2": ["success"],
+    "re_opt_config2___a002_b006": ["success"],
+    "re_opt_config2___a003_b004": ["success"],
+    "re_opt_config2___a004_b007": ["success"],
+    "re_opt_config2___a007_b021_2": ["walltime_errors", "walltime_errors"],
+    "re_opt_config2___a007_b022_2": ["walltime_errors", "success"],
+    "re_opt_config2___a007_b026": ["walltime_errors", "success"],
+    "re_opt_config2___a007_b027": ["success"],
+    "re_opt_config2___a007_b027_2": ["success"],
+    "re_opt_config2___a007_b069": ["success"],
+}
+
+
+def model_sbatch_output(args, slurm_id_cache_list=[]):
 
     new_id = np.random.randint(100)
-    if new_id in cache_list:
-        new_id = max(cache_list) + 1
-    cache_list.append(new_id)
+    if new_id in slurm_id_cache_list:
+        new_id = max(slurm_id_cache_list) + 1
+    slurm_id_cache_list.append(new_id)
     fake_output_str = f"job {new_id}"
 
     # get mol id
@@ -366,10 +395,36 @@ def model_sbatch_output(args, cache_list):
     step_id = Path(args[1]).stem.split("___")[0]
     run_id = Path(args[1]).stem
 
+    # change slurm output if resubmit test is run
+
+    if run_id in list(special_return_dict.keys()):
+
+        example_output_dir = (
+            Path(__file__).parent
+            / "test_data"
+            / "test_walltime_error_output"
+            / special_return_dict[run_id].pop(0)
+        )
+
+    elif run_id.startswith("re"):
+        example_output_dir = (
+            Path(__file__).parent
+            / "test_data"
+            / "test_walltime_error_output"
+            / "success"
+        )
+
+    else:
+        example_output_dir = Path(__file__).parent / "test_data" / "example_outputs"
+
     # get output_dir for this mol_id
     mol_output_dir = Path(args[1]).parents[2] / "output" / run_id
-
-    example_output_mol_dir = list(example_output_dir.glob(f"*{mol_id}"))[0]
+    try:
+        example_output_mol_dir = list(example_output_dir.glob(f"*{mol_id}"))[0]
+    except IndexError as e:
+        print(f"no example output for {mol_id} under {example_output_dir}")
+        print(list(example_output_dir.glob(f"*{mol_id}"))[0])
+        raise e
 
     # copy example output files to output_dir
     for file in example_output_mol_dir.glob("*"):
@@ -379,6 +434,7 @@ def model_sbatch_output(args, cache_list):
 
         mol_output_dir.mkdir(exist_ok=True, parents=True)
         shutil.copy(file, mol_output_dir / new_file)
+
     return fake_output_str
 
 
@@ -459,7 +515,7 @@ def model_sacct_output(args, monkey_patch_job_dict):
 @pytest.fixture
 def fake_slurm_function():
 
-    def _fake_slurm_function(args, monkey_patch_job_dict, cache_list=[], **kwargs):
+    def _fake_slurm_function(args, monkey_patch_job_dict, **kwargs):
 
         # 12486234|PBEh3c_freq_16cores_sp_PBEh_3c_opt__PBEh3c_freq_16cores_sp___C24H3I13N2O3Si|TIMEOUT|
         # 12486234.batch|batch|CANCELLED|
@@ -470,7 +526,7 @@ def fake_slurm_function():
                 self.stdout = stdout
 
         if "sbatch" == str(args[0]):
-            fake_output_str = model_sbatch_output(args, cache_list)
+            fake_output_str = model_sbatch_output(args)
 
         elif "sacct" in args[0]:
             # get id list
@@ -489,8 +545,10 @@ def fake_slurm_function():
 def analysis_tmp_dir():
 
     current_path = pathlib.Path(__file__)
-    (current_path.parents[0] / "tests_dir").mkdir(exist_ok=True)
-    tmp_dir = pathlib.Path(mkdtemp(dir=(current_path.parents[0] / "tests_dir")))
+    (current_path.parents[0] / ".." / ".." / "tests_dir").mkdir(exist_ok=True)
+    tmp_dir = pathlib.Path(
+        mkdtemp(dir=(current_path.parents[0] / ".." / ".." / "tests_dir"))
+    )
 
     for file in (current_path.parents[0] / "test_data" / "analysis_test_data").glob(
         "*.out"

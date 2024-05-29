@@ -15,14 +15,14 @@ def get_sacct_output(
 ):
     sacct_command = "sacct -p"
 
-    if start_date:
-        sacct_command += f" -S {start_date}T{time_range[0]}:00"
+    start_time = f"{start_date}T{time_range[0]}:00"
 
-    if end_date:
-        if time_range[1] == 24:
-            time_range[1] = "00"
-            end_date = end_date[:-1] + str(int(end_date[-1]) + 1)
-        sacct_command += f" -E {end_date}T{time_range[1]}:00"
+    if time_range[1] == 24:
+        time_range[1] = "00"
+        end_date = end_date[:-1] + str(int(end_date[-1]) + 1)
+    end_time = f"{end_date}T{time_range[1]}:00"
+
+    sacct_command += f" -S {start_time} -E {end_time}"
 
     if format_entries:
         sacct_command += f" --format={','.join(format_entries)}"
