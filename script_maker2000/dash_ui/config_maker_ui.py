@@ -337,7 +337,6 @@ def create_new_input(
 
     if id_ is None:
         id_ = f"{key}_input"
-    print(id_)
     if isinstance(value, str):
 
         if value == "" or value == "empty":

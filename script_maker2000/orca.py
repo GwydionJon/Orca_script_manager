@@ -482,7 +482,7 @@ class OrcaModule(TemplateModule):
         return reset_job_list
 
     @classmethod
-    def collect_results(cls, job, key, results_dir="finished") -> dict:
+    def collect_results(cls, job, key, results_dir=None) -> dict:
         """
         Uses the cclib library to extract the results from the ORCA output file.
 
@@ -508,8 +508,20 @@ class OrcaModule(TemplateModule):
             # If not, return None
             return None
 
+        if results_dir is None:
+            if job.status_per_key[key] == "finished":
+                results_dir = "finished"
+                parse_output_file(job.current_dirs[results_dir])
+
+            elif job.status_per_key[key] == "failed":
+                results_dir = job.failed_reason
+                parse_output_file(job.current_dirs[results_dir], job.failed_reason)
+            else:
+                return None
+        else:
+            parse_output_file(job.current_dirs[results_dir])
+
         # Parse the output file
-        parse_output_file(job.current_dirs[results_dir])
 
         # Extract the results from the output file
         result_dict, _ = extract_infos_from_results(job.current_dirs[results_dir])

@@ -427,7 +427,6 @@ def model_sbatch_output(args, slurm_id_cache_list=[]):
         raise e
 
     # copy example output files to output_dir
-    print(f"copying {example_output_mol_dir} to {mol_output_dir}")
     for file in example_output_mol_dir.glob("*"):
         new_file = str(file.name).replace("START_", f"{step_id}___")
         if (mol_output_dir / new_file).exists():

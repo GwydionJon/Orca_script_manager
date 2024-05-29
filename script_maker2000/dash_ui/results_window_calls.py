@@ -283,13 +283,20 @@ def hide_download_column_when_local(remote_local_switch):
 
 
 def _get_all_mol_dirs_in_finished_dirs(config_dict, files_filter_value):
-    # get all mol dirs in finished dirs
-    all_output_dict = defaultdict(lambda: defaultdict(list))
+    def should_skip_file(sub_dir_name, filters):
+        if not filters:
+            return False
+        return all(filter not in sub_dir_name for filter in filters)
+
+    def parse_if_needed(sub_dir, failed_reason=None):
+        result_file = sub_dir / f"{sub_dir.stem}_calc_result.json"
+        if not result_file.exists():
+            parse_output_file(sub_dir, failed_reason=failed_reason)
 
     all_output_dict = {"title": "Calculation Overview:", "key": "all", "children": []}
 
-    for config_key in config_dict.keys():
-        finished_dirs = config_dict[config_key]["finished"]
+    for config_key, config in config_dict.items():
+        finished_dirs = config.get("finished", [])
 
         tree_config_dict = {
             "title": config_key,
@@ -298,10 +305,9 @@ def _get_all_mol_dirs_in_finished_dirs(config_dict, files_filter_value):
         }
 
         for finished_dir in finished_dirs:
-            finished_dir = Path(finished_dir)
-            # find all folders within the raw_results_folder
-            for mol_main_dir in finished_dir.glob("**/raw_results/*"):
+            finished_dir_path = Path(finished_dir)
 
+            for mol_main_dir in finished_dir_path.glob("**/raw_results/*"):
                 mol_main_dict = {
                     "title": mol_main_dir.stem,
                     "key": f"__main__{str(mol_main_dir)}",
@@ -310,44 +316,45 @@ def _get_all_mol_dirs_in_finished_dirs(config_dict, files_filter_value):
 
                 for mol_sub_dir in mol_main_dir.glob("*"):
                     if "failed" in mol_sub_dir.stem:
-                        continue
-                    if not (
-                        mol_sub_dir / (mol_sub_dir.stem + "_calc_result.json")
-                    ).exists():
-                        parse_output_file(mol_sub_dir)
 
-                    # check if the file should be skipped
-                    # if the user has not entered any files to filter
-                    # then skip_file is False
-                    # if the user has entered a comma separated list of files to filter
-                    # then skip_file is True if the file is in the list
-                    if len(files_filter_value) == 0:
-                        skip_file = False
+                        failed_dir = mol_sub_dir
+                        for failed_reason_dir in failed_dir.glob("*"):
+                            for failed_mol_dir in failed_reason_dir.glob("*"):
+                                if should_skip_file(
+                                    failed_mol_dir.stem, files_filter_value
+                                ):
+                                    continue
+                                parse_if_needed(
+                                    failed_mol_dir, failed_reason=failed_reason_dir.stem
+                                )
+                                mol_main_dict["children"].append(
+                                    {
+                                        "title": failed_mol_dir.stem,
+                                        "key": "__failed__" + str(failed_mol_dir),
+                                        "children": [],
+                                    }
+                                )
+
+                        continue
                     else:
-                        skip_file = True
+                        parse_if_needed(mol_sub_dir)
 
-                        for filter in files_filter_value:
-                            if filter in mol_sub_dir.stem:
-                                skip_file = False
+                        if should_skip_file(mol_sub_dir.stem, files_filter_value):
+                            continue
 
-                    if skip_file:
-                        continue
+                        mol_main_dict["children"].append(
+                            {
+                                "title": mol_sub_dir.stem,
+                                "key": str(mol_sub_dir),
+                                "children": [],
+                            }
+                        )
 
-                    mol_main_dict["children"].append(
-                        {
-                            "title": mol_sub_dir.stem,
-                            "key": str(mol_sub_dir),
-                            "children": [],
-                        }
-                    )
+                if mol_main_dict["children"]:
+                    tree_config_dict["children"].append(mol_main_dict)
 
-                if len(mol_main_dict["children"]) == 0:
-                    continue
-                tree_config_dict["children"].append(mol_main_dict)
-
-        if len(tree_config_dict["children"]) == 0:
-            continue
-        all_output_dict["children"].append(tree_config_dict)
+        if tree_config_dict["children"]:
+            all_output_dict["children"].append(tree_config_dict)
 
     return all_output_dict
 
@@ -387,6 +394,7 @@ def update_table_values(
 ):
 
     selected_data = []
+    # selected_failed_data = []
     for selected_entry in tree_dict_selected:
         if selected_entry == "all":
             continue
@@ -394,13 +402,19 @@ def update_table_values(
             continue
         if selected_entry.startswith("__main__"):
             continue
+        if selected_entry.startswith("__failed__"):
+
+            selected_data.append(selected_entry.split("__failed__")[-1])
+            continue
 
         selected_data.append(selected_entry)
+
     table_data, corrections_list = extract_infos_from_results(selected_data)
 
     complete_table_data = table_data
 
     columns_mol_info = [
+        {"name": ["Molecular Informations", "Failed"], "id": "Failed"},
         {"name": ["Molecular Informations", "Charge"], "id": "charge"},
         {"name": ["Molecular Informations", "Multiplicity"], "id": "mult"},
         {"name": ["Molecular Informations", "Atom Count"], "id": "natom"},
@@ -537,7 +551,7 @@ def update_energy_convergence_plot(table_entry, energy_unit_select):
     if table_entry is None:
         return go.Figure(), False
 
-    if len(table_entry["final_energy_path"]) == 1:
+    if len(table_entry.get("final_energy_path", [])) <= 1:
         return go.Figure(), False
 
     index = np.arange(len(table_entry["final_energy_path"]))

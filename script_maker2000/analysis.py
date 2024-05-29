@@ -24,6 +24,7 @@ single_value_entries = [
     "temperature",
     "zpve",
     "connectivity_check",
+    "Failed",
 ]
 
 multi_value_entries = ["scfenergies", "final_sp_energy", "ccenergies"]
@@ -177,7 +178,7 @@ def extract_result_data(data):
     return file_dict, corrections_list
 
 
-def parse_output_file(output_dir):
+def parse_output_file(output_dir, failed_reason=None):
     """
     Parses the output file and saves the results in a JSON file.
 
@@ -210,14 +211,20 @@ def parse_output_file(output_dir):
         output_file = output_dir
         json_file = output_dir.with_name(output_dir.stem + "_calc_result.json")
 
-    try:
-        cclib_results = cclib.io.ccread(str(output_file))
-    except Exception as e:
-        print(f"Error: {e}")
-        raise e
-    cclib_attr = cclib_results.getattributes()
+    if output_file.exists():
+        try:
+            cclib_results = cclib.io.ccread(str(output_file))
+        except Exception as e:
+            print(f"Error: {e}")
+            raise e
+        cclib_attr = cclib_results.getattributes()
 
-    result_dict = _convert_np_to_list(cclib_attr)
+        result_dict = _convert_np_to_list(cclib_attr)
+        if failed_reason is not None:
+            result_dict["Failed"] = failed_reason
+
+    elif failed_reason is not None:
+        result_dict = {"Failed": failed_reason}
 
     # removed due to wrong embedding by rdkit
     # result_dict["connectivity_check"] = basic_connectivity_check(result_dict)
