@@ -1,0 +1,27 @@
+name:
+    script_maker
+channels:
+    - conda-forge
+dependencies:
+    - pip
+    - numpy
+    - pandas
+    - dash
+    - plotly
+    - click
+    - rdkit
+    - dash-bio
+    - dash-bootstrap-components
+    - dash_cytoscape
+    - pint
+    - molmass
+    - paramiko
+    - fabric
+    - PlatformDirs
+    - pip:
+        - dash-renderjson
+        - clickqt
+        - dash_treeview_antd
+        - mip
+        - pint_pandas
+        - cclib @ git+https://github.com/GwydionJon/cclib.git
