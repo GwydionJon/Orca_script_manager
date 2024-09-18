@@ -72,6 +72,7 @@ def update_results_config_(
             raise ModuleNotFoundError(
                 "The orca script manager is not installed. Either install manually or submit a job to install it."
             )
+
         # return-batch-config
         try:
             config_file_remote_str = remote_connection.run(
@@ -99,6 +100,12 @@ def update_results_config_(
             raise FileNotFoundError(
                 "No config file found. Please submit a job to create a config file."
             )
+
+        if config_file_remote_str == "":
+            raise FileNotFoundError(
+                "No config file found. There might be an error with the remote script_maker_cli."
+            )
+
         config_dict = json.loads(config_file_remote_str)
 
     options = [{"label": x, "value": x} for x in config_dict.keys()]
@@ -236,6 +243,8 @@ def download_results_(
 
     # zip the remote folder
 
+    exclude_pattern_value = exclude_pattern_value.replace(" ", "")
+
     result = remote_connection.run(
         "ml devel/python/3.11.4 >/dev/null ;script_maker_cli collect-results "
         + f" --results_path {result_path.as_posix()} --exclude_patterns {exclude_pattern_value}",
@@ -251,7 +260,17 @@ def download_results_(
     # unzip the file
     try:
         with zipfile.ZipFile(target_file, "r") as zipf:
-            zipf.extractall(path=extraction_dir)
+            for member in zipf.namelist():
+                # Skip tarballs
+                if (
+                    member.endswith(".tar")
+                    or member.endswith(".tar.gz")
+                    or member.endswith(".tgz")
+                ):
+                    continue
+                zipf.extract(member, path=extraction_dir)
+                zipf.extractall(path=extraction_dir)
+
     except FileNotFoundError as e:
         faulty_path = str(e).split("No such file or directory: ")[-1].strip()
         faulty_path = faulty_path.replace("'", "")

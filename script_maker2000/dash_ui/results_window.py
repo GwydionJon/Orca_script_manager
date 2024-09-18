@@ -115,7 +115,7 @@ def create_top_row_layout():
                     ),
                     create_new_input(
                         "Exlude pattern from zip (seperate by comma)",
-                        ".gbw,",
+                        ".gbw, backup",
                         id_="exclude_pattern_input",
                         placeholder="Exlude pattern from zip (seperate by comma)",
                     ),
