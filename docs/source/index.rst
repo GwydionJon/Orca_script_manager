@@ -11,6 +11,8 @@ Welcome to script_maker2000's documentation!
    :caption: Contents:
 
 
+   install_guide/install_guide
+
    modules
 
 

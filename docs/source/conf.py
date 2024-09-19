@@ -26,6 +26,7 @@ extensions = [
     "myst_parser",
     "sphinx_rtd_theme",
     "sphinx_click",
+    "sphinx_copybutton",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -59,3 +60,7 @@ autodoc_preserve_defaults = True
 
 # This is kind of unfortunate, but we get errors that are specific to the documentation build:
 nbsphinx_allow_errors = True
+
+
+# Configure sphinx_copybutton to select both block and inline code
+copybutton_selector = 'div.highlight pre, div.literal-block pre, p code'  

@@ -4,10 +4,12 @@ from pathlib import Path
 import cclib
 import numpy as np
 import datetime
-from rdkit import Chem
-from rdkit.Chem import AllChem
+
+# from rdkit import Chem
+# from rdkit.Chem import AllChem
 
 import plotly.graph_objects as go
+
 
 single_value_entries = [
     "charge",
@@ -23,6 +25,7 @@ single_value_entries = [
     "temperature",
     "zpve",
     "connectivity_check",
+    "Failed",
 ]
 
 multi_value_entries = ["scfenergies", "final_sp_energy", "ccenergies"]
@@ -176,7 +179,7 @@ def extract_result_data(data):
     return file_dict, corrections_list
 
 
-def parse_output_file(output_dir):
+def parse_output_file(output_dir, failed_reason=None):
     """
     Parses the output file and saves the results in a JSON file.
 
@@ -209,16 +212,23 @@ def parse_output_file(output_dir):
         output_file = output_dir
         json_file = output_dir.with_name(output_dir.stem + "_calc_result.json")
 
-    try:
-        cclib_results = cclib.io.ccread(str(output_file))
-    except Exception as e:
-        print(f"Error: {e}")
-        raise e
-    cclib_attr = cclib_results.getattributes()
+    if output_file.exists():
+        try:
+            cclib_results = cclib.io.ccread(str(output_file))
+        except Exception as e:
+            print(f"Error: {e}")
+            raise e
+        cclib_attr = cclib_results.getattributes()
 
-    result_dict = _convert_np_to_list(cclib_attr)
+        result_dict = _convert_np_to_list(cclib_attr)
+        if failed_reason is not None:
+            result_dict["Failed"] = failed_reason
 
-    result_dict["connectivity_check"] = basic_connectivity_check(result_dict)
+    elif failed_reason is not None:
+        result_dict = {"Failed": failed_reason}
+
+    # removed due to wrong embedding by rdkit
+    # result_dict["connectivity_check"] = basic_connectivity_check(result_dict)
 
     # Save the results in a JSON file
     with open(json_file, "w", encoding="utf-8") as f:
@@ -318,77 +328,79 @@ def basic_connectivity_check(calc_results):
         bool: True if the structure has not changed, False otherwise.
     """
 
-    def _coords_from_coords(calc_results, index):
-        coords = list(calc_results["coords"].values())[index]
-        xyz_str = f"{len(coords)}\n\n"
+    raise NotImplementedError("Removed due to wrong embedding by rdkit")
 
-        for row in coords:
-            atom, *_coords = row.values()
-            xyz_str += f"{atom} {' '.join(map(str, _coords))}\n"
-        return xyz_str.strip()
+    # def _coords_from_coords(calc_results, index):
+    #     coords = list(calc_results["coords"].values())[index]
+    #     xyz_str = f"{len(coords)}\n\n"
 
-    def _coords_from_atom_coords(calc_results, index):
-        xyz_str = f"{len(calc_results['atomlabels'])}\n\n"
+    #     for row in coords:
+    #         atom, *_coords = row.values()
+    #         xyz_str += f"{atom} {' '.join(map(str, _coords))}\n"
+    #     return xyz_str.strip()
 
-        for atom, coords in zip(
-            calc_results["atomlabels"], calc_results["atomcoords"][index]
-        ):
-            xyz_str += f"{atom} {' '.join(map(str, coords))}\n"
+    # def _coords_from_atom_coords(calc_results, index):
+    #     xyz_str = f"{len(calc_results['atomlabels'])}\n\n"
 
-        return xyz_str.strip()
+    #     for atom, coords in zip(
+    #         calc_results["atomlabels"], calc_results["atomcoords"][index]
+    #     ):
+    #         xyz_str += f"{atom} {' '.join(map(str, coords))}\n"
 
-    if isinstance(calc_results, str) or isinstance(calc_results, Path):
-        calc_results = Path(calc_results)
-        with open(calc_results, "r", encoding="utf-8") as f:
-            calc_results = json.load(f)
-    elif isinstance(calc_results, dict):
-        pass
-    else:
-        raise ValueError(
-            f"calc_results must be a string, a Path object or a dict but is {type(calc_results)}."
-        )
+    #     return xyz_str.strip()
 
-    original_coords = calc_results["metadata"]["coords"]
-    # Coords are only present when ORCA didn't use an XYZ file for the coord input.
-    # If this is the case, the first coordinates from the atom coordinate list will be used.
-    if original_coords == []:
-        if "coords" in calc_results:
-            first_xyz_str = _coords_from_coords(calc_results, index=0)
-        elif "atomcoords" in calc_results:
-            first_xyz_str = _coords_from_atom_coords(calc_results, index=0)
+    # if isinstance(calc_results, str) or isinstance(calc_results, Path):
+    #     calc_results = Path(calc_results)
+    #     with open(calc_results, "r", encoding="utf-8") as f:
+    #         calc_results = json.load(f)
+    # elif isinstance(calc_results, dict):
+    #     pass
+    # else:
+    #     raise ValueError(
+    #         f"calc_results must be a string, a Path object or a dict but is {type(calc_results)}."
+    #     )
 
-    else:  # If the input file contained XYZ coordinates, use these
-        first_xyz_str = f"{len(original_coords)}\n\n"
-        for row in original_coords:
-            atom, *coords = row
-            first_xyz_str += f"{atom} {' '.join(map(str, coords))}\n"
+    # original_coords = calc_results["metadata"]["coords"]
+    # # Coords are only present when ORCA didn't use an XYZ file for the coord input.
+    # # If this is the case, the first coordinates from the atom coordinate list will be used.
+    # if original_coords == []:
+    #     if "coords" in calc_results:
+    #         first_xyz_str = _coords_from_coords(calc_results, index=0)
+    #     elif "atomcoords" in calc_results:
+    #         first_xyz_str = _coords_from_atom_coords(calc_results, index=0)
 
-        first_xyz_str = first_xyz_str.strip()
+    # else:  # If the input file contained XYZ coordinates, use these
+    #     first_xyz_str = f"{len(original_coords)}\n\n"
+    #     for row in original_coords:
+    #         atom, *coords = row
+    #         first_xyz_str += f"{atom} {' '.join(map(str, coords))}\n"
 
-    # Differentiate whether the data is directly parsed from ORCA (atomcoords) or has been extracted first (coords)
-    if "coords" in calc_results:
-        final_xyz_str = _coords_from_coords(calc_results, index=-1)
-    elif "atomcoords" in calc_results:
-        final_xyz_str = _coords_from_atom_coords(calc_results, index=-1)
+    #     first_xyz_str = first_xyz_str.strip()
 
-    # Bonds of the input structure
-    first_mol = Chem.rdmolfiles.MolFromXYZBlock(first_xyz_str)
-    AllChem.Compute2DCoords(first_mol)
-    first_mol = AllChem.AddHs(first_mol)
-    AllChem.EmbedMolecule(first_mol)
-    first_bond_list = []
+    # # Differentiate whether the data is directly parsed from ORCA (atomcoords) or has been extracted first (coords)
+    # if "coords" in calc_results:
+    #     final_xyz_str = _coords_from_coords(calc_results, index=-1)
+    # elif "atomcoords" in calc_results:
+    #     final_xyz_str = _coords_from_atom_coords(calc_results, index=-1)
 
-    for bond in first_mol.GetBonds():
-        first_bond_list.append((bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()))
+    # # Bonds of the input structure
+    # first_mol = Chem.rdmolfiles.MolFromXYZBlock(first_xyz_str)
+    # AllChem.Compute2DCoords(first_mol)
+    # first_mol = AllChem.AddHs(first_mol)
+    # AllChem.EmbedMolecule(first_mol)
+    # first_bond_list = []
 
-    # Bonds of the last iteration
-    last_mol = Chem.rdmolfiles.MolFromXYZBlock(final_xyz_str)
-    AllChem.Compute2DCoords(last_mol)
-    last_mol = AllChem.AddHs(last_mol)
-    AllChem.EmbedMolecule(last_mol)
-    final_bond_list = []
+    # for bond in first_mol.GetBonds():
+    #     first_bond_list.append((bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()))
 
-    for bond in last_mol.GetBonds():
-        final_bond_list.append((bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()))
+    # # Bonds of the last iteration
+    # last_mol = Chem.rdmolfiles.MolFromXYZBlock(final_xyz_str)
+    # AllChem.Compute2DCoords(last_mol)
+    # last_mol = AllChem.AddHs(last_mol)
+    # AllChem.EmbedMolecule(last_mol)
+    # final_bond_list = []
 
-    return set(first_bond_list) == set(final_bond_list)
+    # for bond in last_mol.GetBonds():
+    #     final_bond_list.append((bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()))
+
+    # return set(first_bond_list) == set(final_bond_list)

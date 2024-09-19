@@ -1,7 +1,7 @@
 import dash_bootstrap_components as dbc
 from dash import html, dcc, Input, Output, State
 import dash_treeview_antd as dta
-from script_maker2000.dash_ui.config_maker_ui import create_new_intput
+from script_maker2000.dash_ui.config_maker_ui import create_new_input
 from script_maker2000.dash_ui.remote_explorer_calls import (
     print_selected_path,
     return_selected_path,
@@ -11,6 +11,7 @@ from script_maker2000.dash_ui.remote_explorer_calls import (
     _get_live_updates,
     _submit_job,
     _get_remote_paths,
+    _check_remote_dir,
 )
 
 default_style = {"margin": "10px", "width": "100%"}
@@ -85,7 +86,7 @@ def create_remote_explorer_layout(mode):
                 header_text,
                 style={"margin": "10px", "width": "100%", "height": "100px"},
             ),
-            create_new_intput(input_label, input_value, input_id, input_placeholder),
+            create_new_input(input_label, input_value, input_id, input_placeholder),
             # text field to show wich path is selected
             html.P(
                 id=f"{mode}_path_output",
@@ -132,19 +133,20 @@ def create_job_submission_layout():
                 ],
                 style=default_style,
             ),
-            create_new_intput(
+            create_new_input(
                 "Select the zip file of your calculation. (See Config tab)",
                 "",
                 "valid_input_file",
                 placeholder_local,
                 True,
             ),
-            create_new_intput(
+            create_new_input(
                 "Select the parent dir for your calculation.",
                 "",
                 "valid_target_dir",
                 placeholder_remote,
-                False,
+                readonly=False,
+                debounce=True,
             ),
             html.P(
                 [
@@ -209,6 +211,9 @@ def add_callbacks_remote_explorer(app, remote_connection):
         """
 
         return _submit_job(n_clicks, input_file, target_dir, remote_connection)
+
+    def check_remote_dir(target_dir):
+        return _check_remote_dir(target_dir, remote_connection)
 
     app.callback(
         Output("job_output", "value"),
@@ -281,4 +286,11 @@ def add_callbacks_remote_explorer(app, remote_connection):
         prevent_initial_call=True,
     )(check_local_zip_file)
 
+    app.callback(
+        Output("valid_target_dir", "valid"),
+        Output("valid_target_dir", "invalid"),
+        Output("submit_new_job", "disabled", allow_duplicate=True),
+        Input("valid_target_dir", "value"),
+        prevent_initial_call=True,
+    )(check_remote_dir)
     return app

@@ -294,7 +294,7 @@ class Job:
         - unknown_error: Indicates an unknown error occurred.
 
         Args:
-            return_str (str): The error string from the work module.
+            return_str (str): will return reset if the job has been reset due to walltime error. Else None
         """
 
         if return_str == "success":
@@ -302,6 +302,21 @@ class Job:
             if not self.current_dirs["finished"].exists():
                 shutil.move(self.current_dirs["output"], self.current_dirs["finished"])
         else:
+
+            if return_str == "walltime_error":
+                check_reset = self.reset_key(self.current_key)
+                if check_reset == "reset":
+
+                    shutil.move(
+                        self.current_dirs["output"], self.current_dirs[return_str]
+                    )
+
+                    # clear input directory for resubmission
+                    for file in self.current_dirs["input"].glob("*"):
+                        file.unlink()
+
+                    return "reset"
+
             self.current_status = "failed"
             self.failed_reason = return_str
 
