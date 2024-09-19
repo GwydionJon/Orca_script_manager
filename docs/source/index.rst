@@ -13,6 +13,8 @@ Welcome to script_maker2000's documentation!
    command_line_interface/cli_documentation
 
 
+   GUI/gui_overview
+
    developer_documentation/main_developer_page
 
    modules
