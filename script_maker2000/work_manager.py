@@ -314,9 +314,6 @@ class WorkManager:
 
         self.log.warning(
             "Managed %d returned jobs.\n\t%s",
-            len(returned_jobs),
-            output_info,
-            "Managed %d returned jobs.\n\t%s",
             len(returned_jobs) + len(reset_jobs),
             output_info,
         )
