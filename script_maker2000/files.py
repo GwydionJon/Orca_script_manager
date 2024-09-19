@@ -146,6 +146,7 @@ def read_mol_input_json(input_json, skip_file_check=False):
 
     with open(input_json, "r", encoding="utf-8") as f:
         mol_input = json.load(f)
+
     for key, entry in mol_input.items():
         # check that given values are consistent with filename scheme
         file_path = pathlib.Path(entry["path"])
@@ -164,6 +165,7 @@ def read_mol_input_json(input_json, skip_file_check=False):
         if skip_file_check:
             return mol_input
 
+        # check if all molecules have been creaed successfully and check if the etries are consistent with the file name
         for entry_key, value in entry.items():
 
             if entry_key == "path":
@@ -175,6 +177,7 @@ def read_mol_input_json(input_json, skip_file_check=False):
 
                 if not new_path.exists():
                     raise FileNotFoundError(f"Can't find file {value}")
+
                 if new_path.suffix != ".xyz":
                     raise ValueError(
                         f"Input files must be in xyz format. The following file is not: {value}"
@@ -320,8 +323,12 @@ def check_input_files(main_config):
             + " Please check your file name or provide the necessary files."
         )
 
-    if input_path.is_file() and input_path.suffix != ".json":
-        raise ValueError(f"Input file must be in json format. Found {input_path}.")
+    if input_path.is_file() and (
+        input_path.suffix != ".json" and input_path.suffix != ".xyz"
+    ):
+        raise ValueError(
+            f"Input file must be either json or xyz format. Found {input_path} with {input_path.suffix} format."
+        )
 
     if input_path.is_dir():
         if len(list(input_path.glob("*.xyz"))) == 0:
@@ -491,7 +498,7 @@ def read_config(
     return main_config
 
 
-def collect_xyz_files_to_dict(xyz_dir):
+def collect_xyz_files_to_dict(xyz_dir, filter_path=None):
     """
     Collects all xyz files in a directory and returns them as a dictionary.
 
@@ -514,6 +521,11 @@ def collect_xyz_files_to_dict(xyz_dir):
     mol_dict = {}
 
     for file in xyz_dir.glob("*.xyz"):
+
+        if filter_path:
+            if filter_path not in file.stem:
+                continue
+
         match = re.search(r"__c([+-]?\d+)m([+-]?\d+)", file.stem)
         if not match:
             raise ValueError(
@@ -588,10 +600,25 @@ def collect_input_files(config_path, preparation_dir, config_name=None, zip_name
         input_json = (
             input_path / f"{main_config['main_config']['config_name']}_molecules.json"
         )
-    else:
+
+    elif input_path.suffix == ".xyz":
+        mol_input = collect_xyz_files_to_dict(
+            input_path.parents[0], filter_path=input_path.stem
+        )
+        input_json = (
+            input_path / f"{main_config['main_config']['config_name']}_molecules.json"
+        )
+
+    elif input_path.suffix == ".json":
         # If input path is a file, read the mol_input from the input json file
         input_json = input_path
         mol_input = read_mol_input_json(input_json)
+
+    else:
+        raise ValueError(
+            "Input file must be either a directory, json or xyz file but is %s."
+            % input_path.suffix
+        )
 
     # Create a deep copy of mol_input to modify the paths
     mol_input_new = copy.deepcopy(mol_input)
@@ -653,8 +680,15 @@ def collect_input_files(config_path, preparation_dir, config_name=None, zip_name
     return zip_path
 
 
+def _is_truly_empty(dir_path):
+    for child in dir_path.iterdir():
+        if child.is_file() or (child.is_dir() and not _is_truly_empty(child)):
+            return False
+    return True
+
+
 def collect_results_(output_dir, exclude_patterns=None):
-    # for some reason zip file is many times faster than zip and significantly smaller
+    # for some reason zip file is many times faster than tar and significantly smaller
     output_dir = pathlib.Path(output_dir)
     if exclude_patterns is None:
         exclude_patterns = []
@@ -669,6 +703,10 @@ def collect_results_(output_dir, exclude_patterns=None):
     zip_path = output_dir / (output_dir.name + ".zip")
     with zipfile.ZipFile(zip_path, "w") as zipf:
         for file in output_dir.glob("**/*"):
+
+            # skip empty directories
+            if file.is_dir() and _is_truly_empty(file):
+                continue
 
             if "job_backup.json" in str(file):
                 zipf.write(file, arcname=str(file.relative_to(output_dir)))
@@ -1079,14 +1117,21 @@ def automatic_ressource_allocation(main_config):
     input_path = pathlib.Path(input_file)
 
     if input_path.is_dir():
+        # If input path is a directory, collect all xyz files
         job_input = collect_xyz_files_to_dict(input_path)
-    elif input_path.is_file():
+    elif input_path.suffix == ".xyz":
+        job_input = collect_xyz_files_to_dict(
+            input_path.parents[0], filter_path=input_path.stem
+        )
+
+    elif input_path.suffix == ".json":
+        # If input path is a file, read the mol_input from the input json file
         job_input = read_mol_input_json(input_path)
+
     else:
-        raise FileNotFoundError(f"Test Can't find input files under {input_path}.")
+        raise FileNotFoundError(f"Can't find input files under {input_path}.")
 
     # find max parallel layers
-
     parallel_layer_dict = defaultdict(lambda: 0)
     for loop_key, loop_config in main_config["loop_config"].items():
         parallel_layer_dict[loop_config["step_id"]] += 1

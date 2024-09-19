@@ -7,9 +7,9 @@ from script_maker2000.dash_ui.config_maker_calls import (
     _ordered_dict_recursive,
     check_input_path,
 )
-
+import copy
 from collections import defaultdict, OrderedDict
-
+from pathlib import Path
 
 possible_layer_types = ["type1", "type2", "type3"]
 possible_resource_settings = ["setting1", "setting2", "setting3"]
@@ -27,8 +27,8 @@ options_keys = [
 def test_create_config_file():
     main_config_inputs = {
         "parallel_layer_run": None,
-        "common_input_files": "file1,file2",
-        "xyz_path": "/path/to/xyz",
+        # "common_input_files": "file1,file2",
+        # "xyz_path": "/path/to/xyz",
         "input_file_path": "/path/to/input",
         "max_n_jobs": "4",
         "max_ram_per_core": "8",
@@ -75,6 +75,68 @@ def test_create_config_file():
     assert isinstance(result[1], defaultdict)
     assert isinstance(result[2], str)
     assert isinstance(result[3], bool)
+
+    main_config_inputs_json = copy.deepcopy(main_config_inputs)
+    main_config_inputs_json["input_file_path"] = (
+        Path(__file__).parent
+        / "test_data"
+        / "input_files"
+        / "example_xyz"
+        / "example_molecules.json"
+    )
+    result = create_config_file(
+        1,
+        main_config_inputs_json,
+        structure_check_config_inputs,
+        analysis_config_inputs,
+        layer_config_inputs,
+    )
+
+    config = result[1]
+    assert (
+        Path(config["main_config"]["input_file_path"]).name
+        == main_config_inputs_json["input_file_path"].name
+    )
+
+    main_config_inputs_dir = copy.deepcopy(main_config_inputs)
+    main_config_inputs_dir["input_file_path"] = (
+        Path(__file__).parent / "test_data" / "input_files" / "example_xyz"
+    )
+    result = create_config_file(
+        1,
+        main_config_inputs_dir,
+        structure_check_config_inputs,
+        analysis_config_inputs,
+        layer_config_inputs,
+    )
+
+    config = result[1]
+    assert (
+        Path(config["main_config"]["input_file_path"]).name
+        == main_config_inputs_dir["input_file_path"].name
+    )
+
+    main_config_inputs_xyz = copy.deepcopy(main_config_inputs)
+    main_config_inputs_xyz["input_file_path"] = (
+        Path(__file__).parent
+        / "test_data"
+        / "input_files"
+        / "example_xyz"
+        / "START_a004_b007__c0m1.xyz"
+    )
+    result = create_config_file(
+        1,
+        main_config_inputs_xyz,
+        structure_check_config_inputs,
+        analysis_config_inputs,
+        layer_config_inputs,
+    )
+
+    config = result[1]
+    assert (
+        Path(config["main_config"]["input_file_path"]).name
+        == main_config_inputs_xyz["input_file_path"].name
+    )
 
 
 def test_check_layer_config():

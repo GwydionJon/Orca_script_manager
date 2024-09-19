@@ -31,7 +31,7 @@ def clean_tmp_dir(tmp_dir):
     current_path = pathlib.Path(__file__)
     # load example config
     example_config_path = (
-        current_path / ".." / ".." / "data" / "example_config_xyz.json"
+        current_path / ".." / "test_data" / "input_files" / "example_config_json.json"
     ).resolve()
 
     # copy config to tmp dir
@@ -61,6 +61,9 @@ def clean_tmp_dir(tmp_dir):
 
     with open(tmp_dir / "example_config.json", "w") as json_file:
         json.dump(main_dict, json_file, indent=4)
+
+    # remove original config json
+    pathlib.Path(new_config_path).unlink()
 
     return tmp_dir
 

@@ -18,8 +18,9 @@ def get_sacct_output(
     start_time = f"{start_date}T{time_range[0]}:00"
 
     if time_range[1] == 24:
-        time_range[1] = "00"
-        end_date = end_date[:-1] + str(int(end_date[-1]) + 1)
+        time_range[1] = "0"
+        end_date = end_date[:-2] + str(int(end_date[-2:]) + 1)
+
     end_time = f"{end_date}T{time_range[1]}:00"
 
     sacct_command += f" -S {start_time} -E {end_time}"
