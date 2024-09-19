@@ -4,9 +4,10 @@ from script_maker2000.files import (
     collect_input_files,
     read_mol_input_json,
     automatic_ressource_allocation,
+    collect_results_,
 )
 
-
+import copy
 import logging
 import pathlib
 import pytest
@@ -77,16 +78,59 @@ def test_create_working_dir_structure(test_setup_work_dir):
 
 def test_collect_input_files(clean_tmp_dir):
 
-    zip_path = collect_input_files(
-        clean_tmp_dir / "example_config.json", clean_tmp_dir / "example_prep"
+    # create a config that has a dir as input and one that has a single xyz file
+
+    main_config_json = read_config(clean_tmp_dir / "example_config.json")
+
+    main_config_dir = copy.deepcopy(main_config_json)
+    main_config_dir["main_config"]["input_file_path"] = str(
+        pathlib.Path(main_config_json["main_config"]["input_file_path"]).parents[0]
     )
-    extract_path = clean_tmp_dir / "example_prep" / "extracted_test"
+
+    main_config_xyz = copy.deepcopy(main_config_dir)
+    main_config_xyz["main_config"]["input_file_path"] = str(
+        list(
+            pathlib.Path(main_config_dir["main_config"]["input_file_path"]).glob(
+                "*.xyz"
+            )
+        )[0]
+    )
+
+    # test with json file
+    zip_path = collect_input_files(
+        main_config_json, clean_tmp_dir / "example_prep", "example_json_config"
+    )
+    extract_path = clean_tmp_dir / "example_prep_json" / "extracted_test"
 
     with zipfile.ZipFile(zip_path, "r") as zipf:
         zipf.extractall(path=extract_path)
 
     assert len(list(extract_path.glob("*"))) == 3
     assert len(list(extract_path.glob("*/*"))) == 11
+
+    # test with dir
+    zip_path = collect_input_files(
+        main_config_dir, clean_tmp_dir / "example_prep_dir", "example_dir_config"
+    )
+    extract_path = clean_tmp_dir / "example_prep_dir" / "extracted_test"
+
+    with zipfile.ZipFile(zip_path, "r") as zipf:
+        zipf.extractall(path=extract_path)
+
+    assert len(list(extract_path.glob("*"))) == 3
+    assert len(list(extract_path.glob("*/*"))) == 11
+
+    # test with single xyz file
+    zip_path = collect_input_files(
+        main_config_xyz, clean_tmp_dir / "example_prep_xyz", "example_xyz_config"
+    )
+    extract_path = clean_tmp_dir / "example_prep_xyz" / "extracted_test"
+
+    with zipfile.ZipFile(zip_path, "r") as zipf:
+        zipf.extractall(path=extract_path)
+
+    assert len(list(extract_path.glob("*"))) == 3
+    assert len(list(extract_path.glob("*/*"))) == 1
 
 
 def test_collect_input_files_from_dir(clean_tmp_dir):
@@ -163,7 +207,7 @@ def test_automatic_ressource_allocation(clean_tmp_dir):
     }
 
     # Call the function with the sample main_config
-    result, output_dict = automatic_ressource_allocation(main_config)
+    result, _ = automatic_ressource_allocation(main_config)
 
     # Check that the function modified the main_config as expected
     assert result["loop_config"]["test1"]["options"]["n_cores_per_calculation"] == 4
@@ -207,3 +251,46 @@ def test_automatic_ressource_allocation(clean_tmp_dir):
     assert result["loop_config"]["test2"]["options"]["ram_per_core"] == 8000
     assert "n_cores_per_calculation" not in result["loop_config"]["test3"]["options"]
     assert "ram_per_core" not in result["loop_config"]["test3"]["options"]
+
+
+def test_collect_results_(clean_tmp_dir):
+    # Create a temporary directory for testing
+    output_dir = clean_tmp_dir / "output"
+    output_dir.mkdir()
+
+    # Create some files and directories inside the output directory
+    file1 = output_dir / "file1.txt"
+    file1.write_text("This is file 1")
+    file2 = output_dir / "file2.txt"
+    file2.write_text("This is file 2")
+    sub_dir = output_dir / "sub_dir"
+    sub_dir.mkdir()
+    file3 = sub_dir / "file3.txt"
+    file3.write_text("This is file 3")
+
+    # Call the collect_results_ function
+    zip_path = collect_results_(output_dir)
+
+    # Check that the zip file is created
+    assert zip_path.exists()
+
+    # Extract the contents of the zip file
+    extract_path = clean_tmp_dir / "extracted_results"
+    with zipfile.ZipFile(zip_path, "r") as zipf:
+        zipf.extractall(path=extract_path)
+
+    # Check that the extracted files are the same as the original files
+    assert (extract_path / "file1.txt").read_text() == "This is file 1"
+    assert (extract_path / "file2.txt").read_text() == "This is file 2"
+    assert (extract_path / "sub_dir" / "file3.txt").read_text() == "This is file 3"
+
+    # now test with blacklist filter
+
+    zip_path = collect_results_(output_dir, exclude_patterns=["sub_dir"])
+    extract_path = clean_tmp_dir / "extracted_results_1"
+    with zipfile.ZipFile(zip_path, "r") as zipf:
+        zipf.extractall(path=extract_path)
+
+    assert (extract_path / "file1.txt").read_text() == "This is file 1"
+    assert (extract_path / "file2.txt").read_text() == "This is file 2"
+    assert (extract_path / "sub_dir" / "file3.txt").exists() is False

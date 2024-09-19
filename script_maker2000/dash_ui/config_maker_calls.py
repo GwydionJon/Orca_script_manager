@@ -28,15 +28,15 @@ def create_config_file(
 
         if key == "parallel_layer_run":
             settings_dict["main_config"][key] = bool(value)
-        elif key == "common_input_files":
-            settings_dict["main_config"][key] = [
-                v.strip() for v in value.split(",") if v.strip() != ""
-            ]
-        elif key == "xyz_path":
-            if value is None or value == "":
-                settings_dict["main_config"][key] = "empty"
-            else:
-                settings_dict["main_config"][key] = str(Path(value).resolve())
+        # elif key == "common_input_files":
+        #     settings_dict["main_config"][key] = [
+        #         v.strip() for v in value.split(",") if v.strip() != ""
+        #     ]
+        # elif key == "xyz_path":
+        #     if value is None or value == "":
+        #         settings_dict["main_config"][key] = "empty"
+        #     else:
+        #         settings_dict["main_config"][key] = str(Path(value).resolve())
         elif key == "input_file_path":
             if value is None or value == "":
                 settings_dict["main_config"][key] = "empty"
