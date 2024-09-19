@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>collect_input_files &mdash; script_maker2000 2024 documentation</title>
+  <title>return_batch_config &mdash; script_maker2000 2024 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
@@ -24,8 +24,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="return_batch_config" href="return_batch_config.html" />
-    <link rel="prev" title="config_creator" href="config_creator.html" /> 
+    <link rel="next" title="start_config" href="start_config.html" />
+    <link rel="prev" title="collect_input_files" href="collect_input.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -53,14 +53,13 @@
 <li class="toctree-l1 current"><a class="reference internal" href="cli_documentation.html">CLI</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="cli_documentation.html#scope-and-use-cases">Scope and use cases:</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="config_creator.html">config-creator</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">collect-input</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#collect_input_files"><code class="docutils literal notranslate"><span class="pre">collect_input_files()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="collect_input.html">collect-input</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">return-batch-config</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#return_batch_config"><code class="docutils literal notranslate"><span class="pre">return_batch_config()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#parameters">Parameters</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#return-value">Return Value</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#usage">Usage</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#returns">Returns</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="return_batch_config.html">return-batch-config</a></li>
 <li class="toctree-l3"><a class="reference internal" href="start_config.html">start-config</a></li>
 <li class="toctree-l3"><a class="reference internal" href="start_zip.html">start-zip</a></li>
 <li class="toctree-l3"><a class="reference internal" href="collect_results.html">collect-results</a></li>
@@ -88,9 +87,9 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="cli_documentation.html">CLI</a></li>
-      <li class="breadcrumb-item active">collect_input_files</li>
+      <li class="breadcrumb-item active">return_batch_config</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/command_line_interface/collect_input.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/command_line_interface/return_batch_config.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -98,34 +97,26 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="collect-input-files">
-<h1>collect_input_files<a class="headerlink" href="#collect-input-files" title="Link to this heading"></a></h1>
+  <section id="return-batch-config">
+<h1>return_batch_config<a class="headerlink" href="#return-batch-config" title="Link to this heading"></a></h1>
 <dl class="py function">
-<dt class="sig sig-object py" id="collect_input_files">
-<span class="sig-name descname"><span class="pre">collect_input_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preparation_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zip_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#collect_input_files" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="return_batch_config">
+<span class="sig-name descname"><span class="pre">return_batch_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">as_json</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#return_batch_config" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
-<p>The <code class="docutils literal notranslate"><span class="pre">collect_input_files</span></code> function collects all input files (xyz, config, csv) and puts them into a single zipball.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">return_batch_config</span></code> function returns the batch config file.</p>
 <section id="parameters">
 <h2>Parameters<a class="headerlink" href="#parameters" title="Link to this heading"></a></h2>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">config_path</span></code> (str): Path to the config file.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">preparation_dir</span></code> (str): Path to the directory where the input files will be prepared.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">config_name</span></code> (str, optional): Name of the config file. If not provided, the file name will be used. Defaults to None.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">zip_name</span></code> (str, optional): Name of the zip archive. If not provided, a default name will be used. Defaults to None.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">as_json</span></code> (bool, optional): If the config should be returned as json. Defaults to False.</p></li>
 </ul>
 </section>
-<section id="return-value">
-<h2>Return Value<a class="headerlink" href="#return-value" title="Link to this heading"></a></h2>
-<p>The function returns 0 on success. If the results path does not exist, it returns 1.
-This function will also output a logging text while running.</p>
-</section>
-<section id="usage">
-<h2>Usage<a class="headerlink" href="#usage" title="Link to this heading"></a></h2>
-<p>You can use the <code class="docutils literal notranslate"><span class="pre">collect_input_files</span></code> function as follows:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>script_maker_cli<span class="w"> </span>collect_input_files<span class="w"> </span>--config_path<span class="w"> </span>/path/to/config<span class="w"> </span>--preparation_dir<span class="w"> </span>/path/to/preparation<span class="w"> </span>--config_name<span class="w"> </span>my_config<span class="w"> </span>--zip_name<span class="w"> </span>my_zipball
-</pre></div>
-</div>
+<section id="returns">
+<h2>Returns<a class="headerlink" href="#returns" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>int: The return value indicating the success of the function (0 for success, 1 for failure).</p></li>
+</ul>
+<p>This function reads the batch config file and returns it either as a JSON string or as a file path, depending on the <code class="docutils literal notranslate"><span class="pre">as_json</span></code> parameter. If the config file cannot be read, it prints an error message and returns 1.</p>
 </section>
 </section>
 
@@ -133,8 +124,8 @@ This function will also output a logging text while running.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="config_creator.html" class="btn btn-neutral float-left" title="config_creator" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="return_batch_config.html" class="btn btn-neutral float-right" title="return_batch_config" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="collect_input.html" class="btn btn-neutral float-left" title="collect_input_files" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="start_config.html" class="btn btn-neutral float-right" title="start_config" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

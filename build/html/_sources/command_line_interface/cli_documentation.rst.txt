@@ -20,6 +20,7 @@ There are two main command groups we need to differentiate:
     - return-batch-config: will return the status file for all batch processes.
     - collect-resuls: Collect the results from the specified path and create a zip file. 
 
+When using the GUI most of these commands will be run automatically. However, you can also run them manually from the command line.
 
 
 .. toctree::
@@ -29,5 +30,10 @@ There are two main command groups we need to differentiate:
 
     collect-input <collect_input>
 
+    return-batch-config <return_batch_config>
+
+    start-config <start_config>
+
+    start-zip <start_zip>
 
     collect-results <collect_results>

@@ -1,6 +1,6 @@
-================
-Developer secion
-================
+=================
+Developer section
+=================
 
 
 This section is for developers who want to contribute to the project. 
