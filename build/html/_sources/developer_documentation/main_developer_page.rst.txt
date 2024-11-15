@@ -13,5 +13,6 @@ and how to contribute to the project.
 
     developer_installation
     developer_contribution
+    developer_next_steps
    
  

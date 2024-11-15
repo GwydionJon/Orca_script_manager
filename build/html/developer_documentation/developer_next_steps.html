@@ -1,0 +1,171 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Next implementation steps &mdash; script_maker2000 2024 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=6fefd858"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=8177b258"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Modules" href="../modules.html" />
+    <link rel="prev" title="Contributions" href="developer_contribution.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            script_maker2000
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../install_guide/install_guide.html">Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/explanation.html">How does this program work?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command_line_interface/cli_documentation.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../GUI/gui_overview.html">GUI</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="main_developer_page.html">Developer section</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="developer_installation.html">Cloning the Repository and setting up the environment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_contribution.html">Contributions</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Next implementation steps</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#adding-automatic-tests-for-the-dash-gui-functions">Adding automatic tests for the dash gui functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#adding-an-offline-mode-for-the-gui">Adding an offline mode for the GUI</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#adding-additional-computation-tools-apart-to-orca">Adding additional computation tools apart to ORCA</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">Modules</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">script_maker2000</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="main_developer_page.html">Developer section</a></li>
+      <li class="breadcrumb-item active">Next implementation steps</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/developer_documentation/developer_next_steps.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="next-implementation-steps">
+<h1>Next implementation steps<a class="headerlink" href="#next-implementation-steps" title="Link to this heading"></a></h1>
+<section id="adding-automatic-tests-for-the-dash-gui-functions">
+<h2>Adding automatic tests for the dash gui functions<a class="headerlink" href="#adding-automatic-tests-for-the-dash-gui-functions" title="Link to this heading"></a></h2>
+<p>To apply automatic test to the entire GUI section it is necessary to create a mock <code class="docutils literal notranslate"><span class="pre">remote_connection</span></code> object.
+This object must be able to imitate the responses normally coming from the server thus allowing the GUI functions to run as normal.</p>
+<p>The most challenging of these will most likely be the <code class="docutils literal notranslate"><span class="pre">remote_connection.run()</span></code> command,
+as this takes different strings as input and also returns different strings depending on the resulting operation result.</p>
+<p>All methods that rely on this remote_connection object should be located in the <code class="docutils literal notranslate"><span class="pre">*_calls.py</span></code> files</p>
+<p>Once this mock object is created, the tests can be written in the <code class="docutils literal notranslate"><span class="pre">test_dash_ui.py</span></code> file.</p>
+<p>The mock object should be initilized as a pytest fixture in the <code class="docutils literal notranslate"><span class="pre">conftest.py</span></code> file.</p>
+<p>The tests should be written in the following format:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">test_gui_function</span><span class="p">(</span><span class="n">mock_remote_connection</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">foo_calls</span> <span class="kn">import</span> <span class="n">bar_function</span>
+
+    <span class="c1"># Create the GUI object</span>
+    <span class="n">test_function</span> <span class="o">=</span> <span class="n">bar_function</span><span class="p">(</span><span class="n">remote_connection</span><span class="o">=</span><span class="n">mock_remote_connection</span><span class="p">)</span>
+
+    <span class="c1"># Run the GUI function</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">test_function</span><span class="p">()</span>
+
+    <span class="c1"># Check the result</span>
+    <span class="k">assert</span> <span class="n">result</span> <span class="o">==</span> <span class="n">expected_result</span>
+</pre></div>
+</div>
+</section>
+<section id="adding-an-offline-mode-for-the-gui">
+<h2>Adding an offline mode for the GUI<a class="headerlink" href="#adding-an-offline-mode-for-the-gui" title="Link to this heading"></a></h2>
+<p>The GUI should be able to run in an offline mode. This means that the GUI should be able to run without a connection to the server.
+This however is not easy to implement in the current state of the GUI, as the GUI is heavily reliant on the server interactions for its functionality.</p>
+<dl class="simple">
+<dt>A decent work around would be to rely on the mock object from [The GUI tests](#Adding automatic tests for the dash gui functions)</dt><dd><p>to implement an object that simply returns <strong>Offline mode</strong> or something similar on all visible outputs or simply leaves tables and menus empty.</p>
+</dd>
+</dl>
+<p>This would allow users to at least use the same gui to interact with already downloaded files.</p>
+<p>The offline mode should be activated by a command line argument, for example <code class="docutils literal notranslate"><span class="pre">--offline</span></code>.</p>
+</section>
+<section id="adding-additional-computation-tools-apart-to-orca">
+<h2>Adding additional computation tools apart to ORCA<a class="headerlink" href="#adding-additional-computation-tools-apart-to-orca" title="Link to this heading"></a></h2>
+<p>For this step the current <code class="docutils literal notranslate"><span class="pre">orca.py</span></code> file should serve as a guideline.</p>
+<p>To make future implementation easier this tool is designed to work with any module that uses the provided template class from <code class="docutils literal notranslate"><span class="pre">template.py</span></code>.</p>
+<p>This template provides a few basic functions that the work manager uses to interact with the calculation module.
+This allows for basically any computation tool to be used in this library as long as a child class of the template is implemented.</p>
+<p>When new tools are added it might be a good idea to pack all tools into a new subfolder for better organization.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="developer_contribution.html" class="btn btn-neutral float-left" title="Contributions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../modules.html" class="btn btn-neutral float-right" title="Modules" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Gwydion Daskalakis, Manuel Schmitt.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

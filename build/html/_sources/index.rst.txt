@@ -10,6 +10,8 @@ Welcome to script_maker2000's documentation!
 
    install_guide/install_guide
 
+   explanation/explanation
+
    command_line_interface/cli_documentation
 
 
