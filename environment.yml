@@ -3,6 +3,7 @@ name:
 channels:
     - conda-forge
 dependencies:
+    - python=3.11
     - pip
     - numpy
     - pandas
@@ -25,3 +26,4 @@ dependencies:
         - mip
         - pint_pandas
         - cclib @ git+https://github.com/GwydionJon/cclib.git
+        - nbformat

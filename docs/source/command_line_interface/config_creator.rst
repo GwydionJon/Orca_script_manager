@@ -27,12 +27,14 @@ You can use the ``config_creator`` command from the command line as follows:
 If your password includes special characters, you should put it in quotes.
 
 First a full example:
-.. code-block:: bash
 
+.. code-block:: bash
+   
    script_maker_cli config_creator --port 8050 --config /path/to/config --hostname my-server.com --username my-username --password "my-password"
 
 
 and here a shortend example:
+
 .. code-block:: bash
 
    script_maker_cli config_creator --hostname justus2-login01.rz.uni-ulm.de	 --username hd_xyz --password "my-password"

@@ -10,7 +10,6 @@ import pint_pandas
 
 import plotly.express as px
 
-
 ureg = pint.UnitRegistry(cache_folder=":auto:")
 pint_pandas.PintType.ureg = ureg
 
@@ -24,6 +23,7 @@ def load_job_backup(file_path: str) -> dict:
 
 def _quantify_with_units(df, column):
     # Split values and units
+
     split_df = df[column].str.split(" ", expand=True)
     values = split_df[0].astype(float)
     units = split_df[1]
@@ -149,7 +149,7 @@ def plot_efficiency(df, x_axis_label, y_axis_label, molecules=None):
         labels={"x": x_axis_label, "y": y_axis_label},
         title=f"Time plot for {df.index.get_level_values('Method')[0]}",
     )
-    fig.show()
+    return fig
 
 
 def estimate_total_run_time(

@@ -13,6 +13,11 @@ from abc import abstractmethod
 class TemplateModule:
     """
     This class is only used as a template guide to have all derived classes follow the same general layout.
+    When creating a new derived class this __init__ function must be called
+    via super().__init__(main_config, config_key)
+
+
+
     """
 
     def __init__(
@@ -56,7 +61,8 @@ class TemplateModule:
     def create_internal_config(self, main_config, config_key) -> dict:
         """
         Extracts the necessary information from the main config and stores them.
-
+        The main config stores all the information for the entire program,
+        this function filters out the config for this specific calculation step.
         Returns:
             dict: A dict of the sub config.
         """
@@ -67,7 +73,8 @@ class TemplateModule:
     def create_slurm_scripts(self, slurm_config=None) -> Union[str, Path]:
         """
         Create the slurm script that is used to submit this calculation run to the server.
-        This should use the slurm class provided in this module.
+
+
         """
         raise NotImplementedError
 
