@@ -7,7 +7,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>script_maker2000.crest &mdash; script_maker2000 2024 documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
 
@@ -66,6 +66,7 @@
 <li class="toctree-l2"><a class="reference internal" href="script_maker2000_files.html">script_maker2000.files</a></li>
 <li class="toctree-l2"><a class="reference internal" href="script_maker2000_orca.html">script_maker2000.orca</a></li>
 <li class="toctree-l2"><a class="reference internal" href="script_maker2000_slurm.html">script_maker2000.slurm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="script_maker2000_template.html">script_maker2000.template</a></li>
 </ul>
 </li>
 </ul>
@@ -99,13 +100,13 @@
 <span id="script-maker2000-crest"></span><h1>script_maker2000.crest<a class="headerlink" href="#module-script_maker2000.crest" title="Link to this heading"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="script_maker2000.crest.CrestModule">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">script_maker2000.crest.</span></span><span class="sig-name descname"><span class="pre">CrestModule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">main_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.crest.CrestModule" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">script_maker2000.crest.</span></span><span class="sig-name descname"><span class="pre">CrestModule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">main_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#script_maker2000.crest.CrestModule" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>use config to setup a crest run.
 generate crest config as well as necessary slurm scripts.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="script_maker2000.crest.CrestModule.check_result_integrity">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">check_result_integrity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#script_maker2000.crest.CrestModule.check_result_integrity" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">check_result_integrity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#script_maker2000.crest.CrestModule.check_result_integrity" title="Link to this definition"></a></dt>
 <dd><p>provide some method to verify if a single calculation was succesful.
 This should be handled indepentendly from the existence of this class object.</p>
 </dd></dl>

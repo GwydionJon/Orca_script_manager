@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Index &mdash; script_maker2000 2024 documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
 
@@ -90,6 +90,7 @@
  | <a href="#P"><strong>P</strong></a>
  | <a href="#R"><strong>R</strong></a>
  | <a href="#S"><strong>S</strong></a>
+ | <a href="#T"><strong>T</strong></a>
  | <a href="#U"><strong>U</strong></a>
  | <a href="#W"><strong>W</strong></a>
  
@@ -145,7 +146,11 @@
       <li><a href="script_maker2000_files.html#script_maker2000.files.check_input_files">check_input_files() (in module script_maker2000.files)</a>
 </li>
       <li><a href="script_maker2000_orca.html#script_maker2000.orca.OrcaModule.check_job_status">check_job_status() (script_maker2000.orca.OrcaModule class method)</a>
+
+      <ul>
+        <li><a href="script_maker2000_template.html#script_maker2000.template.TemplateModule.check_job_status">(script_maker2000.template.TemplateModule class method)</a>
 </li>
+      </ul></li>
       <li><a href="script_maker2000_crest.html#script_maker2000.crest.CrestModule.check_result_integrity">check_result_integrity() (script_maker2000.crest.CrestModule class method)</a>
 </li>
       <li>
@@ -167,7 +172,11 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="script_maker2000_orca.html#script_maker2000.orca.OrcaModule.collect_results">collect_results() (script_maker2000.orca.OrcaModule class method)</a>
+
+      <ul>
+        <li><a href="script_maker2000_template.html#script_maker2000.template.TemplateModule.collect_results">(script_maker2000.template.TemplateModule class method)</a>
 </li>
+      </ul></li>
       <li><a href="script_maker2000_files.html#script_maker2000.files.collect_results_">collect_results_() (in module script_maker2000.files)</a>
 </li>
       <li><a href="script_maker2000_files.html#script_maker2000.files.collect_xyz_files_to_dict">collect_xyz_files_to_dict() (in module script_maker2000.files)</a>
@@ -179,12 +188,18 @@
         <li><a href="command_line_interface/config_creator.html#config_creator">built-in function</a>
 </li>
       </ul></li>
+      <li><a href="script_maker2000_template.html#script_maker2000.template.TemplateModule.create_internal_config">create_internal_config() (script_maker2000.template.TemplateModule method)</a>
+</li>
       <li><a href="script_maker2000_orca.html#script_maker2000.orca.OrcaModule.create_orca_input_files">create_orca_input_files() (script_maker2000.orca.OrcaModule method)</a>
 </li>
       <li><a href="script_maker2000_crest.html#script_maker2000.crest.CrestModule.create_slurm_script">create_slurm_script() (script_maker2000.crest.CrestModule method)</a>
 </li>
       <li><a href="script_maker2000_orca.html#script_maker2000.orca.OrcaModule.create_slurm_scripts">create_slurm_scripts() (script_maker2000.orca.OrcaModule method)</a>
+
+      <ul>
+        <li><a href="script_maker2000_template.html#script_maker2000.template.TemplateModule.create_slurm_scripts">(script_maker2000.template.TemplateModule method)</a>
 </li>
+      </ul></li>
       <li><a href="script_maker2000_files.html#script_maker2000.files.create_working_dir_structure">create_working_dir_structure() (in module script_maker2000.files)</a>
 </li>
       <li><a href="script_maker2000_crest.html#script_maker2000.crest.CrestModule">CrestModule (class in script_maker2000.crest)</a>
@@ -237,6 +252,8 @@
 </li>
         <li><a href="script_maker2000_slurm.html#module-script_maker2000.slurm">script_maker2000.slurm</a>
 </li>
+        <li><a href="script_maker2000_template.html#module-script_maker2000.template">script_maker2000.template</a>
+</li>
       </ul></li>
   </ul></td>
 </tr></table>
@@ -258,10 +275,14 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="script_maker2000_cli.html#script_maker2000.cli.prepare_extract_path">prepare_extract_path() (in module script_maker2000.cli)</a>
 </li>
+      <li><a href="script_maker2000_orca.html#script_maker2000.orca.OrcaModule.prepare_jobs">prepare_jobs() (script_maker2000.orca.OrcaModule method)</a>
+
+      <ul>
+        <li><a href="script_maker2000_template.html#script_maker2000.template.TemplateModule.prepare_jobs">(script_maker2000.template.TemplateModule method)</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="script_maker2000_orca.html#script_maker2000.orca.OrcaModule.prepare_jobs">prepare_jobs() (script_maker2000.orca.OrcaModule method)</a>
-</li>
       <li><a href="script_maker2000_orca.html#script_maker2000.orca.OrcaModule.prepare_slurm_script">prepare_slurm_script() (script_maker2000.orca.OrcaModule method)</a>
 </li>
   </ul></td>
@@ -282,12 +303,16 @@
 </li>
       <li><a href="script_maker2000_files.html#script_maker2000.files.remove_premade_config">remove_premade_config() (in module script_maker2000.files)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="script_maker2000_files.html#script_maker2000.files.replace_empty_with_empty_string">replace_empty_with_empty_string() (in module script_maker2000.files)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="script_maker2000_orca.html#script_maker2000.orca.OrcaModule.restart_jobs">restart_jobs() (script_maker2000.orca.OrcaModule method)</a>
+
+      <ul>
+        <li><a href="script_maker2000_template.html#script_maker2000.template.TemplateModule.restart_jobs">(script_maker2000.template.TemplateModule method)</a>
 </li>
+      </ul></li>
       <li>
     return_batch_config()
 
@@ -299,6 +324,8 @@
 
       <ul>
         <li><a href="script_maker2000_orca.html#script_maker2000.orca.OrcaModule.run_job">(script_maker2000.orca.OrcaModule method)</a>
+</li>
+        <li><a href="script_maker2000_template.html#script_maker2000.template.TemplateModule.run_job">(script_maker2000.template.TemplateModule method)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -335,13 +362,20 @@
         <li><a href="script_maker2000_orca.html#module-script_maker2000.orca">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     script_maker2000.slurm
 
       <ul>
         <li><a href="script_maker2000_slurm.html#module-script_maker2000.slurm">module</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    script_maker2000.template
+
+      <ul>
+        <li><a href="script_maker2000_template.html#module-script_maker2000.template">module</a>
 </li>
       </ul></li>
       <li><a href="script_maker2000_slurm.html#script_maker2000.slurm.Slurm_Script">Slurm_Script (class in script_maker2000.slurm)</a>
@@ -361,6 +395,14 @@
 </li>
       </ul></li>
       <li><a href="script_maker2000_slurm.html#script_maker2000.slurm.Slurm_Script.submit_slurm_script">submit_slurm_script() (script_maker2000.slurm.Slurm_Script method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="T">T</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="script_maker2000_template.html#script_maker2000.template.TemplateModule">TemplateModule (class in script_maker2000.template)</a>
 </li>
   </ul></td>
 </tr></table>

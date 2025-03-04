@@ -7,7 +7,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CLI &mdash; script_maker2000 2024 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
 
@@ -95,7 +95,7 @@
 <section id="scope-and-use-cases">
 <h2>Scope and use cases:<a class="headerlink" href="#scope-and-use-cases" title="Link to this heading"></a></h2>
 <p>This project has various command line tools which will be explained here.
-These tools are designed to help you create, organzie, submit and return you chemical calculations on any slurm based server or system.</p>
+These tools are designed to help you create, organize, submit and return you chemical calculations on any slurm based server or system.</p>
 <p>There are two main command groups we need to differentiate:</p>
 <ul class="simple">
 <li><dl class="simple">
@@ -112,12 +112,22 @@ These tools are designed to help you create, organzie, submit and return you che
 <li><p>start-config: Will start a batch calculation based on a given config. Jobs will be submitted through slurm.</p></li>
 <li><p>start-zip: Will start a batch calculation based on a given zipball. Jobs will be submitted through slurm.</p></li>
 <li><p>return-batch-config: will return the status file for all batch processes.</p></li>
-<li><p>collect-resuls: Collect the results from the specified path and create a zip file.</p></li>
+<li><p>collect-results: Collect the results from the specified path and create a zip file.</p></li>
 </ul>
 </dd>
 </dl>
 </li>
 </ul>
+<div class="line-block">
+<div class="line">To run any of these commands, you can use the following syntax:</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">script_maker_cli</span> <span class="pre">&lt;command&gt;</span> <span class="pre">&lt;arguments&gt;</span></code></div>
+</div>
+<div class="line-block">
+<div class="line">For example:</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">script_maker_cli</span> <span class="pre">start-config</span> <span class="pre">--config</span> <span class="pre">/path/to/config</span> <span class="pre">--continue_run</span> <span class="pre">--profile</span></code></div>
+</div>
+<p>This would continue or restart a previously started calculation based on the config file at /path/to/config and profile the code for performance analysis.
+For more details about the commands and their arguments, please refer to the individual pages or use the  <code class="docutils literal notranslate"><span class="pre">--help</span></code> flag.</p>
 <p>When using the GUI most of these commands will be run automatically. However, you can also run them manually from the command line.</p>
 <div class="toctree-wrapper compound">
 <ul>

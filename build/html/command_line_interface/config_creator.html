@@ -7,7 +7,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>config_creator &mdash; script_maker2000 2024 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
 
@@ -118,16 +118,14 @@
 <h2>Usage<a class="headerlink" href="#usage" title="Link to this heading"></a></h2>
 <p>You can use the <code class="docutils literal notranslate"><span class="pre">config_creator</span></code> command from the command line as follows:</p>
 <p>If your password includes special characters, you should put it in quotes.</p>
-<p>First a full example:
-.. code-block:: bash</p>
-<blockquote>
-<div><p>script_maker_cli config_creator –port 8050 –config /path/to/config –hostname my-server.com –username my-username –password “my-password”</p>
-</div></blockquote>
-<p>and here a shortend example:
-.. code-block:: bash</p>
-<blockquote>
-<div><p>script_maker_cli config_creator –hostname justus2-login01.rz.uni-ulm.de      –username hd_xyz –password “my-password”</p>
-</div></blockquote>
+<p>First a full example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>script_maker_cli<span class="w"> </span>config_creator<span class="w"> </span>--port<span class="w"> </span><span class="m">8050</span><span class="w"> </span>--config<span class="w"> </span>/path/to/config<span class="w"> </span>--hostname<span class="w"> </span>my-server.com<span class="w"> </span>--username<span class="w"> </span>my-username<span class="w"> </span>--password<span class="w"> </span><span class="s2">&quot;my-password&quot;</span>
+</pre></div>
+</div>
+<p>and here a shortend example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>script_maker_cli<span class="w"> </span>config_creator<span class="w"> </span>--hostname<span class="w"> </span>justus2-login01.rz.uni-ulm.de<span class="w">      </span>--username<span class="w"> </span>hd_xyz<span class="w"> </span>--password<span class="w"> </span><span class="s2">&quot;my-password&quot;</span>
+</pre></div>
+</div>
 <p>This command will create a new config file for the script_maker2000 tool, establish a connection to the remote server, create the main application, open the browser after 1 second, and run the server.</p>
 </section>
 </section>

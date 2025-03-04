@@ -7,7 +7,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Next implementation steps &mdash; script_maker2000 2024 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
 
@@ -54,10 +54,12 @@
 <li class="toctree-l1 current"><a class="reference internal" href="main_developer_page.html">Developer section</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="developer_installation.html">Cloning the Repository and setting up the environment</a></li>
 <li class="toctree-l2"><a class="reference internal" href="developer_contribution.html">Contributions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_contribution.html#adding-a-new-calculation-module">Adding a new calculation module</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Next implementation steps</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#adding-automatic-tests-for-the-dash-gui-functions">Adding automatic tests for the dash gui functions</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#adding-an-offline-mode-for-the-gui">Adding an offline mode for the GUI</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#adding-additional-computation-tools-apart-to-orca">Adding additional computation tools apart to ORCA</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#adding-additional-computation-tools-apart-from-orca">Adding additional computation tools apart from ORCA</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#enabling-split-calculation-pipelines">Enabling split calculation pipelines</a></li>
 </ul>
 </li>
 </ul>
@@ -102,8 +104,8 @@ as this takes different strings as input and also returns different strings depe
 <p>Once this mock object is created, the tests can be written in the <code class="docutils literal notranslate"><span class="pre">test_dash_ui.py</span></code> file.</p>
 <p>The mock object should be initilized as a pytest fixture in the <code class="docutils literal notranslate"><span class="pre">conftest.py</span></code> file.</p>
 <p>The tests should be written in the following format:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">test_gui_function</span><span class="p">(</span><span class="n">mock_remote_connection</span><span class="p">):</span>
-    <span class="kn">from</span> <span class="nn">foo_calls</span> <span class="kn">import</span> <span class="n">bar_function</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_gui_function</span><span class="p">(</span><span class="n">mock_remote_connection</span><span class="p">):</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">foo_calls</span><span class="w"> </span><span class="kn">import</span> <span class="n">bar_function</span>
 
     <span class="c1"># Create the GUI object</span>
     <span class="n">test_function</span> <span class="o">=</span> <span class="n">bar_function</span><span class="p">(</span><span class="n">remote_connection</span><span class="o">=</span><span class="n">mock_remote_connection</span><span class="p">)</span>
@@ -119,21 +121,29 @@ as this takes different strings as input and also returns different strings depe
 <section id="adding-an-offline-mode-for-the-gui">
 <h2>Adding an offline mode for the GUI<a class="headerlink" href="#adding-an-offline-mode-for-the-gui" title="Link to this heading"></a></h2>
 <p>The GUI should be able to run in an offline mode. This means that the GUI should be able to run without a connection to the server.
-This however is not easy to implement in the current state of the GUI, as the GUI is heavily reliant on the server interactions for its functionality.</p>
-<dl class="simple">
-<dt>A decent work around would be to rely on the mock object from [The GUI tests](#Adding automatic tests for the dash gui functions)</dt><dd><p>to implement an object that simply returns <strong>Offline mode</strong> or something similar on all visible outputs or simply leaves tables and menus empty.</p>
-</dd>
-</dl>
+This however is not easy to implement in the current state of the GUI, as the GUI is heavily reliant
+on the server interactions for its functionality.</p>
+<p>A decent work around would be to rely on the mock object from
+the  <a class="reference external" href="#adding-automatic-tests-for-the-dash-gui-functions">GUI tests</a>
+to implement an object that simply returns <strong>Offline mode</strong> or something similar on all visible outputs or simply leaves tables and menus empty.</p>
 <p>This would allow users to at least use the same gui to interact with already downloaded files.</p>
 <p>The offline mode should be activated by a command line argument, for example <code class="docutils literal notranslate"><span class="pre">--offline</span></code>.</p>
 </section>
-<section id="adding-additional-computation-tools-apart-to-orca">
-<h2>Adding additional computation tools apart to ORCA<a class="headerlink" href="#adding-additional-computation-tools-apart-to-orca" title="Link to this heading"></a></h2>
+<section id="adding-additional-computation-tools-apart-from-orca">
+<h2>Adding additional computation tools apart from ORCA<a class="headerlink" href="#adding-additional-computation-tools-apart-from-orca" title="Link to this heading"></a></h2>
 <p>For this step the current <code class="docutils literal notranslate"><span class="pre">orca.py</span></code> file should serve as a guideline.</p>
 <p>To make future implementation easier this tool is designed to work with any module that uses the provided template class from <code class="docutils literal notranslate"><span class="pre">template.py</span></code>.</p>
 <p>This template provides a few basic functions that the work manager uses to interact with the calculation module.
 This allows for basically any computation tool to be used in this library as long as a child class of the template is implemented.</p>
 <p>When new tools are added it might be a good idea to pack all tools into a new subfolder for better organization.</p>
+</section>
+<section id="enabling-split-calculation-pipelines">
+<h2>Enabling split calculation pipelines<a class="headerlink" href="#enabling-split-calculation-pipelines" title="Link to this heading"></a></h2>
+<p>Currently all nodes in a layer will be performed on all results from the previous layer.
+This is not always the desired behavior, as some calculations might be independent of each other.
+However setting this type of branching is not really feasible with the current implementation.
+For this to work each node would need a direct reference to its linked nodes. For small pipelines this could work as a simple text argument for each node.
+However for the GUI a drag and drop like solution similar to a molecule builder would be preferable.</p>
 </section>
 </section>
 

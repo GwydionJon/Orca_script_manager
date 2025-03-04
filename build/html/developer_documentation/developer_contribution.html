@@ -7,7 +7,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Contributions &mdash; script_maker2000 2024 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
 
@@ -54,6 +54,7 @@
 <li class="toctree-l1 current"><a class="reference internal" href="main_developer_page.html">Developer section</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="developer_installation.html">Cloning the Repository and setting up the environment</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Contributions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#adding-a-new-calculation-module">Adding a new calculation module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="developer_next_steps.html">Next implementation steps</a></li>
 </ul>
 </li>
@@ -99,6 +100,23 @@
 </ol>
 <p>Please make sure to follow the project’s code style and to run the tests before opening a pull request.</p>
 <p>If you have any questions or need help with contributing, please feel free to reach out to us via the issues page on GitHub.</p>
+</section>
+<section id="adding-a-new-calculation-module">
+<h1>Adding a new calculation module<a class="headerlink" href="#adding-a-new-calculation-module" title="Link to this heading"></a></h1>
+<p>To add a new calculation module, you need to create a new class that inherits from the <cite>template</cite> class.
+This class should implement the required functions and any additional functions that are necessary for the calculation module.
+The required functions are:</p>
+<ul class="simple">
+<li><p><cite>__init__</cite>: This function initializes the calculation module and sets up the necessary variables.</p></li>
+<li><p><cite>create_slurm_scripts</cite>: This function creates the slurm script that will be submitted to the server.</p></li>
+<li><p><cite>prepare_jobs</cite>: This function prepares the jobs that will be submitted to the server.</p></li>
+<li><p><cite>check_job_status</cite>: This function checks the status of the jobs that are currently running on the server.</p></li>
+<li><p><cite>collect_results</cite>: This function collects results from the server and stores them in the correct location.</p></li>
+<li><p><cite>run_job</cite>: This function submits the jobs to the server and monitors their progress.</p></li>
+<li><p><cite>restart_job</cite>: This function restarts a job that has failed or been stopped.</p></li>
+</ul>
+<p>Failure to implement any of these functions will result in an error when trying to use the calculation module.</p>
+<p>For more documentation you can refer to the API reference of the <a class="reference internal" href="../script_maker2000_orca.html#id1"><span class="std std-ref">ORCA</span></a> and <a class="reference internal" href="../script_maker2000_template.html#id1"><span class="std std-ref">template</span></a> classes.</p>
 </section>
 
 

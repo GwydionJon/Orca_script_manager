@@ -39,10 +39,12 @@ Adding an offline mode for the GUI
 -----------------------------------
 
 The GUI should be able to run in an offline mode. This means that the GUI should be able to run without a connection to the server.
-This however is not easy to implement in the current state of the GUI, as the GUI is heavily reliant on the server interactions for its functionality.
+This however is not easy to implement in the current state of the GUI, as the GUI is heavily reliant 
+on the server interactions for its functionality.
 
-A decent work around would be to rely on the mock object from [The GUI tests](#Adding automatic tests for the dash gui functions)
- to implement an object that simply returns **Offline mode** or something similar on all visible outputs or simply leaves tables and menus empty.
+A decent work around would be to rely on the mock object from 
+the  `GUI tests <#adding-automatic-tests-for-the-dash-gui-functions>`_
+to implement an object that simply returns **Offline mode** or something similar on all visible outputs or simply leaves tables and menus empty.
 
 This would allow users to at least use the same gui to interact with already downloaded files.
 
@@ -50,7 +52,7 @@ The offline mode should be activated by a command line argument, for example ``-
 
 
 
-Adding additional computation tools apart to ORCA
+Adding additional computation tools apart from ORCA
 -------------------------------------------------
 
 For this step the current ``orca.py`` file should serve as a guideline.
@@ -63,3 +65,11 @@ This allows for basically any computation tool to be used in this library as lon
 When new tools are added it might be a good idea to pack all tools into a new subfolder for better organization.
 
 
+Enabling split calculation pipelines
+------------------------------------
+
+Currently all nodes in a layer will be performed on all results from the previous layer.
+This is not always the desired behavior, as some calculations might be independent of each other.
+However setting this type of branching is not really feasible with the current implementation.
+For this to work each node would need a direct reference to its linked nodes. For small pipelines this could work as a simple text argument for each node. 
+However for the GUI a drag and drop like solution similar to a molecule builder would be preferable. 

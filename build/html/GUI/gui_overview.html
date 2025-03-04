@@ -7,7 +7,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GUI &mdash; script_maker2000 2024 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
 
@@ -51,10 +51,19 @@
 <li class="toctree-l1"><a class="reference internal" href="../explanation/explanation.html">How does this program work?</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../command_line_interface/cli_documentation.html">CLI</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">GUI</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#starting-the-gui">Starting the GUI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#config-creator">Config Creator</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#creating-a-new-config">creating a new config:</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#input-file">Input File</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#creating-a-calculation-pipeline">Creating a calculation pipeline</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#submitting-jobs">Submitting Jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#check-on-running-and-past-jobs">Check on running and past jobs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#retrieving-results">Retrieving Results</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#download-results">Download Results</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#results-table">Results Table</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#checking-the-details">Checking the details</a></li>
 </ul>
 </li>
 </ul>
@@ -94,6 +103,20 @@
 <p>The main features are structures into four different tabs located at the top left:</p>
 <img alt="GUI Tabs" class="align-center" src="../_images/gui_tabs.PNG" />
 <p>Each of these tabs will be discussed in more detail below.</p>
+<section id="starting-the-gui">
+<h2>Starting the GUI<a class="headerlink" href="#starting-the-gui" title="Link to this heading"></a></h2>
+<p>To start the GUI, the user must run the following command from the command line:
+`` script_maker_cli config-creator –port 8050 –config /path/to/config –hostname my-server.com –username my-username –password “my-password”``</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">--port</span></code> sets the local port on which the GUI will be hosted. The default is 8050 and as long as no error message indicates that this port is already blocked, this flag can be ignored.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--config</span></code> Allows for a specific config file to be loaded at startup. However this should not really be useful for the user as they are available in a dropdown anyway and is mostly used for debugging purposes.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--hostname</span></code> The hostname of the remote server. This is the address of the server you want your calculations to run on. The default is “justus2.uni-ulm.de” but you could also specify the login node by using “justus2-login01.rz.uni-ulm.de”.Choosing one login node as a default would be a good idea as it would allow for a more consistent user experience.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--username</span></code> The username for the remote server. This is the username that you use to log in to the server. If not provided, the user will be prompted for the username.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--password</span></code> The password for the remote server. This is the password that you use to log in to the server. Note that if you add the password directly into the commandline it should be encapsulated like this “password123”.If not provided, the user will be prompted for the password.</p></li>
+</ul>
+<p>A recommended command would be to use the following command:
+<code class="docutils literal notranslate"><span class="pre">script_maker_cli</span> <span class="pre">config-creator</span> <span class="pre">--hostname</span> <span class="pre">justus2.uni-ulm.de</span> <span class="pre">--username</span> <span class="pre">my-username</span></code></p>
+</section>
 <section id="config-creator">
 <h2>Config Creator<a class="headerlink" href="#config-creator" title="Link to this heading"></a></h2>
 <p>The config creator tab is the first tab and is used to create a new config file. It is the first step in the process of submitting a batch calculation.</p>
@@ -103,7 +126,7 @@
 <ol class="arabic simple">
 <li><dl class="simple">
 <dt>main_config:</dt><dd><p>In this section the config name or label is set. This is the name that will be used to identify the config file in the database.
-Also important is to set the path to the input file. More infomaton about the inpu file can be found later on this page.</p>
+Also important is to set the path to the input file. More information about the input file can be found later on this page.</p>
 </dd>
 </dl>
 </li>
@@ -118,12 +141,12 @@ Also important is to set the path to the input file. More infomaton about the in
 </dl>
 </li>
 <li><dl class="simple">
-<dt>loop_config:</dt><dd><p>This one is where one can acutally setup the individual computations.</p>
+<dt>loop_config:</dt><dd><p>This one is where one can actually setup the individual computations.</p>
 </dd>
 </dl>
 </li>
 </ol>
-<p>For all entries in the conig editor there is hover text that will provide more information about the entry.</p>
+<p>For all entries in the config editor there is hover text that will provide more information about the entry.</p>
 </section>
 <section id="creating-a-new-config">
 <h2>creating a new config:<a class="headerlink" href="#creating-a-new-config" title="Link to this heading"></a></h2>
@@ -183,6 +206,58 @@ A shorter run time will get started faster but might not finish in time. A longe
 If a calculations runs into the walltime it will automatically restarted with the <code class="docutils literal notranslate"><span class="pre">max</span> <span class="pre">run</span> <span class="pre">time</span></code> setting from the main_config section, but this is done only once.</p></li>
 </ol>
 <p>Now repeat these steps for all desired calculation steps.</p>
+</section>
+</section>
+<section id="submitting-jobs">
+<h2>Submitting Jobs<a class="headerlink" href="#submitting-jobs" title="Link to this heading"></a></h2>
+<p>This tab is used to select which jobs are send to the server and also choose their desired calculation directory.</p>
+<img alt="GUI Config" class="align-center" src="../_images/managment_page.jpg" />
+<p>Due to this program being run in a browser the typical file selection dialog is not available without having to copy the entire file into memory.
+Instead the user can specify a path (both unix and windows paths work) and the tree structure underneath will show any valid pre packaged calculation setups.
+The same can then be done for the remote directory. Please note that each submitted calculation needs to be run in a new directory.</p>
+<p>To add a new subdirectory simply add the desired name to the selected calculation path on the right.
+Or create the folder on the remote server first. (You may need to search the remote paths again if you do so while the program is running)</p>
+<p>After pressing Submit job you will get a short summary of what the program is doing and a confirmation if the job was submitted successfully.</p>
+</section>
+<section id="check-on-running-and-past-jobs">
+<h2>Check on running and past jobs<a class="headerlink" href="#check-on-running-and-past-jobs" title="Link to this heading"></a></h2>
+<p>The slurm watcher tab is a quick way to check and filter the status of all jobs that have been submitted to the slurm system.</p>
+<img alt="slurm watcher" class="align-center" src="../_images/slurm_page.jpg" />
+<p>On the top left the user can select the time frame for which the jobs should be displayed. The default is the current date.
+While on the top right the user can select which properties to display for the jobs.</p>
+<p>The actual table on the bottom can be sorted and filtered according to the dash conventions.
+For more information about the syntax see the <a class="reference external" href="https://dash.plotly.com/datatable/interactivity">dash documentation</a>.</p>
+</section>
+<section id="retrieving-results">
+<h2>Retrieving Results<a class="headerlink" href="#retrieving-results" title="Link to this heading"></a></h2>
+<section id="download-results">
+<h3>Download Results<a class="headerlink" href="#download-results" title="Link to this heading"></a></h3>
+<p>The last tab is used to download and display the results of the calculations.</p>
+<img alt="results download" class="align-center" src="../_images/result_download.jpg" />
+<p>At the top you can choose which job batch you want to download.
+The dropdown will show all available batches that have been submitted through this program.
+On the right you can choose the local directory where the results should be downloaded to.
+It is really important that you don’t move the data after the download. This program will keep track of its data locations to have them available in the table below, if you move the data manually however this will not work anymore.</p>
+<p>Additionally you can exclude certain keywords from the download. By default the default the backup folder and the .gbw files are excluded as they consume quite a lot of space and bandwidth.</p>
+</section>
+<section id="results-table">
+<h3>Results Table<a class="headerlink" href="#results-table" title="Link to this heading"></a></h3>
+<p>The table below will show all available results for the selected jobs.</p>
+<img alt="results table" class="align-center" src="../_images/result_table.jpg" />
+<p>On the left you can select which results to display and on the right you have the actual table as well as some basic control surface for the displayed data and units.
+The table itself can be sorted and filtered according to the <a class="reference external" href="https://dash.plotly.com/datatable/interactivity">dash conventions</a>.
+Additionally the table can be saved as an excel/csv file.</p>
+<p>By clicking the small circle on the left of the table you will see more details for this calculation.</p>
+</section>
+<section id="checking-the-details">
+<h3>Checking the details<a class="headerlink" href="#checking-the-details" title="Link to this heading"></a></h3>
+<p>The details page will show all available information for the selected calculation.</p>
+<img alt="results details" class="align-center" src="../_images/result_details.jpg" />
+<p>For all calculations this view allows you to directly open your file explorer at the location or simply open the output file directly.
+The molecular structure will show the 3d molecule and also allow you to scroll through the iterations if they are available.
+This will show you how the structure changed during the optimization.
+For optimizations there will also be an error plot that shows the energy change over the iterations.
+And for frequency calculations there will be a rough simulated IR spectrum.</p>
 </section>
 </section>
 </section>
