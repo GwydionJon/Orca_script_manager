@@ -354,6 +354,8 @@ class WorkManager:
 
             # if result_dict and result_dict["connectivity_check"] is False:
             #     self.log.warning("Connectivity check for %s was not successful!", job)
+            # if result_dict and result_dict["connectivity_check"] is False:
+            #     self.log.warning("Connectivity check for %s was not successful!", job)
 
         collection_format_arguments = [
             "JobID",

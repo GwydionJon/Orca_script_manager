@@ -9,7 +9,7 @@ the config contains all the calculation setups while the csv file contains the f
 # Quickstart
 
 ## Installation: 
-`pip install git+pip install git+https://github.com/GwydionJon/AC-Forschi`
+`pip install git+pip install git+https://github.com/GwydionJon/Orca_script_manager`
 
 
 

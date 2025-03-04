@@ -38,10 +38,10 @@ def test_workmanager(clean_tmp_dir, job_dict, monkeypatch, fake_slurm_function):
     )
     assert len(current_job_dict["not_started"]) == 11
 
-    for dir in (orca_test.working_dir / "input").glob("*"):
-        assert len(list(dir.glob("*inp"))) == 1
-        assert len(list(dir.glob("*xyz"))) == 1
-        assert len(list(dir.glob("*sbatch"))) == 1
+    for current_dir in (orca_test.working_dir / "input").glob("*"):
+        assert len(list(current_dir.glob("*inp"))) == 1
+        assert len(list(current_dir.glob("*xyz"))) == 1
+        assert len(list(current_dir.glob("*sbatch"))) == 1
 
     current_job_dict["submitted"].extend(
         work_manager.submit_jobs(current_job_dict["not_started"])
