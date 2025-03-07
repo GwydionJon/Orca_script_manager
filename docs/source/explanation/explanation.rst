@@ -10,14 +10,14 @@ The inner most layer is the **JOB**, the second is the **work_manager** and the 
 
 
 | The **JOB** is the most basic unit of work. It is a single calculation that needs to be done.
- For an orca calculation this would be the desired molecule and the orca input file. 
+ For an orca calculation, the job would contain the desired molecule and the orca input file. 
 | Each job can be in different stages depending on its process. 
 | These stages go from *initialized* -> *submitted* -> *running* -> *returned* -> *finished*
 | Jobs only have information about themselves and their current status.
 
 
 | The **work_manager** is responsible for managing the jobs. It is the layer that interacts with the calculation module.
- In the beginning each work_manager is given a list of jobs and a single calculation config. (eg. a specific optimization *or* a single point calculation)
+ In the beginning each work_manager is given a list of jobs and a single calculation config. This config contains the settings for one specific operation (basis set, functional, optimization *or* single point calculation, etc.)
  The work manager will create all necessary input files and folders and submit the jobs via *slurm*.
  It then enters a loop to continually check and update the status of the jobs.
 | Prepare new jobs -> Submit jobs -> Check submitted jobs -> Manage returned jobs -> Check if all jobs are done -> Wait -> Repeat
@@ -28,17 +28,18 @@ The inner most layer is the **JOB**, the second is the **work_manager** and the 
 
 
 The **batch_manager** is the outer most layer and is responsible for managing the *work_managers*.
-it is given a list of molecules and a list of calculations as well as the order these calculations are to be performed in.
+It is given a list of molecules and a list of calculations as well as the order in which these calculations have to be performed.
 
 .. image:: example_config.png
    :alt: Description of the image
    :width: 400px
    :align: center
 
+
 The example flow chart reads as follows:
 
-The initial guess is optimized according to **Optimization A** and **Optimization B** before both results are advanced to each **SP** Step.
-This parallelization allows for a quick and efficient generation of various benchmarks or comparisons.
+The initial guess is optimized according to **Optimization A** and **Optimization B** before both results are advanced to each **Single Point** step.
+This parallelization allows for a quick and efficient generation of new data.
 It is of course also possible to have many more calculations in sequence or parallel.
 For example a MM calculation followed by a QM calculation and followed up by a frequency calculation.
 
@@ -49,20 +50,18 @@ Performance considerations
 To make this program as efficient as possible the following cost considerations were made:
 
 - Running the actual calculations is the most expensive part of the program. 
-  This makes it feasible to have the python script wait for most of its run time and only check occasionally for finished jobs.
-  As the jobs will very in their run time it is unlikely that a sufficiently large amount would finish simultaneously to notably affect overall performance.
+  As a result, the python script will wait for most of its run time and only check occasionally for finished jobs.
 - The python part of this program is usually run on the login node of the cluster. 
   This node is not designed to run heavy calculations and can be slow to respond to user input.
   To minimize the time spent on the login node, the program is designed to only run the minimum amount of code on the login node.
-  This is done by submitting all calculations to the slurm server and then only checking the status of the jobs on the login node.
-  This way the login node is only used to check the status of the jobs and submit new jobs.
-- To further reduce impact on the login note this program is running sequentially, thus checking all jobs in a loop on a single core and idling for most of its run time.
-  This should allow the node to schedule other task in between the checks.
+  This is done by submitting all calculations to the slurm workload manager and only use the login node to check the status of running jobs and submit new ones.
+- To further reduce impact on the login node this program is running sequentially, thus checking all jobs in a loop on a single core and idling for most of its run time.
+
 
 Automatic resource allocation
 ------------------------------
-To further improve efficiency for larger datasets an automatic resource allocation scheme was implemented based on results from a benchmark over multiple molecules and calculation methods.
-In this benchmark the same calculations were performed with different number of utilized cores to see if more cores are actually beneficial.
+To further improve efficiency for the generation of larger datasets, an automatic resource allocation scheme was implemented based on results from a benchmark over multiple molecules and calculation methods.
+In this benchmark the same calculations were performed with different number of cores per job to see if the useage of more cores in parallel is actually beneficial.
 
 A good representation of the results can be seen in the following graph:
 
@@ -72,10 +71,10 @@ A good representation of the results can be seen in the following graph:
    :align: center
 
 As one can see the overall calculation time decreases with the number of cores used, however the decrease is not linear.
-This means that the more cores are used the less efficient the calculation becomes.
+This means that the more cores per job are used the less efficient the calculation becomes.
 This is due to the fact that the calculation is not perfectly parallelizable and the overhead of managing many cores becomes more expensive than the benefit of running the calculation in parallel.
 
-To find the optimal number of cores for a given calculation the program will estimate the time it takes to run the calculation with different number of cores and then choose the number of cores that will finish the calculation the fastest.
+To find the optimal number of cores for a given calculation the program will estimate the time it takes to run the calculation with different number of cores and then choose the number of cores that will finish whole  set of calculation the fastest.
 This is based on the selected number of nodes these calculations can request from the server and the number of calculations that are currently running on the server.
 
 This way the program will always try to run the calculations as fast as possible without overloading the server with unnecessary calculations.
@@ -134,15 +133,15 @@ The program then presents the results in an organized table for easy analysis an
 
 Interface between python and the calculation module
 ----------------------------------------------------
-A core requirement for this program was the ability to seamlessly integrate different calculation tools (eg. Orca, Gaussian, RSA, CREST, etc ).
+A core requirement for this program was the ability to seamlessly integrate different quantum chemistry software packages (eg. Orca, Gaussian, RSA, CREST, etc ).
 The difficulty in managing these different tools is that they all have different input and output formats.
-To allow for a single work class to manage all these different tools, 
+To allow for a single work_manager class to manage all these different tools, 
 a template class was created from which all calculation tool classes inherit a common interface structure.
 
 This template class provides a few basic functions that the work manager uses to interact with the calculation module.
-This allows for basically any computation tool to be used in this library as long as a child class of the template is implemented.
+This approach allows the usage of any quantum chemistry software as long as a corresponding child class of the template is implemented.
 
-Its main functions are:
+The main functions of the template are:
 
 - creating the slurm script that will be submitted to the server.
 - preparing the jobs that will be submitted to the server.
@@ -150,5 +149,5 @@ Its main functions are:
 - collecting results from the server and storing them in the correct location.
 - submitting new jobs and restarting failed jobs.
 
-All of these functions will depend on the specific calculation tool that is being used.
-however this should cover all aspects needed for any calculation tool to be used in this program.
+All of these functions depend on the used quantum chemistry software package.
+However this interface should cover all aspects needed for the usage of any software package with this program.
