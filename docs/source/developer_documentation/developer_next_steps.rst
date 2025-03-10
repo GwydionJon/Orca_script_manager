@@ -53,7 +53,7 @@ The offline mode should be activated by a command line argument, for example ``-
 
 
 Adding additional computation tools apart from ORCA
--------------------------------------------------
+---------------------------------------------------
 
 For this step the current ``orca.py`` file should serve as a guideline.
 

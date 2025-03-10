@@ -3,7 +3,14 @@ config_creator
 
 .. py:function:: config_creator(port, config, hostname, username, password)
 
-The ``config_creator`` function is a command-line interface (CLI) command that creates a new config file for the script_maker2000 tool. This function is part of the ``script_maker_cli`` group of commands.
+The ``config_creator`` function is a command-line interface (CLI) 
+command that opens the graphical interface to setup, change, manage, deploy and collect calculations and their results. 
+This function is part of the ``script_maker_cli`` group of commands.
+
+After running this command an internal link to the remote host will be created, this allows the deployment of calculations directly from this GUI without external programs.
+Additionally a local dash server will be started, this will host the GUI and automatically open this dash application in your browser.
+Dash essentially imitates a webserver on your local machine.
+
 
 Parameters
 ----------
@@ -39,6 +46,3 @@ and here a shortend example:
 
    script_maker_cli config_creator --hostname justus2-login01.rz.uni-ulm.de	 --username hd_xyz --password "my-password"
 
-
-
-This command will create a new config file for the script_maker2000 tool, establish a connection to the remote server, create the main application, open the browser after 1 second, and run the server.

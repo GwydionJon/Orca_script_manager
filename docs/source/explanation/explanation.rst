@@ -1,6 +1,27 @@
 How does this program work?
 ===========================
 
+Interface between python and the calculation module
+----------------------------------------------------
+A core requirement for this program was the ability to seamlessly integrate different quantum chemistry software packages (eg. Orca, Gaussian, RSA, CREST, etc ).
+The difficulty in managing these different tools is that they all have different input and output formats.
+To allow for a single work_manager class to manage all these different tools, 
+a template class was created from which all calculation tool classes inherit a common interface structure.
+
+This template class provides a few basic functions that the work manager uses to interact with the calculation module.
+This approach allows the usage of any quantum chemistry software as long as a corresponding child class of the template is implemented.
+
+The main functions of the template are:
+
+- creating the slurm script that will be submitted to the server.
+- preparing the jobs that will be submitted to the server.
+- checking the status of the jobs that are currently running on the server.
+- collecting results from the server and storing them in the correct location.
+- submitting new jobs and restarting failed jobs.
+
+All of these functions depend on the used quantum chemistry software package.
+However this interface should cover all aspects needed for the usage of any software package with this program.
+
 
 Three layers of abstraction
 ---------------------------
@@ -18,7 +39,9 @@ The inner most layer is the **JOB**, the second is the **work_manager** and the 
 
 | The **work_manager** is responsible for managing the jobs. It is the layer that interacts with the calculation module.
  In the beginning each work_manager is given a list of jobs and a single calculation config. This config contains the settings for one specific operation (basis set, functional, optimization *or* single point calculation, etc.)
- The work manager will create all necessary input files and folders and submit the jobs via *slurm*.
+ The config will also determine which calculation module (e.g Orca) will be used.
+ As mentioned before each calculation module has a common interface that the work_manager can use to interact with the calculation module.
+ Through the calculation module the work manager will create all necessary input files and folders and submit the jobs via *slurm*.
  It then enters a loop to continually check and update the status of the jobs.
 | Prepare new jobs -> Submit jobs -> Check submitted jobs -> Manage returned jobs -> Check if all jobs are done -> Wait -> Repeat
 | Should new input files appear in its managed directories the new calculation will be initialized and submitted.
@@ -120,6 +143,14 @@ This way the program will always try to run the calculations as fast as possible
 
         96 Jobs
 
+These graphs were created with a set limit of 48 cores.
+While the absolute time is of course different for each calculation method their relative tendencies are identical.
+For this benchmark the optimal number of cores was the number of cores divided by the number of calculation rounded up if necessary.
+
+.. math::
+
+   n_{best cores} = \lceil \frac{N_{cores}}{N_{calc}} \rceil
+
 
 Local vs Remote operations
 --------------------------
@@ -131,23 +162,3 @@ After the calculations are completed, the results are extracted and sent back to
 The program then presents the results in an organized table for easy analysis and review.
 
 
-Interface between python and the calculation module
-----------------------------------------------------
-A core requirement for this program was the ability to seamlessly integrate different quantum chemistry software packages (eg. Orca, Gaussian, RSA, CREST, etc ).
-The difficulty in managing these different tools is that they all have different input and output formats.
-To allow for a single work_manager class to manage all these different tools, 
-a template class was created from which all calculation tool classes inherit a common interface structure.
-
-This template class provides a few basic functions that the work manager uses to interact with the calculation module.
-This approach allows the usage of any quantum chemistry software as long as a corresponding child class of the template is implemented.
-
-The main functions of the template are:
-
-- creating the slurm script that will be submitted to the server.
-- preparing the jobs that will be submitted to the server.
-- checking the status of the jobs that are currently running on the server.
-- collecting results from the server and storing them in the correct location.
-- submitting new jobs and restarting failed jobs.
-
-All of these functions depend on the used quantum chemistry software package.
-However this interface should cover all aspects needed for the usage of any software package with this program.
