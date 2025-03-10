@@ -3,7 +3,7 @@ GUI
 
 The GUI is a browser based designed to streamline the process of creating config files, submitting and retrieving calculation results as well as handling communications with a remote server.
 
-It will automatically upload and download the necessery files, this circumventing the need for additional tools like scp or rsync.
+It will automatically upload and download the necessary files, this circumventing the need for additional tools like scp or rsync.
 
 The main features are structures into four different tabs located at the top left:
 
@@ -18,7 +18,7 @@ Starting the GUI
 ----------------
 
 To start the GUI, the user must run the following command from the command line:
-`` script_maker_cli config-creator --port 8050 --config /path/to/config --hostname my-server.com --username my-username --password "my-password"``
+``script_maker_cli config-creator --port 8050 --config /path/to/config --hostname my-server.com --username my-username --password "my-password"``
 
 - ``--port`` sets the local port on which the GUI will be hosted. The default is 8050 and as long as no error message indicates that this port is already blocked, this flag can be ignored.
 
