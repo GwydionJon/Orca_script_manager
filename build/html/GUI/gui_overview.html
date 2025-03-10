@@ -99,14 +99,14 @@
   <section id="gui">
 <h1>GUI<a class="headerlink" href="#gui" title="Link to this heading"></a></h1>
 <p>The GUI is a browser based designed to streamline the process of creating config files, submitting and retrieving calculation results as well as handling communications with a remote server.</p>
-<p>It will automatically upload and download the necessery files, this circumventing the need for additional tools like scp or rsync.</p>
+<p>It will automatically upload and download the necessary files, this circumventing the need for additional tools like scp or rsync.</p>
 <p>The main features are structures into four different tabs located at the top left:</p>
 <img alt="GUI Tabs" class="align-center" src="../_images/gui_tabs.PNG" />
 <p>Each of these tabs will be discussed in more detail below.</p>
 <section id="starting-the-gui">
 <h2>Starting the GUI<a class="headerlink" href="#starting-the-gui" title="Link to this heading"></a></h2>
 <p>To start the GUI, the user must run the following command from the command line:
-`` script_maker_cli config-creator –port 8050 –config /path/to/config –hostname my-server.com –username my-username –password “my-password”``</p>
+<code class="docutils literal notranslate"><span class="pre">script_maker_cli</span> <span class="pre">config-creator</span> <span class="pre">--port</span> <span class="pre">8050</span> <span class="pre">--config</span> <span class="pre">/path/to/config</span> <span class="pre">--hostname</span> <span class="pre">my-server.com</span> <span class="pre">--username</span> <span class="pre">my-username</span> <span class="pre">--password</span> <span class="pre">&quot;my-password&quot;</span></code></p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">--port</span></code> sets the local port on which the GUI will be hosted. The default is 8050 and as long as no error message indicates that this port is already blocked, this flag can be ignored.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">--config</span></code> Allows for a specific config file to be loaded at startup. However this should not really be useful for the user as they are available in a dropdown anyway and is mostly used for debugging purposes.</p></li>
