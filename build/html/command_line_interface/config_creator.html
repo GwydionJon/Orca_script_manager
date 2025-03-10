@@ -23,7 +23,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="collect_input_files" href="collect_input.html" />
-    <link rel="prev" title="CLI" href="cli_documentation.html" /> 
+    <link rel="prev" title="Command-line interface" href="cli_documentation.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -49,7 +49,7 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../install_guide/install_guide.html">Installation Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../explanation/explanation.html">How does this program work?</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="cli_documentation.html">CLI</a><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="cli_documentation.html">Command-line interface</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="cli_documentation.html#scope-and-use-cases">Scope and use cases:</a><ul class="current">
 <li class="toctree-l3 current"><a class="current reference internal" href="#">config-creator</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#config_creator"><code class="docutils literal notranslate"><span class="pre">config_creator()</span></code></a></li>
@@ -85,7 +85,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="cli_documentation.html">CLI</a></li>
+          <li class="breadcrumb-item"><a href="cli_documentation.html">Command-line interface</a></li>
       <li class="breadcrumb-item active">config_creator</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/command_line_interface/config_creator.rst.txt" rel="nofollow"> View page source</a>
@@ -103,7 +103,12 @@
 <span class="sig-name descname"><span class="pre">config_creator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">port</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hostname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">username</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#config_creator" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
-<p>The <code class="docutils literal notranslate"><span class="pre">config_creator</span></code> function is a command-line interface (CLI) command that creates a new config file for the script_maker2000 tool. This function is part of the <code class="docutils literal notranslate"><span class="pre">script_maker_cli</span></code> group of commands.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">config_creator</span></code> function is a command-line interface (CLI)
+command that opens the graphical interface to setup, change, manage, deploy and collect calculations and their results.
+This function is part of the <code class="docutils literal notranslate"><span class="pre">script_maker_cli</span></code> group of commands.</p>
+<p>After running this command an internal link to the remote host will be created, this allows the deployment of calculations directly from this GUI without external programs.
+Additionally a local dash server will be started, this will host the GUI and automatically open this dash application in your browser.
+Dash essentially imitates a webserver on your local machine.</p>
 <section id="parameters">
 <h2>Parameters<a class="headerlink" href="#parameters" title="Link to this heading"></a></h2>
 <ul class="simple">
@@ -126,7 +131,6 @@
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>script_maker_cli<span class="w"> </span>config_creator<span class="w"> </span>--hostname<span class="w"> </span>justus2-login01.rz.uni-ulm.de<span class="w">      </span>--username<span class="w"> </span>hd_xyz<span class="w"> </span>--password<span class="w"> </span><span class="s2">&quot;my-password&quot;</span>
 </pre></div>
 </div>
-<p>This command will create a new config file for the script_maker2000 tool, establish a connection to the remote server, create the main application, open the browser after 1 second, and run the server.</p>
 </section>
 </section>
 
@@ -134,7 +138,7 @@
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="cli_documentation.html" class="btn btn-neutral float-left" title="CLI" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="cli_documentation.html" class="btn btn-neutral float-left" title="Command-line interface" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="collect_input.html" class="btn btn-neutral float-right" title="collect_input_files" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

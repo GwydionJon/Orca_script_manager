@@ -19,10 +19,11 @@
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
       <script src="../_static/copybutton.js?v=8177b258"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="CLI" href="../command_line_interface/cli_documentation.html" />
+    <link rel="next" title="Command-line interface" href="../command_line_interface/cli_documentation.html" />
     <link rel="prev" title="Installation Guide" href="../install_guide/install_guide.html" /> 
 </head>
 
@@ -49,14 +50,14 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../install_guide/install_guide.html">Installation Guide</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">How does this program work?</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#interface-between-python-and-the-calculation-module">Interface between python and the calculation module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#three-layers-of-abstraction">Three layers of abstraction</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#performance-considerations">Performance considerations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#automatic-resource-allocation">Automatic resource allocation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#local-vs-remote-operations">Local vs Remote operations</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#interface-between-python-and-the-calculation-module">Interface between python and the calculation module</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../command_line_interface/cli_documentation.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../command_line_interface/cli_documentation.html">Command-line interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../GUI/gui_overview.html">GUI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developer_documentation/main_developer_page.html">Developer section</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../modules.html">Modules</a></li>
@@ -88,21 +89,42 @@
              
   <section id="how-does-this-program-work">
 <h1>How does this program work?<a class="headerlink" href="#how-does-this-program-work" title="Link to this heading"></a></h1>
+<section id="interface-between-python-and-the-calculation-module">
+<h2>Interface between python and the calculation module<a class="headerlink" href="#interface-between-python-and-the-calculation-module" title="Link to this heading"></a></h2>
+<p>A core requirement for this program was the ability to seamlessly integrate different quantum chemistry software packages (eg. Orca, Gaussian, RSA, CREST, etc ).
+The difficulty in managing these different tools is that they all have different input and output formats.
+To allow for a single work_manager class to manage all these different tools,
+a template class was created from which all calculation tool classes inherit a common interface structure.</p>
+<p>This template class provides a few basic functions that the work manager uses to interact with the calculation module.
+This approach allows the usage of any quantum chemistry software as long as a corresponding child class of the template is implemented.</p>
+<p>The main functions of the template are:</p>
+<ul class="simple">
+<li><p>creating the slurm script that will be submitted to the server.</p></li>
+<li><p>preparing the jobs that will be submitted to the server.</p></li>
+<li><p>checking the status of the jobs that are currently running on the server.</p></li>
+<li><p>collecting results from the server and storing them in the correct location.</p></li>
+<li><p>submitting new jobs and restarting failed jobs.</p></li>
+</ul>
+<p>All of these functions depend on the used quantum chemistry software package.
+However this interface should cover all aspects needed for the usage of any software package with this program.</p>
+</section>
 <section id="three-layers-of-abstraction">
 <h2>Three layers of abstraction<a class="headerlink" href="#three-layers-of-abstraction" title="Link to this heading"></a></h2>
 <p>The core of this program is divided into three different layers.
 The inner most layer is the <strong>JOB</strong>, the second is the <strong>work_manager</strong> and the outer most layer is the <strong>batch_manager</strong>.</p>
 <div class="line-block">
 <div class="line">The <strong>JOB</strong> is the most basic unit of work. It is a single calculation that needs to be done.
-For an orca calculation this would be the desired molecule and the orca input file.</div>
+For an orca calculation, the job would contain the desired molecule and the orca input file.</div>
 <div class="line">Each job can be in different stages depending on its process.</div>
 <div class="line">These stages go from <em>initialized</em> -&gt; <em>submitted</em> -&gt; <em>running</em> -&gt; <em>returned</em> -&gt; <em>finished</em></div>
 <div class="line">Jobs only have information about themselves and their current status.</div>
 </div>
 <div class="line-block">
 <div class="line">The <strong>work_manager</strong> is responsible for managing the jobs. It is the layer that interacts with the calculation module.
-In the beginning each work_manager is given a list of jobs and a single calculation config. (eg. a specific optimization <em>or</em> a single point calculation)
-The work manager will create all necessary input files and folders and submit the jobs via <em>slurm</em>.
+In the beginning each work_manager is given a list of jobs and a single calculation config. This config contains the settings for one specific operation (basis set, functional, optimization <em>or</em> single point calculation, etc.)
+The config will also determine which calculation module (e.g Orca) will be used.
+As mentioned before each calculation module has a common interface that the work_manager can use to interact with the calculation module.
+Through the calculation module the work manager will create all necessary input files and folders and submit the jobs via <em>slurm</em>.
 It then enters a loop to continually check and update the status of the jobs.</div>
 <div class="line">Prepare new jobs -&gt; Submit jobs -&gt; Check submitted jobs -&gt; Manage returned jobs -&gt; Check if all jobs are done -&gt; Wait -&gt; Repeat</div>
 <div class="line">Should new input files appear in its managed directories the new calculation will be initialized and submitted.
@@ -110,12 +132,12 @@ Once all its jobs are finished it will automatically shut off.</div>
 <div class="line">The work_manager only has information about the jobs it is managing and its own calculation config.</div>
 </div>
 <p>The <strong>batch_manager</strong> is the outer most layer and is responsible for managing the <em>work_managers</em>.
-it is given a list of molecules and a list of calculations as well as the order these calculations are to be performed in.</p>
+It is given a list of molecules and a list of calculations as well as the order in which these calculations have to be performed.</p>
 <a class="reference internal image-reference" href="../_images/example_config.png"><img alt="Description of the image" class="align-center" src="../_images/example_config.png" style="width: 400px;" />
 </a>
 <p>The example flow chart reads as follows:</p>
-<p>The initial guess is optimized according to <strong>Optimization A</strong> and <strong>Optimization B</strong> before both results are advanced to each <strong>SP</strong> Step.
-This parallelization allows for a quick and efficient generation of various benchmarks or comparisons.
+<p>The initial guess is optimized according to <strong>Optimization A</strong> and <strong>Optimization B</strong> before both results are advanced to each <strong>Single Point</strong> step.
+This parallelization allows for a quick and efficient generation of new data.
 It is of course also possible to have many more calculations in sequence or parallel.
 For example a MM calculation followed by a QM calculation and followed up by a frequency calculation.</p>
 </section>
@@ -124,28 +146,25 @@ For example a MM calculation followed by a QM calculation and followed up by a f
 <p>To make this program as efficient as possible the following cost considerations were made:</p>
 <ul class="simple">
 <li><p>Running the actual calculations is the most expensive part of the program.
-This makes it feasible to have the python script wait for most of its run time and only check occasionally for finished jobs.
-As the jobs will very in their run time it is unlikely that a sufficiently large amount would finish simultaneously to notably affect overall performance.</p></li>
+As a result, the python script will wait for most of its run time and only check occasionally for finished jobs.</p></li>
 <li><p>The python part of this program is usually run on the login node of the cluster.
 This node is not designed to run heavy calculations and can be slow to respond to user input.
 To minimize the time spent on the login node, the program is designed to only run the minimum amount of code on the login node.
-This is done by submitting all calculations to the slurm server and then only checking the status of the jobs on the login node.
-This way the login node is only used to check the status of the jobs and submit new jobs.</p></li>
-<li><p>To further reduce impact on the login note this program is running sequentially, thus checking all jobs in a loop on a single core and idling for most of its run time.
-This should allow the node to schedule other task in between the checks.</p></li>
+This is done by submitting all calculations to the slurm workload manager and only use the login node to check the status of running jobs and submit new ones.</p></li>
+<li><p>To further reduce impact on the login node this program is running sequentially, thus checking all jobs in a loop on a single core and idling for most of its run time.</p></li>
 </ul>
 </section>
 <section id="automatic-resource-allocation">
 <h2>Automatic resource allocation<a class="headerlink" href="#automatic-resource-allocation" title="Link to this heading"></a></h2>
-<p>To further improve efficiency for larger datasets an automatic resource allocation scheme was implemented based on results from a benchmark over multiple molecules and calculation methods.
-In this benchmark the same calculations were performed with different number of utilized cores to see if more cores are actually beneficial.</p>
+<p>To further improve efficiency for the generation of larger datasets, an automatic resource allocation scheme was implemented based on results from a benchmark over multiple molecules and calculation methods.
+In this benchmark the same calculations were performed with different number of cores per job to see if the useage of more cores in parallel is actually beneficial.</p>
 <p>A good representation of the results can be seen in the following graph:</p>
 <a class="reference internal image-reference" href="../_images/b3lyp_performance_per_core.png"><img alt="Description of the image" class="align-center" src="../_images/b3lyp_performance_per_core.png" style="width: 95%;" />
 </a>
 <p>As one can see the overall calculation time decreases with the number of cores used, however the decrease is not linear.
-This means that the more cores are used the less efficient the calculation becomes.
+This means that the more cores per job are used the less efficient the calculation becomes.
 This is due to the fact that the calculation is not perfectly parallelizable and the overhead of managing many cores becomes more expensive than the benefit of running the calculation in parallel.</p>
-<p>To find the optimal number of cores for a given calculation the program will estimate the time it takes to run the calculation with different number of cores and then choose the number of cores that will finish the calculation the fastest.
+<p>To find the optimal number of cores for a given calculation the program will estimate the time it takes to run the calculation with different number of cores and then choose the number of cores that will finish whole  set of calculation the fastest.
 This is based on the selected number of nodes these calculations can request from the server and the number of calculations that are currently running on the server.</p>
 <p>This way the program will always try to run the calculations as fast as possible without overloading the server with unnecessary calculations.</p>
 <table class="docutils align-default" id="id1">
@@ -208,6 +227,11 @@ This is based on the selected number of nodes these calculations can request fro
 </tr>
 </tbody>
 </table>
+<p>These graphs were created with a set limit of 48 cores.
+While the absolute time is of course different for each calculation method their relative tendencies are identical.
+For this benchmark the optimal number of cores was the number of cores divided by the number of calculation rounded up if necessary.</p>
+<div class="math notranslate nohighlight">
+\[n_{best cores} = \lceil \frac{N_{cores}}{N_{calc}} \rceil\]</div>
 </section>
 <section id="local-vs-remote-operations">
 <h2>Local vs Remote operations<a class="headerlink" href="#local-vs-remote-operations" title="Link to this heading"></a></h2>
@@ -217,25 +241,6 @@ Once the files are transferred, the program initiates and monitors calculations 
 After the calculations are completed, the results are extracted and sent back to the local machine.
 The program then presents the results in an organized table for easy analysis and review.</p>
 </section>
-<section id="interface-between-python-and-the-calculation-module">
-<h2>Interface between python and the calculation module<a class="headerlink" href="#interface-between-python-and-the-calculation-module" title="Link to this heading"></a></h2>
-<p>A core requirement for this program was the ability to seamlessly integrate different calculation tools (eg. Orca, Gaussian, RSA, CREST, etc ).
-The difficulty in managing these different tools is that they all have different input and output formats.
-To allow for a single work class to manage all these different tools,
-a template class was created from which all calculation tool classes inherit a common interface structure.</p>
-<p>This template class provides a few basic functions that the work manager uses to interact with the calculation module.
-This allows for basically any computation tool to be used in this library as long as a child class of the template is implemented.</p>
-<p>Its main functions are:</p>
-<ul class="simple">
-<li><p>creating the slurm script that will be submitted to the server.</p></li>
-<li><p>preparing the jobs that will be submitted to the server.</p></li>
-<li><p>checking the status of the jobs that are currently running on the server.</p></li>
-<li><p>collecting results from the server and storing them in the correct location.</p></li>
-<li><p>submitting new jobs and restarting failed jobs.</p></li>
-</ul>
-<p>All of these functions will depend on the specific calculation tool that is being used.
-however this should cover all aspects needed for any calculation tool to be used in this program.</p>
-</section>
 </section>
 
 
@@ -243,7 +248,7 @@ however this should cover all aspects needed for any calculation tool to be used
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="../install_guide/install_guide.html" class="btn btn-neutral float-left" title="Installation Guide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="../command_line_interface/cli_documentation.html" class="btn btn-neutral float-right" title="CLI" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="../command_line_interface/cli_documentation.html" class="btn btn-neutral float-right" title="Command-line interface" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

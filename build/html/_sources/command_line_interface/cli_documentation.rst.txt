@@ -1,13 +1,13 @@
-CLI 
-===
+Command-line interface 
+======================
 
 Scope and use cases:
 --------------------    
 
-This project has various command line tools which will be explained here.
-These tools are designed to help you create, organize, submit and return you chemical calculations on any slurm based server or system.
+This project contains various command-line tools which will be explained below.
+These tools are designed to help create, organize, submit, and analyse quantum chemical calculations on any slurm based server or system.
 
-There are two main command groups we need to differentiate:
+There are two groups of commands that must be distinguished:
 
 - Local commands: are designed to be run on your local machine. These include:
     - config-creator: This command opens the GUI and will be discussed in more detail in the GUI section.
@@ -27,8 +27,8 @@ There are two main command groups we need to differentiate:
 | For example:
 | ``script_maker_cli start-config --config /path/to/config --continue_run --profile``
 
-This would continue or restart a previously started calculation based on the config file at /path/to/config and profile the code for performance analysis.
-For more details about the commands and their arguments, please refer to the individual pages or use the  ``--help`` flag.
+This command would continue or restart a previously started calculation based on the config file at `/path/to/config` and profile the code for performance analysis.
+For more details about the commands and their arguments, please refer to the individual pages or use the ``--help`` flag.
 
 When using the GUI most of these commands will be run automatically. However, you can also run them manually from the command line.
 

@@ -3,7 +3,7 @@ GUI
 
 The GUI is a browser based designed to streamline the process of creating config files, submitting and retrieving calculation results as well as handling communications with a remote server.
 
-It will automatically upload and download the necessery files, this circumventing the need for addtional tools like scp or rsync.
+It will automatically upload and download the necessery files, this circumventing the need for additional tools like scp or rsync.
 
 The main features are structures into four different tabs located at the top left:
 

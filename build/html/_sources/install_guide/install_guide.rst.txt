@@ -31,7 +31,7 @@ thus simplifying the installation process on most machines.
 
 .. code-block:: bash
 
-    conda env create -f https://raw.githubusercontent.com/GwydionJon/Orca_script_manager/environment.yml
+    conda env create -f https://raw.githubusercontent.com/GwydionJon/Orca_script_manager/refs/heads/main/environment.yml
 
 When this command is finished it will tell you to activate this conda environment, do so by running:
 
