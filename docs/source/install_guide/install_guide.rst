@@ -35,6 +35,13 @@ thus simplifying the installation process on most machines.
 
 When this command is finished it will tell you to activate this conda environment, do so by running:
 
+On some systems you may be required to install git first, you can do this by running:
+
+.. code-block:: bash
+
+    conda install git
+
+
 .. code-block:: bash
 
     conda activate script_maker
