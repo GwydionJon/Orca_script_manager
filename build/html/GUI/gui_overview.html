@@ -53,7 +53,7 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">GUI</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#starting-the-gui">Starting the GUI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#config-creator">Config Creator</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#creating-a-new-config">creating a new config:</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#creating-a-new-config">Creating a new config:</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#input-file">Input File</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#creating-a-calculation-pipeline">Creating a calculation pipeline</a></li>
 </ul>
@@ -121,12 +121,12 @@
 <h2>Config Creator<a class="headerlink" href="#config-creator" title="Link to this heading"></a></h2>
 <p>The config creator tab is the first tab and is used to create a new config file. It is the first step in the process of submitting a batch calculation.</p>
 <img alt="GUI Config" class="align-center" src="../_images/gui_config_overview.PNG" />
-<p>At the top left of the tab is a dropdown menu with all the available templates. The user can select a template from the dropdown menu to load the configuration into the editor t the bottom left.</p>
+<p>At the top left of the tab is a dropdown menu with all the available templates. The user can select a template from the dropdown menu to load the configuration into the editor at the bottom left.</p>
 <p>The editor is divided into 4 sections:</p>
 <ol class="arabic simple">
 <li><dl class="simple">
 <dt>main_config:</dt><dd><p>In this section the config name or label is set. This is the name that will be used to identify the config file in the database.
-Also important is to set the path to the input file. More information about the input file can be found later on this page.</p>
+It is also important to enter the path to the input file. More information about the input file can be found later on this page.</p>
 </dd>
 </dl>
 </li>
@@ -141,15 +141,15 @@ Also important is to set the path to the input file. More information about the 
 </dl>
 </li>
 <li><dl class="simple">
-<dt>loop_config:</dt><dd><p>This one is where one can actually setup the individual computations.</p>
+<dt>loop_config:</dt><dd><p>In this section the actually setup of individual computations is done.</p>
 </dd>
 </dl>
 </li>
 </ol>
-<p>For all entries in the config editor there is hover text that will provide more information about the entry.</p>
+<p>For all entries in the config editor, a hover text provides more information about the entry.</p>
 </section>
 <section id="creating-a-new-config">
-<h2>creating a new config:<a class="headerlink" href="#creating-a-new-config" title="Link to this heading"></a></h2>
+<h2>Creating a new config:<a class="headerlink" href="#creating-a-new-config" title="Link to this heading"></a></h2>
 <p>To create a new config file, the user must first select a template from the dropdown menu. Once a template is selected, the user can edit the configuration in the editor. Once the user is satisfied with the configuration, the user can click the “Save Config” button to save the configuration to the database.</p>
 <p>A given config can be added to the template list with the “add default config” button. when overriding an existing emplate check the box next to the button.</p>
 <section id="input-file">
@@ -185,25 +185,25 @@ every key is the name or identifier of a molecule and must contain the sub keys:
 </section>
 <section id="creating-a-calculation-pipeline">
 <h3>Creating a calculation pipeline<a class="headerlink" href="#creating-a-calculation-pipeline" title="Link to this heading"></a></h3>
-<p>In addition to the abiliy of submiting many different molecules at once this program was also designed to submit arbitrary pipelines consisting of different individual calculations.
-The simplest example would be to perform a geometry optimization followed by a frequency calculation with different methods or basissets.</p>
+<p>In addition to the abiliy of submiting many different molecules at once, this program was also designed to submit arbitrary pipelines consisting of different individual calculations.
+The simplest example would be to perform a geometry optimization followed by a single point calculation on a higher level of theory.</p>
 <p>These pipelines are created in the loop_config section of the config editor.
 Note that this description is currently only valid for Orca calculations.</p>
 <ol class="arabic simple">
 <li><p>Choose the total number of desired steps.</p></li>
 <li><p>Then we set the name for the first calculation step. This name should be unique and descriptive.</p></li>
-<li><p>Select the calculation type, however currently only Orca is supported. Tools like crestor solvent corrections are planned for the future an will allow for much more complex pipelines.</p></li>
+<li><p>Select the calculation type, however currently only Orca is supported. Tools such as CREST or AMS are planned for the future which will allow much more complex pipelines.</p></li>
 <li><p>Now we set the step ID, this basically determines the position in the pipeline. The first step should always be 0.
 To create a branching pipeline we can set multiple steps to the same ID.</p></li>
 <li><p>Choose the method and basis set for the calculation.</p></li>
 <li><p>Add additinal settings that you woud normally add in the first line of an orca input file. (Block settings can be set later.)</p></li>
-<li><p>In most cases we can stick ith the automated resource allocation. However if we want to use a specific node we can set it here.
+<li><p>In most cases we can stick with the automated resource allocation. However if we want to use a specific node we can set it here.
 The automated allocation will estimate how many compute cores are optiomal based on the number of calculations and the number of nodes available.
-This is important because orca and most other programs do not scale linearly with the number of cores. The more calculations are done the more efficient it is to perform them in parallel with fewer compares compared to running them in sequence with many cores.
+This is important because orca and most other programs do not scale linearly with the number of cores. The more calculations are performed, the more efficient it is to perform them in parallel with fewer cores than to perform them one after the other with many cores.
 This setting takes the <code class="docutils literal notranslate"><span class="pre">max_compute_nodes</span></code> setting from the main_config section into account.</p></li>
-<li><p>The last step is to set the initial run time. This is the time that the calculation is allowed to run before it is killed. This is important to prevent the calculation from running for too long and blocking the queue for other users.
+<li><p>The last step is to set the initial run time. This is the maximum amount of time that the calculation is allowed to run before it is killed. This setting is important to prevent the calculation from running for too long and blocking the queue for other users.
 A shorter run time will get started faster but might not finish in time. A longer run time will take longer to start but will have a higher chance of finishing.
-If a calculations runs into the walltime it will automatically restarted with the <code class="docutils literal notranslate"><span class="pre">max</span> <span class="pre">run</span> <span class="pre">time</span></code> setting from the main_config section, but this is done only once.</p></li>
+If a calculations is stopped by the the walltime limit, it will automatically restarted with the <code class="docutils literal notranslate"><span class="pre">max</span> <span class="pre">run</span> <span class="pre">time</span></code> setting from the main_config section, but this is done only once.</p></li>
 </ol>
 <p>Now repeat these steps for all desired calculation steps.</p>
 </section>
@@ -212,12 +212,12 @@ If a calculations runs into the walltime it will automatically restarted with th
 <h2>Submitting Jobs<a class="headerlink" href="#submitting-jobs" title="Link to this heading"></a></h2>
 <p>This tab is used to select which jobs are send to the server and also choose their desired calculation directory.</p>
 <img alt="GUI Config" class="align-center" src="../_images/managment_page.jpg" />
-<p>Due to this program being run in a browser the typical file selection dialog is not available without having to copy the entire file into memory.
-Instead the user can specify a path (both unix and windows paths work) and the tree structure underneath will show any valid pre packaged calculation setups.
-The same can then be done for the remote directory. Please note that each submitted calculation needs to be run in a new directory.</p>
+<p>On the left hand side, the user can specify a path (both unix and windows paths work) and the tree structure underneath will show any valid pre-packaged calculation setups to run.
+The same can then be done for the remote directory. Select a target path on the remote machine where the calculations should be saved.
+Please note that each submitted calculation needs to be run in its own directory.</p>
 <p>To add a new subdirectory simply add the desired name to the selected calculation path on the right.
 Or create the folder on the remote server first. (You may need to search the remote paths again if you do so while the program is running)</p>
-<p>After pressing Submit job you will get a short summary of what the program is doing and a confirmation if the job was submitted successfully.</p>
+<p>After pressing “Submit job” you will get a short summary of what the program is doing and a confirmation if the job was submitted successfully.</p>
 </section>
 <section id="check-on-running-and-past-jobs">
 <h2>Check on running and past jobs<a class="headerlink" href="#check-on-running-and-past-jobs" title="Link to this heading"></a></h2>
@@ -238,7 +238,7 @@ For more information about the syntax see the <a class="reference external" href
 The dropdown will show all available batches that have been submitted through this program.
 On the right you can choose the local directory where the results should be downloaded to.
 It is really important that you don’t move the data after the download. This program will keep track of its data locations to have them available in the table below, if you move the data manually however this will not work anymore.</p>
-<p>Additionally you can exclude certain keywords from the download. By default the default the backup folder and the .gbw files are excluded as they consume quite a lot of space and bandwidth.</p>
+<p>Additionally you can exclude certain keywords from the download. By default the backup folder and the .gbw files are excluded as they consume quite a lot of space and bandwidth.</p>
 </section>
 <section id="results-table">
 <h3>Results Table<a class="headerlink" href="#results-table" title="Link to this heading"></a></h3>
@@ -254,10 +254,10 @@ Additionally the table can be saved as an excel/csv file.</p>
 <p>The details page will show all available information for the selected calculation.</p>
 <img alt="results details" class="align-center" src="../_images/result_details.jpg" />
 <p>For all calculations this view allows you to directly open your file explorer at the location or simply open the output file directly.
-The molecular structure will show the 3d molecule and also allow you to scroll through the iterations if they are available.
-This will show you how the structure changed during the optimization.
-For optimizations there will also be an error plot that shows the energy change over the iterations.
-And for frequency calculations there will be a rough simulated IR spectrum.</p>
+The molecular structure will show the 3d molecule and also allow you to scroll through the iterations of the calculation if they are available.
+This graph will show you how the structure changed during the optimization.
+For geometry optimizations, there will also be an error plot that shows the energy change over the iterations.
+For frequency calculations, this pages includes a rough simulated IR spectrum.</p>
 </section>
 </section>
 </section>

@@ -43,25 +43,25 @@ The config creator tab is the first tab and is used to create a new config file.
     :align: center
 
 
-At the top left of the tab is a dropdown menu with all the available templates. The user can select a template from the dropdown menu to load the configuration into the editor t the bottom left.
+At the top left of the tab is a dropdown menu with all the available templates. The user can select a template from the dropdown menu to load the configuration into the editor at the bottom left.
 
 The editor is divided into 4 sections:
 
 1. main_config:
     In this section the config name or label is set. This is the name that will be used to identify the config file in the database.
-    Also important is to set the path to the input file. More information about the input file can be found later on this page.
+    It is also important to enter the path to the input file. More information about the input file can be found later on this page.
    
 2. structure_check_config:
     Not yet implemented
 3. analysis_config:
      Not yet implemented
 4. loop_config:
-     This one is where one can actually setup the individual computations.
+     In this section the actually setup of individual computations is done.
 
-For all entries in the config editor there is hover text that will provide more information about the entry.
+For all entries in the config editor, a hover text provides more information about the entry.
 
 
-creating a new config:
+Creating a new config:
 ----------------------
 
 To create a new config file, the user must first select a template from the dropdown menu. Once a template is selected, the user can edit the configuration in the editor. Once the user is satisfied with the configuration, the user can click the "Save Config" button to save the configuration to the database.
@@ -109,8 +109,8 @@ Example json file:
 Creating a calculation pipeline
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In addition to the abiliy of submiting many different molecules at once this program was also designed to submit arbitrary pipelines consisting of different individual calculations.
-The simplest example would be to perform a geometry optimization followed by a frequency calculation with different methods or basissets.
+In addition to the abiliy of submiting many different molecules at once, this program was also designed to submit arbitrary pipelines consisting of different individual calculations.
+The simplest example would be to perform a geometry optimization followed by a single point calculation on a higher level of theory.
 
 These pipelines are created in the loop_config section of the config editor.
 Note that this description is currently only valid for Orca calculations.
@@ -118,18 +118,18 @@ Note that this description is currently only valid for Orca calculations.
 
 1. Choose the total number of desired steps.
 2. Then we set the name for the first calculation step. This name should be unique and descriptive.
-3. Select the calculation type, however currently only Orca is supported. Tools like crestor solvent corrections are planned for the future an will allow for much more complex pipelines.
+3. Select the calculation type, however currently only Orca is supported. Tools such as CREST or AMS are planned for the future which will allow much more complex pipelines.
 4. Now we set the step ID, this basically determines the position in the pipeline. The first step should always be 0. 
    To create a branching pipeline we can set multiple steps to the same ID.
 5. Choose the method and basis set for the calculation.
 6. Add additinal settings that you woud normally add in the first line of an orca input file. (Block settings can be set later.)
-7. In most cases we can stick ith the automated resource allocation. However if we want to use a specific node we can set it here.
+7. In most cases we can stick with the automated resource allocation. However if we want to use a specific node we can set it here.
    The automated allocation will estimate how many compute cores are optiomal based on the number of calculations and the number of nodes available.
-   This is important because orca and most other programs do not scale linearly with the number of cores. The more calculations are done the more efficient it is to perform them in parallel with fewer compares compared to running them in sequence with many cores.
+   This is important because orca and most other programs do not scale linearly with the number of cores. The more calculations are performed, the more efficient it is to perform them in parallel with fewer cores than to perform them one after the other with many cores.
    This setting takes the ``max_compute_nodes`` setting from the main_config section into account.
-8. The last step is to set the initial run time. This is the time that the calculation is allowed to run before it is killed. This is important to prevent the calculation from running for too long and blocking the queue for other users.
+8. The last step is to set the initial run time. This is the maximum amount of time that the calculation is allowed to run before it is killed. This setting is important to prevent the calculation from running for too long and blocking the queue for other users.
    A shorter run time will get started faster but might not finish in time. A longer run time will take longer to start but will have a higher chance of finishing.
-   If a calculations runs into the walltime it will automatically restarted with the ``max run time`` setting from the main_config section, but this is done only once. 
+   If a calculations is stopped by the the walltime limit, it will automatically restarted with the ``max run time`` setting from the main_config section, but this is done only once. 
 
 Now repeat these steps for all desired calculation steps.
 
@@ -144,14 +144,14 @@ This tab is used to select which jobs are send to the server and also choose the
     :alt: GUI Config
     :align: center
 
-Due to this program being run in a browser the typical file selection dialog is not available without having to copy the entire file into memory. 
-Instead the user can specify a path (both unix and windows paths work) and the tree structure underneath will show any valid pre packaged calculation setups.
-The same can then be done for the remote directory. Please note that each submitted calculation needs to be run in a new directory.
+On the left hand side, the user can specify a path (both unix and windows paths work) and the tree structure underneath will show any valid pre-packaged calculation setups to run.
+The same can then be done for the remote directory. Select a target path on the remote machine where the calculations should be saved. 
+Please note that each submitted calculation needs to be run in its own directory.
 
 To add a new subdirectory simply add the desired name to the selected calculation path on the right.
 Or create the folder on the remote server first. (You may need to search the remote paths again if you do so while the program is running)
 
-After pressing Submit job you will get a short summary of what the program is doing and a confirmation if the job was submitted successfully.
+After pressing "Submit job" you will get a short summary of what the program is doing and a confirmation if the job was submitted successfully.
 
 
 Check on running and past jobs
@@ -187,7 +187,7 @@ The dropdown will show all available batches that have been submitted through th
 On the right you can choose the local directory where the results should be downloaded to.
 It is really important that you don't move the data after the download. This program will keep track of its data locations to have them available in the table below, if you move the data manually however this will not work anymore.
 
-Additionally you can exclude certain keywords from the download. By default the default the backup folder and the .gbw files are excluded as they consume quite a lot of space and bandwidth.
+Additionally you can exclude certain keywords from the download. By default the backup folder and the .gbw files are excluded as they consume quite a lot of space and bandwidth.
 
 Results Table
 ~~~~~~~~~~~~~
@@ -214,8 +214,8 @@ The details page will show all available information for the selected calculatio
     :align: center
 
 For all calculations this view allows you to directly open your file explorer at the location or simply open the output file directly.
-The molecular structure will show the 3d molecule and also allow you to scroll through the iterations if they are available.
-This will show you how the structure changed during the optimization.
-For optimizations there will also be an error plot that shows the energy change over the iterations.
-And for frequency calculations there will be a rough simulated IR spectrum.
+The molecular structure will show the 3d molecule and also allow you to scroll through the iterations of the calculation if they are available.
+This graph will show you how the structure changed during the optimization.
+For geometry optimizations, there will also be an error plot that shows the energy change over the iterations.
+For frequency calculations, this pages includes a rough simulated IR spectrum.
 

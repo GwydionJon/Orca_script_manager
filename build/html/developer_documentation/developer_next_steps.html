@@ -98,8 +98,8 @@
 <h2>Adding automatic tests for the dash gui functions<a class="headerlink" href="#adding-automatic-tests-for-the-dash-gui-functions" title="Link to this heading"></a></h2>
 <p>To apply automatic test to the entire GUI section it is necessary to create a mock <code class="docutils literal notranslate"><span class="pre">remote_connection</span></code> object.
 This object must be able to imitate the responses normally coming from the server thus allowing the GUI functions to run as normal.</p>
-<p>The most challenging of these will most likely be the <code class="docutils literal notranslate"><span class="pre">remote_connection.run()</span></code> command,
-as this takes different strings as input and also returns different strings depending on the resulting operation result.</p>
+<p>The most challenging part here will likely be the <code class="docutils literal notranslate"><span class="pre">remote_connection.run()</span></code> command,
+as this command takes different strings as input and also returns different strings depending on the obtained operation result.</p>
 <p>All methods that rely on this remote_connection object should be located in the <code class="docutils literal notranslate"><span class="pre">*_calls.py</span></code> files</p>
 <p>Once this mock object is created, the tests can be written in the <code class="docutils literal notranslate"><span class="pre">test_dash_ui.py</span></code> file.</p>
 <p>The mock object should be initilized as a pytest fixture in the <code class="docutils literal notranslate"><span class="pre">conftest.py</span></code> file.</p>
