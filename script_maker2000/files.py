@@ -8,6 +8,8 @@ from platformdirs import PlatformDirs
 import os
 import copy
 import re
+import subprocess
+import platform
 
 batchLogger = logging.getLogger("BatchManager")
 
@@ -955,6 +957,35 @@ def add_dir_to_config(new_output_dir):
     return "added to config."
 
 
+def open_dir_in_explorer(path):
+
+    file_path = pathlib.Path(path)
+
+    if platform.system() == "Windows":
+        os.startfile(file_path)
+    elif platform.system() == "Darwin":  # macOS
+        subprocess.run(["open", file_path])
+    else:  # Linux and other Unix-like systems
+        subprocess.run(["xdg-open", file_path])
+
+
+def return_user_config_dir():
+    """
+    Returns the user configuration directory path.
+
+    Returns:
+        str: Path to the user configuration directory.
+    """
+    try:
+        user_dirs = PlatformDirs(os.getlogin(), "Orca_Script_Maker")
+        user_config_dir = pathlib.Path(user_dirs.user_config_dir)
+    except OSError:
+        # this should only happen on  github actions
+        user_config_dir = pathlib.Path(".")
+
+    return str(user_config_dir)
+
+
 def read_premade_config(mode):
     """
     Reads a premade configuration file and returns the configuration data.
@@ -975,12 +1006,7 @@ def read_premade_config(mode):
     if mode not in ["path", "dict", "both"]:
         raise ValueError(f"Mode must be either 'path', 'dict' or 'both' but is {mode}.")
 
-    try:
-        user_dirs = PlatformDirs(os.getlogin(), "Orca_Script_Maker")
-        user_config_dir = pathlib.Path(user_dirs.user_config_dir)
-    except OSError:
-        # this should only happen on  github actions
-        user_config_dir = pathlib.Path(".")
+    user_config_dir = pathlib.Path(return_user_config_dir())
 
     user_config_dir.mkdir(parents=True, exist_ok=True)
 

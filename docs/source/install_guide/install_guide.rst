@@ -31,7 +31,7 @@ thus simplifying the installation process on most machines.
 
 .. code-block:: bash
 
-    conda env create -f https://raw.githubusercontent.com/GwydionJon/Orca_script_manager/environment.yml
+    conda env create -f https://raw.githubusercontent.com/GwydionJon/Orca_script_manager/refs/heads/main/environment.yml
 
 When this command is finished it will tell you to activate this conda environment, do so by running:
 
@@ -39,8 +39,24 @@ When this command is finished it will tell you to activate this conda environmen
 
     conda activate script_maker
 
+On some systems you may be required to install git first, you can do this by running:
+
+.. code-block:: bash
+
+    conda install git
+
+
 Finally, install the package by running:
 
 .. code-block:: bash
 
     pip install git+https://github.com/GwydionJon/Orca_script_manager
+
+
+Installation on remote system
+=================================================
+The remote installation of this software will be done automatically after you first submit a job to a remote server via the gui.
+
+This will install all dependencies and the package itself on the remote server.
+
+For a more detailed explanation of how to do this please look at the GUI section of this documentation.

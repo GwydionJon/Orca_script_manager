@@ -7,7 +7,7 @@ dependencies:
     - pip
     - numpy
     - pandas
-    - dash
+    - dash<=2.18.2
     - plotly
     - click
     - rdkit

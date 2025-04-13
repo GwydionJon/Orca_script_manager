@@ -8,8 +8,8 @@ Adding automatic tests for the dash gui functions
 To apply automatic test to the entire GUI section it is necessary to create a mock ``remote_connection`` object.
 This object must be able to imitate the responses normally coming from the server thus allowing the GUI functions to run as normal.
 
-The most challenging of these will most likely be the ``remote_connection.run()`` command, 
-as this takes different strings as input and also returns different strings depending on the resulting operation result.
+The most challenging part here will likely be the ``remote_connection.run()`` command, 
+as this command takes different strings as input and also returns different strings depending on the obtained operation result.
 
 All methods that rely on this remote_connection object should be located in the ``*_calls.py`` files
 
@@ -53,7 +53,7 @@ The offline mode should be activated by a command line argument, for example ``-
 
 
 Adding additional computation tools apart from ORCA
--------------------------------------------------
+---------------------------------------------------
 
 For this step the current ``orca.py`` file should serve as a guideline.
 

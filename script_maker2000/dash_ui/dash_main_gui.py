@@ -154,8 +154,8 @@ def create_hover_text_field():
     hover_layout.append(parallel_layer_run_input_hover)
 
     wait_for_results_time_input_hover = create_new_hover_text(
-        popover_header="Enter the waiting time for results",
-        popover_body="The time the script will wait to refresh results. 30 Seconds is recommended.",
+        popover_header="Enter the waiting time for results [s]",
+        popover_body="The time in seconds that the script will wait to refresh results. 30 Seconds is recommended.",
         target_id="wait_for_results_time_input",
     )
     hover_layout.append(wait_for_results_time_input_hover)
@@ -192,8 +192,9 @@ def create_hover_text_field():
     hover_layout.append(max_cores_per_node_input_hover)
 
     max_ram_per_core_input_hover = create_new_hover_text(
-        popover_header="Enter the maximum ram per core.",
-        popover_body="The maximum amount of ram that will be allocated by the automatic ressource allocation tool."
+        popover_header="Enter the maximum ram per core. [mb]",
+        popover_body="The maximum amount of ram in mega bytes that will "
+        + "be allocated by the automatic resource allocation tool."
         + "(default 4GB for normal nodes and 8gb for large nodes)\n"
         + "This value is for each individual calculation.",
         target_id="max_ram_per_core_input",
@@ -201,9 +202,11 @@ def create_hover_text_field():
     hover_layout.append(max_ram_per_core_input_hover)
 
     max_run_time_input_hover = create_new_hover_text(
-        popover_header="Enter the maximum wall time.",
+        popover_header="Enter the maximum wall time. [DAYS-HOURS:MINUTES:SECONDS]",
         popover_body="If a calculations runs into the set walltime this"
-        + " max value will be used to restart the calculation once.",
+        + " max value will be used to restart the calculation once."
+        + "The format is DAYS-HOURS:MINUTES:SECONDS.\n"
+        + "For example: 0-00:30:00 for 30 minutes.\n",
         target_id="max_run_time_input",
     )
     hover_layout.append(max_run_time_input_hover)
@@ -287,8 +290,8 @@ def create_hover_text_field():
     hover_layout.append(automatic_ressource_allocation_input_hover)
 
     ram_per_core_input_hover = create_new_hover_text(
-        popover_header="Enter the ram per core",
-        popover_body="The amount of ram that will be allocated per core."
+        popover_header="Enter the ram per core [mb]",
+        popover_body="The amount of ram in mega byte that will be allocated per core."
         + " Only used when automatic resource allocation is set to manual.",
         target_id={"type": "ram_per_core_input", "index": "0"},
     )
@@ -311,9 +314,11 @@ def create_hover_text_field():
     hover_layout.append(disk_storage_input_hover)
 
     walltime_input_hover = create_new_hover_text(
-        popover_header="Enter the walltime",
+        popover_header="Enter the walltime [DAYS-HOURS:MINUTES:SECONDS]",
         popover_body="The time that will be used for this calculation layer.\n"
-        + "When encountering a walltime error the calculation will be restarted with the max walltime value.",
+        + "When encountering a walltime error the calculation will be restarted with the max walltime value."
+        + " The format is DAYS-HOURS:MINUTES:SECONDS.\n"
+        + "For example: 0-00:30:00 for 30 minutes.\n",
         target_id={"type": "walltime_input", "index": "0"},
     )
     hover_layout.append(walltime_input_hover)

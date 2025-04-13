@@ -9,6 +9,8 @@ from script_maker2000.files import (
     read_premade_config,
     add_premade_config,
     automatic_ressource_allocation,
+    return_user_config_dir,
+    open_dir_in_explorer,
 )
 
 
@@ -263,7 +265,7 @@ def _ordered_dict_recursive(d):
     )
 
 
-def export_json(n_clicks, config_name_input, settings_dict):
+def export_json(n_clicks, config_name_input, settings_dict, config_save_path_input):
 
     if settings_dict is None:
         return "Please check the config inputs before exporting."
@@ -271,22 +273,41 @@ def export_json(n_clicks, config_name_input, settings_dict):
     if ".json" not in config_name_input:
         config_name_input += ".json"
 
-    with open(config_name_input, "w", encoding="utf-8") as f:
+    if config_save_path_input is None:
+        config_save_path_input = Path(config_name_input).resolve()
+    else:
+        config_save_path_input = Path(config_save_path_input).resolve()
+
+    config_output = config_save_path_input / config_name_input
+    config_output.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(config_output, "w", encoding="utf-8") as f:
         json.dump(_ordered_dict_recursive(settings_dict), f, indent=4)
 
     return f"Config file exported as {config_name_input}."
 
 
-def _collect_input_files(n_clicks, settings_dict, config_name_input):
+def _collect_input_files(
+    n_clicks, settings_dict, config_name_input, config_save_path_input
+):
 
     try:
         if ".json" not in config_name_input:
             config_json_name = f"{config_name_input}.json"
         else:
             config_json_name = config_name_input
+
+        if config_save_path_input is None:
+            config_save_path_input = Path(config_name_input).resolve()
+        else:
+            config_save_path_input = Path(config_save_path_input).resolve()
+
+        config_output = config_save_path_input / config_name_input
+        config_output.parent.mkdir(parents=True, exist_ok=True)
+
         zip_path = collect_input_files(
             settings_dict,
-            config_name_input,
+            config_output,
             config_name=config_json_name,
             zip_name=config_name_input,
         )
@@ -371,3 +392,16 @@ def add_predefined_config(
         new_options.append({"label": config, "value": config})
 
     return return_text, new_options, return_value
+
+
+def open_config_dir(n_clicks):
+    config_dir = return_user_config_dir()
+    config_dir = Path(config_dir).resolve()
+    if config_dir and config_dir.is_dir():
+        config_dir = str(config_dir.resolve())
+        open_dir_in_explorer(config_dir)
+
+    if config_dir:
+        return f"Config directory opened at {config_dir}."
+    else:
+        return "Error opening config directory."

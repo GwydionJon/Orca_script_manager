@@ -3,7 +3,13 @@ return_batch_config
 
 .. py:function:: return_batch_config(as_json=False)
 
-The ``return_batch_config`` function returns the batch config file.
+The ``return_batch_config`` function is mostly used internally to collect the batch config file. 
+It is part of the ``script_maker_cli`` group of commands.
+
+The batch config file is a json file that stores which calculations have been deployed under which config name and where they are stored.
+It exists as a cli interface to allow the remote link to easily fetch this data through the ssh tunnel.
+
+
 
 Parameters
 ----------
