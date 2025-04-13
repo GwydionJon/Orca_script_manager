@@ -15,6 +15,7 @@ from script_maker2000.files import (
     read_batch_config_file,
     check_dir_in_batch_config,
     add_dir_to_config,
+    open_dir_in_explorer,
 )
 from script_maker2000.analysis import (
     extract_infos_from_results,
@@ -616,7 +617,7 @@ def open_output_file(n_clicks, table_entry):
     file_path = Path(table_entry["dirname"]) / (
         Path(table_entry["filename"]).stem + ".out"
     )
-    os.system(f"rundll32.exe shell32.dll,OpenAs_RunDLL {file_path}")
+    open_dir_in_explorer(file_path)
 
     return "Open Output File"
 

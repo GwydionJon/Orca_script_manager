@@ -15,6 +15,7 @@ from script_maker2000.dash_ui.config_maker_calls import (
     displayTapNodeData,
     update_predefined_config_select,
     add_predefined_config,
+    open_config_dir,
 )
 
 from script_maker2000.work_manager import (
@@ -66,7 +67,7 @@ def create_config_manager_layout(json_path: dict) -> html.Div:
 
 
 def create_config_load_row() -> dbc.Row:
-    predeined_config_select = dbc.Select(
+    predefined_config_select = dbc.Select(
         id="predefined_config_select",
         options=[],
         style={"margin": "20px", "width": "50%"},
@@ -80,8 +81,15 @@ def create_config_load_row() -> dbc.Row:
         debounce=True,
     )
 
+    open_config_storage_button = dbc.Button(
+        "Open config storage",
+        id="open_config_storage_button",
+        n_clicks=0,
+        style={"margin": "10px", "width": "95%"},
+    )
+
     save_default_config_button = dbc.Button(
-        "Add default config",
+        "Save config",
         id="save_default_config_button",
         n_clicks=0,
         style={"margin": "10px", "width": "95%"},
@@ -103,9 +111,14 @@ def create_config_load_row() -> dbc.Row:
 
     load_config_row = dbc.Row(
         [
-            html.H3("Load preconfigured Config"),
+            html.H3("Load pre-configured Config"),
             custom_config_path_input,
-            predeined_config_select,
+            dbc.Row(
+                [
+                    dbc.Col(predefined_config_select, width=8),
+                    dbc.Col(open_config_storage_button, width=4),
+                ]
+            ),
             dbc.Row(
                 [
                     dbc.Col(save_default_config_button, width=5),
@@ -257,12 +270,17 @@ def create_config_buttons_and_display() -> dbc.Row:
         disabled=True,
     )
 
-    download_object = dcc.Download(id="download_config_file")
+    config_save_path_input = create_new_input(
+        "Config save path",
+        str(Path(".").resolve()),
+        id_="config_save_path_input_id",
+        placeholder="Path to save the config file, empty for current working directory.",
+    )
+
     button_row = dbc.Row(
         [
             create_config_file_button,
             export_config_file_button,
-            download_object,
             collect_input_files_button,
         ]
     )
@@ -277,6 +295,7 @@ def create_config_buttons_and_display() -> dbc.Row:
             html.P(
                 "Always check the config file before exporting it, as this will reset the internal config."
             ),
+            config_save_path_input,
             button_row,
             dbc.Row(
                 dcc.Textarea(
@@ -824,6 +843,7 @@ def add_callbacks(app: Dash) -> Dash:
         Input("export_config_file_button", "n_clicks"),
         State("config_name_input", "value"),
         State("json_view", "data"),
+        State("config_save_path_input_id", "value"),
         prevent_initial_call=True,
     )(export_json)
 
@@ -833,6 +853,7 @@ def add_callbacks(app: Dash) -> Dash:
             "n_clicks": Input("collect_input_files_button", "n_clicks"),
             "settings_dict": State("json_view", "data"),
             "config_name_input": State("config_name_input", "value"),
+            "config_save_path_input": State("config_save_path_input_id", "value"),
         },
         prevent_initial_call=True,
     )(_collect_input_files)
@@ -863,5 +884,11 @@ def add_callbacks(app: Dash) -> Dash:
         State("accordion", "active_item"),
         prevent_initial_call=True,
     )(load_predefined_config)
+
+    app.callback(
+        Output("safe_config_textarea", "value", allow_duplicate=True),
+        Input("open_config_storage_button", "n_clicks"),
+        prevent_initial_call=True,
+    )(open_config_dir)
 
     return app
