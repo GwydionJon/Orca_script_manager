@@ -31,7 +31,12 @@ jobs:
         auto-activate-base: true
         python-version: ${{ matrix.python-version }}
  
-    
+    - name: Create conda environment
+      run: |
+        conda env create -f environment.yml
+        conda activate script_maker
+
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
