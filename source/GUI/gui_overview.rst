@@ -80,7 +80,7 @@ Example: ``H2O__c0m1.xyz``
 
 
 There are three main options for the input file, though each option can be given with a relative (to where you started the GUI) or absolute path.:
-if a valid file has been found a green mark will apear next to the input file path.
+if a valid file has been found a green mark will appear next to the input file path.
 
 1. A single xyz file: This is the most straight forward option and does exactly what it says. 
 2. A directory with xyz files: This option will look for all xyz files in the directory and use them as input files. This is the intended usecase of this programm and allows for large batches of calculations to be performed simultaneously.
@@ -109,7 +109,7 @@ Example json file:
 Creating a calculation pipeline
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In addition to the abiliy of submiting many different molecules at once, this program was also designed to submit arbitrary pipelines consisting of different individual calculations.
+In addition to the ability of submitting many different molecules at once, this program was also designed to submit arbitrary pipelines consisting of different individual calculations.
 The simplest example would be to perform a geometry optimization followed by a single point calculation on a higher level of theory.
 
 These pipelines are created in the loop_config section of the config editor.
@@ -122,9 +122,9 @@ Note that this description is currently only valid for Orca calculations.
 4. Now we set the step ID, this basically determines the position in the pipeline. The first step should always be 0. 
    To create a branching pipeline we can set multiple steps to the same ID.
 5. Choose the method and basis set for the calculation.
-6. Add additinal settings that you woud normally add in the first line of an orca input file. (Block settings can be set later.)
+6. Add additional  settings that you would normally add in the first line of an orca input file. (Block settings can be set later.)
 7. In most cases we can stick with the automated resource allocation. However if we want to use a specific node we can set it here.
-   The automated allocation will estimate how many compute cores are optiomal based on the number of calculations and the number of nodes available.
+   The automated allocation will estimate how many compute cores are optimal based on the number of calculations and the number of nodes available.
    This is important because orca and most other programs do not scale linearly with the number of cores. The more calculations are performed, the more efficient it is to perform them in parallel with fewer cores than to perform them one after the other with many cores.
    This setting takes the ``max_compute_nodes`` setting from the main_config section into account.
 8. The last step is to set the initial run time. This is the maximum amount of time that the calculation is allowed to run before it is killed. This setting is important to prevent the calculation from running for too long and blocking the queue for other users.
@@ -133,6 +133,17 @@ Note that this description is currently only valid for Orca calculations.
 
 Now repeat these steps for all desired calculation steps.
 
+Checking the config:
+~~~~~~~~~~~~~~~~~~~~~~~
+
+In the middle and right part of the config creator tab, 
+you can check the current config and also see a preview of the config file that will be created.
+
+The config save path will determine where the exported config and the input files will be saved to.
+The config will be a simple json file and the collected input files will already be zipped and ready for upload in the next section.
+
+Below the buttons you can see what values the automatic resource allocation has chosen for the current config.
+The black bar underneath can be expanded to show the entire config file that will be created.
 
 Submitting Jobs
 ---------------
