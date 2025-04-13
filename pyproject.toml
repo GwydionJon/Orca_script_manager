@@ -28,7 +28,7 @@ dependencies = [
     "rdkit",
     "tqdm",
     "joblib",
-    "dash",
+    "dash<=2.18.2",
     "dash-bootstrap-components",
     "dash-renderjson",
     "dash_cytoscape",
