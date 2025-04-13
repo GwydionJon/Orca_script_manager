@@ -28,15 +28,11 @@ jobs:
     
     - uses: conda-incubator/setup-miniconda@v3
       with:
-        auto-activate-base: true
-        python-version: ${{ matrix.python-version }}
- 
-    - name: Create conda environment
-      run: |
-        conda env create -f environment.yml
-        conda activate script_maker
-
-
+        auto-activate-base: false
+        auto-update-conda: true
+        activate-environment: script_maker
+        environment-file: environment.yml
+   
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
