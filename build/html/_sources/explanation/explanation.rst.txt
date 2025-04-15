@@ -29,10 +29,14 @@ Three layers of abstraction
 The core of this program is divided into three different layers.
 The inner most layer is the **JOB**, the second is the **work_manager** and the outer most layer is the **batch_manager**.
 
+.. image:: worker_diagram.png
+   :alt: Description of the image
+   :width: 400px
+   :align: center
 
 | The **JOB** is the most basic unit of work. It is a single calculation that needs to be done.
- For an orca calculation, the job would contain the desired molecule and the orca input file. 
-| Each job can be in different stages depending on its process. 
+  For an orca calculation, the job would contain the desired molecule and the orca input file. 
+  Each job can be in different stages depending on its process. 
 | These stages go from *initialized* -> *submitted* -> *running* -> *returned* -> *finished*
 | Jobs only have information about themselves and their current status.
 

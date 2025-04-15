@@ -60,3 +60,36 @@ The remote installation of this software will be done automatically after you fi
 This will install all dependencies and the package itself on the remote server.
 
 For a more detailed explanation of how to do this please look at the GUI section of this documentation.
+
+
+Quick-launch guide
+===================
+
+Opening the GUI through a command line can be a bit bothersome, 
+so here is some quick code to create a bash or batch file to open the GUI.
+
+For Linux/MacOS, create a bash script (e.g., `open_gui.sh`) with the following content:
+
+.. code-block:: bash
+
+    #!/bin/bash
+    conda activate script_maker
+    script_maker_cli config-creator --username UserName --password "PASSWORD" --hostname "justus2.uni-ulm.de"
+
+Make the script executable by running:
+
+.. code-block:: bash
+
+    chmod +x open_gui.sh
+
+For Windows, create a batch file (e.g., `open_gui.bat`) with the following content:
+
+.. code-block:: bat
+
+    call conda activate script_maker
+    script_maker_cli config-creator --username UserName --password "PASSWORD" --hostname "justus2.uni-ulm.de"
+
+
+Double-click the respective file to launch the GUI.
+Please note that the default working directory of the GUI is the folder from which you run the script.
+This means that the GUI will create all files in the current working directory.

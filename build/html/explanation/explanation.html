@@ -112,10 +112,12 @@ However this interface should cover all aspects needed for the usage of any soft
 <h2>Three layers of abstraction<a class="headerlink" href="#three-layers-of-abstraction" title="Link to this heading"></a></h2>
 <p>The core of this program is divided into three different layers.
 The inner most layer is the <strong>JOB</strong>, the second is the <strong>work_manager</strong> and the outer most layer is the <strong>batch_manager</strong>.</p>
+<a class="reference internal image-reference" href="../_images/worker_diagram.png"><img alt="Description of the image" class="align-center" src="../_images/worker_diagram.png" style="width: 400px;" />
+</a>
 <div class="line-block">
 <div class="line">The <strong>JOB</strong> is the most basic unit of work. It is a single calculation that needs to be done.
-For an orca calculation, the job would contain the desired molecule and the orca input file.</div>
-<div class="line">Each job can be in different stages depending on its process.</div>
+For an orca calculation, the job would contain the desired molecule and the orca input file.
+Each job can be in different stages depending on its process.</div>
 <div class="line">These stages go from <em>initialized</em> -&gt; <em>submitted</em> -&gt; <em>running</em> -&gt; <em>returned</em> -&gt; <em>finished</em></div>
 <div class="line">Jobs only have information about themselves and their current status.</div>
 </div>

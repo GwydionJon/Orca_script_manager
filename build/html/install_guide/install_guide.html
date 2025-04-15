@@ -54,6 +54,7 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#using-conda">Using conda</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#installation-on-remote-system">Installation on remote system</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#quick-launch-guide">Quick-launch guide</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../explanation/explanation.html">How does this program work?</a></li>
@@ -131,6 +132,29 @@ thus simplifying the installation process on most machines.</p>
 <p>The remote installation of this software will be done automatically after you first submit a job to a remote server via the gui.</p>
 <p>This will install all dependencies and the package itself on the remote server.</p>
 <p>For a more detailed explanation of how to do this please look at the GUI section of this documentation.</p>
+</section>
+<section id="quick-launch-guide">
+<h2>Quick-launch guide<a class="headerlink" href="#quick-launch-guide" title="Link to this heading"></a></h2>
+<p>Opening the GUI through a command line can be a bit bothersome,
+so here is some quick code to create a bash or batch file to open the GUI.</p>
+<p>For Linux/MacOS, create a bash script (e.g., <cite>open_gui.sh</cite>) with the following content:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/bin/bash</span>
+conda<span class="w"> </span>activate<span class="w"> </span>script_maker
+script_maker_cli<span class="w"> </span>config-creator<span class="w"> </span>--username<span class="w"> </span>UserName<span class="w"> </span>--password<span class="w"> </span><span class="s2">&quot;PASSWORD&quot;</span><span class="w"> </span>--hostname<span class="w"> </span><span class="s2">&quot;justus2.uni-ulm.de&quot;</span>
+</pre></div>
+</div>
+<p>Make the script executable by running:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>chmod<span class="w"> </span>+x<span class="w"> </span>open_gui.sh
+</pre></div>
+</div>
+<p>For Windows, create a batch file (e.g., <cite>open_gui.bat</cite>) with the following content:</p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span><span class="k">call</span> conda activate script_maker
+script_maker_cli config-creator --username UserName --password <span class="s2">&quot;PASSWORD&quot;</span> --hostname <span class="s2">&quot;justus2.uni-ulm.de&quot;</span>
+</pre></div>
+</div>
+<p>Double-click the respective file to launch the GUI.
+Please note that the default working directory of the GUI is the folder from which you run the script.
+This means that the GUI will create all files in the current working directory.</p>
 </section>
 </section>
 
